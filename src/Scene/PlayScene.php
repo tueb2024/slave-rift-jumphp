@@ -2,6 +2,7 @@
 
 namespace App\Scene;
 
+use App\Audio\RiftMusic;
 use App\Game\BrushMap;
 use App\Game\Run;
 use App\Gfx\World;
@@ -15,6 +16,8 @@ final class PlayScene extends AbstractScene
     private Run $run;
     private World $world;
     private FixedStep $step;
+    private RiftMusic $music;
+    private int $musicWave = 1;
     private bool $demo = false;
     private bool $paused = false;
     private bool $jumpPending = false;
@@ -32,6 +35,13 @@ final class PlayScene extends AbstractScene
         $this->paused = false;
         $this->jumpPending = false;
         $this->world->prepare($this->engine->gl(), $this->run);
+
+        if (!isset($this->music)) {
+            $this->music = new RiftMusic($this->sound());
+            $this->music->register();
+        }
+        $this->musicWave = $this->run->wave;
+        $this->music->reset($this->musicWave);
     }
 
     public function update(float $dt): void
@@ -67,6 +77,13 @@ final class PlayScene extends AbstractScene
             $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending);
             $this->jumpPending = false;
         });
+
+        if ($this->run->wave !== $this->musicWave) {
+            $this->musicWave = $this->run->wave;
+            $this->music->onWaveStart($this->musicWave);
+        }
+        $pressure = min(1.0, 0.32 + count($this->run->enemies) / 24.0);
+        $this->music->update($dt, $pressure);
     }
 
     public function render(Renderer $r): void
