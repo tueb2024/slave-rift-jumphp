@@ -135,28 +135,30 @@ final class PlayScene extends AbstractScene
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
 
             $mx = 0.0; $my = 0.0;
-            $relativeActive = function_exists('SDL_GetRelativeMouseState')
-                && (!function_exists('SDL_GetRelativeMouseMode') || (bool)@\SDL_GetRelativeMouseMode());
-            if ($relativeActive) {
+            $relativeWorked = false;
+            if (function_exists('SDL_GetRelativeMouseState')) {
                 $rx = 0; $ry = 0;
                 @\SDL_GetRelativeMouseState($rx, $ry);
-                $mx = max(-300, min(300, (int)$rx)) * self::MOUSE_SENS_REL;
-                $my = max(-300, min(300, (int)$ry)) * self::MOUSE_SENS_REL;
+                if ($rx !== 0 || $ry !== 0) {
+                    $mx = max(-300, min(300, (int)$rx)) * self::MOUSE_SENS_REL;
+                    $my = max(-300, min(300, (int)$ry)) * self::MOUSE_SENS_REL;
+                    $relativeWorked = true;
+                }
             }
-            if (!$relativeActive) {
+            if (!$relativeWorked) {
                 if (function_exists('SDL_SetRelativeMouseMode') && ($mouse->isPressed(1) || $mouse->isPressed(3))) @\SDL_SetRelativeMouseMode(true);
                 if ($this->mouseX !== null && $this->mouseY !== null) {
-                    $dx = max(-160.0, min(160.0, $mouse->x - $this->mouseX));
-                    $dy = max(-160.0, min(160.0, $mouse->y - $this->mouseY));
-                    $mx = $dx * self::MOUSE_SENS_ABS;
-                    $my = $dy * self::MOUSE_SENS_ABS;
+                    $dx = $mouse->x - $this->mouseX;
+                    $dy = $mouse->y - $this->mouseY;
+                    // Ignore a pointer-lock recenter, never a normal movement.
+                    if (abs($dx) <= 96 && abs($dy) <= 96) {
+                        $mx = $dx * self::MOUSE_SENS_ABS;
+                        $my = $dy * self::MOUSE_SENS_ABS;
+                    }
                 }
-                $this->mouseX = $mouse->x;
-                $this->mouseY = $mouse->y;
-            } else {
-                $this->mouseX = $mouse->x;
-                $this->mouseY = $mouse->y;
             }
+            $this->mouseX = $mouse->x;
+            $this->mouseY = $mouse->y;
             $this->run->yaw -= $mx;
             $this->pitch = max(-1.20, min(1.20, $this->pitch - $my));
         }
