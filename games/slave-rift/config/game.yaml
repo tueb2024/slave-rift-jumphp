@@ -1,0 +1,19 @@
+game:
+  id: slave-rift
+  title: "SLAVE RIFT"
+  version: 0.1.0
+  description: "Original low-poly FPS experiment: Quake-style brush maps through JumPHP 3D."
+  descriptions:
+    fr: "FPS low-poly original : cartes brush façon Quake rendues par la 3D de JumPHP."
+    en: "Original low-poly FPS: Quake-style brush maps rendered through JumPHP 3D."
+  width: 320
+  height: 180
+  scale: 3
+  background: [8, 7, 10]
+  start_scene: App\Scene\PlayScene
+  lang: en
+  controls: "W/S move, A/D strafe, arrows turn/move, Space fire, Enter restart."
+  pwa: { short_name: SLAVE RIFT, theme_color: '#08070a' }
+  smoke:
+    scene: App\Scene\PlayScene
+    params: { demo: true }
