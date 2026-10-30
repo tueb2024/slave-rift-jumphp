@@ -64,7 +64,9 @@ final class Run
 
     public function __construct(public readonly BrushMap $map, int $seed = 1337)
     {
-        [$this->x, $this->y, $this->z] = $map->playerStart;
+        // Quake deathmatch maps often use info_player_start as an intermission
+        // camera. DM1's is above empty space, so use a real deathmatch spawn.
+        [$this->x, $this->y, $this->z] = $map->spawnPoints[0] ?? $map->playerStart;
         $this->yaw = $map->playerYaw;
         $this->rng = max(1, $seed % 65521);
     }
@@ -168,13 +170,28 @@ final class Run
     {
         $target = null;
         $best = INF;
+        $visibleTarget = null;
+        $visibleScore = INF;
         foreach ($this->enemies as $enemy) {
             $d = hypot($enemy['x'] - $this->x, $enemy['z'] - $this->z);
             if ($d < $best) { $target = $enemy; $best = $d; }
+            if ($d <= 19.0 && $this->lineClear(
+                [$this->x, $this->y + 0.35, $this->z],
+                [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']],
+            )) {
+                $angle = abs(self::angleDelta(atan2($enemy['x'] - $this->x, $enemy['z'] - $this->z), $this->yaw));
+                $score = $d + $angle * 5.0;
+                if ($score < $visibleScore) { $visibleTarget = $enemy; $visibleScore = $score; }
+            }
         }
         if ($target === null) return [0.25, 0.4, 0.3, false];
-        $error = self::angleDelta(atan2($target['x'] - $this->x, $target['z'] - $this->z), $this->yaw);
-        return [$best < 3.2 ? -0.7 : 0.25, 0.65, max(-1.0, min(1.0, -$error * 2)), abs($error) < 0.12];
+        // Prefer an enemy the weapons can actually hit. The nearest enemy may be
+        // on the other side of a DM1 wall, where it would otherwise hold aim forever.
+        $aimTarget = $visibleTarget ?? $target;
+        $error = self::angleDelta(atan2($aimTarget['x'] - $this->x, $aimTarget['z'] - $this->z), $this->yaw);
+        $forward = $visibleTarget !== null && hypot($visibleTarget['x'] - $this->x, $visibleTarget['z'] - $this->z) < 3.2 ? -0.35 : 0.25;
+        $strafe = $visibleTarget === null ? 0.25 : 0.0;
+        return [$forward, $strafe, max(-1.0, min(1.0, -$error * 2)), $visibleTarget !== null && abs($error) < 0.12];
     }
 
     private function stepWaves(float $dt): void
