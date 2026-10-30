@@ -287,6 +287,9 @@ final class Run
                 $y = $mapY - 0.20;
                 $distance = hypot($x - $this->x, $z - $this->z);
                 if ($distance < 4.5 || $distance > 34.0) continue;
+                // DM1 has stacked floors. A spawn directly above the player
+                // reads as an enemy walking on the ceiling from below.
+                if (abs($y - $this->y) > 1.5) continue;
                 if ($this->collides($x, $y, $z, 0.42, 0.55)) continue;
                 $occupied = false;
                 foreach ($this->enemies as $enemy) {
@@ -318,6 +321,7 @@ final class Run
             $x = $this->x + sin($a) * $r;
             $z = $this->z + cos($a) * $r;
             $ground = $this->supportHeight($x, $z, 0.42, $this->y + 2.0);
+            if ($ground === null) continue;
             $y = $ground + 0.55;
             if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, $y, $z, 0.42, 0.55)) continue;
             return $this->spawnEnemyAt($x, $y, $z);
@@ -382,7 +386,9 @@ final class Run
                     $speed = $enemy['speed'] * $dt;
                     $nx = $enemy['x'] + sin($angle + $offset) * $speed;
                     $nz = $enemy['z'] + cos($angle + $offset) * $speed;
-                    $ny = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23) + 0.55;
+                    $ground = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23);
+                    if ($ground === null) continue;
+                    $ny = $ground + 0.55;
                     if ($this->collides($nx, $ny, $nz, $enemy['radius'], 0.55)) continue;
                     $blocked = false;
                     foreach ($this->enemies as $otherId => $other) {
@@ -663,12 +669,12 @@ final class Run
         return false;
     }
 
-    private function supportHeight(float $x, float $z, float $radius, float $ceiling): float
+    private function supportHeight(float $x, float $z, float $radius, float $ceiling): ?float
     {
-        $top = 0.0;
+        $top = null;
         foreach ($this->map->solids as $solid) {
             $height = $solid['max'][1];
-            if ($height > $ceiling + 0.002 || $height < $top) continue;
+            if ($height > $ceiling + 0.002 || ($top !== null && $height < $top)) continue;
             $dx = $x - max($solid['min'][0], min($solid['max'][0], $x));
             $dz = $z - max($solid['min'][2], min($solid['max'][2], $z));
             if ($dx * $dx + $dz * $dz < $radius * $radius) $top = $height;

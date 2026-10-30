@@ -87,16 +87,19 @@ final class PlayScene extends AbstractScene
         if ($this->paused) return;
         if ($this->run->state === 'upgrade') {
             $mouse = $this->engine->input->getMouse();
-            $wheel = $this->engine->input instanceof \App\Input\WheelInputManager ? $this->engine->input->consumeWheelY() : 0;
-            if ($wheel !== 0 && count($this->run->choices) > 0) {
-                $count = count($this->run->choices);
-                $delta = $wheel > 0 ? -1 : 1;
-                $this->upgradeCursor = ($this->upgradeCursor + $delta + $count) % $count;
+            if (!$this->demo && $mouse->x >= 12 && $mouse->x < $this->width() - 12) {
+                foreach ($this->run->choices as $slot => $_choice) {
+                    if ($mouse->y >= 68 + $slot * 22 && $mouse->y < 90 + $slot * 22) {
+                        $this->upgradeCursor = $slot;
+                        break;
+                    }
+                }
             }
             foreach (['upgrade_one', 'upgrade_two', 'upgrade_three'] as $slot => $action) {
                 if ($this->actions()->isPressed($action)) {
                     $this->upgradeCursor = $slot;
                     $this->run->chooseUpgrade($slot);
+                    if (function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(true);
                     return;
                 }
             }
@@ -106,6 +109,7 @@ final class PlayScene extends AbstractScene
             }
             if ($mouse->isPressed(1)) {
                 $this->run->chooseUpgrade($this->upgradeCursor);
+                if (function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(true);
             }
             return;
         }
@@ -155,9 +159,8 @@ final class PlayScene extends AbstractScene
                 $this->mouseX = $mouse->x;
                 $this->mouseY = $mouse->y;
             }
-            $this->run->yaw += $mx;
-            // Normal FPS convention: mouse up looks up, mouse down looks down.
-            $this->pitch = max(-1.20, min(1.20, $this->pitch + $my));
+            $this->run->yaw -= $mx;
+            $this->pitch = max(-1.20, min(1.20, $this->pitch - $my));
         }
 
         $beforeState = $this->run->state;
@@ -168,6 +171,9 @@ final class PlayScene extends AbstractScene
         });
 
         $this->playAudioEvents($beforeState, $beforeXp);
+        if (!$this->demo && $beforeState === 'play' && $this->run->state === 'upgrade' && function_exists('SDL_SetRelativeMouseMode')) {
+            @\SDL_SetRelativeMouseMode(false);
+        }
         if ($this->run->wave !== $this->musicWave) {
             $this->musicWave = $this->run->wave;
             $this->music->onWaveStart($this->musicWave);
@@ -257,7 +263,7 @@ final class PlayScene extends AbstractScene
                 $font->draw($r, $prefix . ($slot + 1) . '  ' . $choice, 24, 72 + $slot * 22, 1, $selected ? $cyan : $cream);
                 $font->draw($r, $run->upgradeDescription($choice), 24, 81 + $slot * 22, 1, $cyan);
             }
-            $font->draw($r, 'WHEEL SELECT / LMB CONFIRM  (1/2/3 FALLBACK)', $cx, 135, 1, $cream, 'center');
+            $font->draw($r, 'HOVER SELECT / LMB CONFIRM  (1/2/3 FALLBACK)', $cx, 135, 1, $cream, 'center');
         } elseif ($run->state === 'dead') {
             $r->fillRect(26, 56, $w - 52, 69, [8,5,12,235]);
             $font->draw($r, 'RIFT CLAIMED YOU', $cx, 65, 2, [245,90,76], 'center');

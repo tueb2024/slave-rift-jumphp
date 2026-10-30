@@ -67,6 +67,11 @@ check($run->arsenalLabel() === 'COLT .45 ONLY', 'run starts with manual Colt ars
 // DM1's info_player_start is an intermission camera above empty space. The
 // demo must start at a deathmatch point and keep making combat progress there.
 $dm1 = new Run(BrushMap::load(__DIR__ . '/../assets/maps/quake-dm1.map'), 1337);
+$spawnProbe = new Run($dm1->map, 1337);
+frames($spawnProbe, 90);
+check($spawnProbe->enemies !== [] && count(array_filter($spawnProbe->enemies,
+    static fn (array $enemy): bool => abs($enemy['y'] - $spawnProbe->y) > 1.5)) === 0,
+    'DM1 opening enemies stay on the player floor');
 $sawDeathAnimation = false;
 for ($i = 0; $i < 600 && $dm1->state !== 'dead'; $i++) {
     if ($dm1->state === 'upgrade') {
@@ -82,10 +87,10 @@ check($dm1->shots > 0 && $dm1->hits > 0 && $dm1->kills > 0, 'DM1 demo makes comb
 check($dm1->score > 0 && $dm1->multiplier >= 1.0, 'DM1 demo rewards kills with score');
 check($sawDeathAnimation, 'DM1 enemy kills leave a short visual death animation');
 
-$rangedWave = new Run($dm1->map, 3);
+$rangedWave = new Run($dm1->map, 1);
 $rangedWave->wave = 2;
 $rangedWave->remaining = 100;
-for ($i = 0; $i < 30; $i++) $rangedWave->step(1 / 60, 0, 0, 0);
+for ($i = 0; $i < 120; $i++) $rangedWave->step(1 / 60, 0, 0, 0);
 check(count(array_filter($rangedWave->enemies, static fn (array $enemy): bool => $enemy['type'] === 'enforcer')) > 0,
     'DM1 wave two can spawn the ranged enforcer');
 

@@ -113,7 +113,7 @@ final class World
 
     private function draw3d(WebGl $gl, Renderer $r, Run $run, float $pitch): void
     {
-        $fog = [0.075, 0.055, 0.085];
+        $fog = [0.14, 0.12, 0.15];
         $gl->clear([18, 13, 22]);
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
         $common = ['u_viewProj' => $vp, 'u_eye' => self::eye($run), 'u_fog' => $fog];
