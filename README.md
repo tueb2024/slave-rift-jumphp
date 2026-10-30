@@ -4,25 +4,23 @@ A deliberately anachronistic FPS prototype: **Quake-style brush maps**, a **Powe
 
 The project contains no Quake, PowerSlave or Chasm proprietary game data, textures, sounds or models. The current test level is mostly original geometry, with two small convex structures adapted from the GPL-2.0 `spirit1dm2.map` source by spirit to exercise the real brush importer.
 
-## Milestone 0.2 — real brush geometry + retro materials
+## Milestone 0.2 — real brush geometry
 
 - JumPHP game structure at repository root (`config/`, `src/`, `assets/`).
 - OpenGL desktop / WebGL browser renderer using `JumPHP\Gl\WebGl` and `Mat4`.
 - Quake `.map` reader that reconstructs **convex brushes from their planes**.
 - Brush-plane intersections are rebuilt as real XYZ vertices, sorted per face and triangulated for the GPU.
 - Rendering no longer reduces every brush to an axis-aligned box.
-- Simple planar UV projection on reconstructed brush faces.
-- Nearest-neighbour repeating texture sampling for a deliberately 1990s FPS look.
 - Collision deliberately remains conservative AABB collision for this milestone.
 - Test map: chamber → doorway → second chamber, now with non-orthogonal GPL-derived brush structures.
-- FPS camera, forward/back, strafe and turn.
+- FPS camera, forward/back, strafe, turn and Quake-style jump/gravity.
 - One original low-poly guardian with chase/melee AI.
 - Hitscan-style firing and HUD weapon overlay.
 - `demo: true` autopilot for JumPHP smoke tests.
 - Software top-down fallback when GL is unavailable.
 - `site/index.html` plus repository preview artwork for JumPHP/web import metadata.
 
-This is now a genuine polygonal 3D pipeline: the map supplies planes, the importer derives convex vertices and faces, and JumPHP/WebGL renders those triangles. The first world material is now a real repeating retro texture rather than flat colour only.
+This is now a genuine polygonal 3D pipeline: the map supplies planes, the importer derives convex vertices and faces, and JumPHP/WebGL renders those triangles. It is still intentionally much smaller than Quake BSP or the Kex engine.
 
 ## Controls
 
@@ -30,7 +28,8 @@ This is now a genuine polygonal 3D pipeline: the map supplies planes, the import
 - `Down` / `S`: backward
 - `Left` / `Right`: turn
 - `A` / `D`: strafe
-- `Space`: fire
+- `Space`: jump
+- `F`: fire
 - `Enter`: restart after death / clear
 - `Esc`: pause if the host supplies the default pause action
 
@@ -63,19 +62,20 @@ BrushMap
   ├─ intersect plane triplets → convex XYZ vertices
   ├─ collect/sort vertices per face
   ├─ triangulate faces → WebGL mesh
-  ├─ planar UV projection → repeating retro material
   ├─ AABB bounds → conservative collision
   ├─ player start
   └─ guardian spawn
 
 PlayScene
   ↓
-Run (simulation, collision, AI, hitscan)
+Run (simulation, collision, jump/gravity, AI, hitscan)
   ↓
 World (camera + renderer)
 ```
 
 Coordinate conversion is explicit: Quake `X/Y/Z` becomes JumPHP world `X/Z/-Y`; 32 Quake units = 1 world unit.
+
+The next useful importer milestone is to replace conservative AABB collision with brush-plane collision or a generated collision mesh, then assign distinct textures by material rather than one global repeated texture.
 
 ## Licensing / provenance
 
@@ -87,15 +87,6 @@ Source: `https://github.com/dfsp-spirit/spirit-quake-maps-gpl`
 
 The upstream repository explicitly states that its `.map` sources are GPL but the original map assets are not included and generally need replacement. That is the approach used here.
 
-### Retro textures
-
-The repository includes four replacement textures from `LibreQuake/QuadCompati` under `assets/textures/quadcompati/`:
-
-- `cop1_1.png`
-- `ceil1_1.png`
-- `crate0_side.png`
-- `arch7.png`
-
-QuadCompati describes its `texture-wads` as liberated replacements under **CC0 / MIT0 / BSD0** for its v0.01 texture set. They are used here as freely redistributable retro-FPS materials rather than copied Quake game data.
+The prototype also includes a small subset of replacement textures from LibreQuake's `QuadCompati` project under `assets/textures/quadcompati/`: `cop1_1.png`, `ceil1_1.png`, `crate0_side.png` and `arch7.png`. QuadCompati publishes its texture-wad replacements under CC0 / MIT0 / BSD0-style terms; these files are used as freely redistributable retro-FPS replacements rather than original Quake artwork.
 
 Source: `https://github.com/LibreQuake/QuadCompati`
