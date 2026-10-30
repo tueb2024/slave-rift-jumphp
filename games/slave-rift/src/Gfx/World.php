@@ -68,10 +68,10 @@ final class World
                 'runner' => $gl->buffer(Meshes::enemy('runner'), true),
                 'brute' => $gl->buffer(Meshes::enemy('brute'), true),
                 'pulse' => $gl->buffer(Meshes::pulse(), true),
-                'stoneTex' => $gl->texture('assets/textures/rift-stone.png', false, true),
-                'metalTex' => $gl->texture('assets/textures/quadcompati/metal_panel.png', false, true),
-                'ceilTex' => $gl->texture('assets/textures/quadcompati/ceil1_1.png', false, true),
-                'crateTex' => $gl->texture('assets/textures/quadcompati/crate0_side.png', false, true),
+                'stoneTex' => $gl->texture('assets/textures/librequake/brick1.png', false, true),
+                'metalTex' => $gl->texture('assets/textures/librequake/met_blc_block.png', false, true),
+                'ceilTex' => $gl->texture('assets/textures/librequake/med_flat8.png', false, true),
+                'crateTex' => $gl->texture('assets/textures/librequake/crate4.png', false, true),
             ];
         }
         $gl->setLayer('below', 'native', self::KEY);

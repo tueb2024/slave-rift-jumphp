@@ -79,6 +79,16 @@ All seven sheets are by Nmn (Pawel Zarczynski), CC0. The local files are compact
 - Usage: first-person automatic weapon tiers
 - Modification: none; transparent RGBA output used directly
 
+## LibreQuake material textures
+
+- Name: `brick1.png`, `met_blc_block.png`, `med_flat8.png`, `crate4.png`
+- Author: LibreQuake contributors
+- Source: https://github.com/lavenderdotpet/LibreQuake/tree/main/texture-wads
+- License: BSD-3-Clause; text at `assets/textures/librequake/COPYING`
+- Local files: `assets/textures/librequake/`
+- Usage: DM1 stone, metal, ceiling and crate material groups
+- Modifications: none; original PNGs copied without edits
+
 ## Audio
 
 - Gameplay SFX and drum voices are generated at runtime by `src/Audio/RiftSfx.php` as original 44.1 kHz PCM.
