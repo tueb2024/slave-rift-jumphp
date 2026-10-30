@@ -1,0 +1,9 @@
+actions:
+  move_forward: [W, Up, pad0:up]
+  move_back: [S, Down, pad0:down]
+  strafe_left: [A]
+  strafe_right: [D]
+  turn_left: [Left, pad0:left]
+  turn_right: [Right, pad0:right]
+  fire: [Space, pad0:a, touch:tap]
+  restart: [Return, pad0:start]
