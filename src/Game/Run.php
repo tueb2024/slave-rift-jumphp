@@ -185,13 +185,16 @@ final class Run
             }
         }
         if ($target === null) return [0.25, 0.4, 0.3, false];
+        if ($visibleTarget === null) {
+            // The demo has no pathfinder: keep moving while sweeping the view until DM1 geometry reveals a target.
+            return [0.18, sin($this->time * 0.8) * 0.55, 0.68, false];
+        }
         // Prefer an enemy the weapons can actually hit. The nearest enemy may be
         // on the other side of a DM1 wall, where it would otherwise hold aim forever.
-        $aimTarget = $visibleTarget ?? $target;
+        $aimTarget = $visibleTarget;
         $error = self::angleDelta(atan2($aimTarget['x'] - $this->x, $aimTarget['z'] - $this->z), $this->yaw);
-        $forward = $visibleTarget !== null && hypot($visibleTarget['x'] - $this->x, $visibleTarget['z'] - $this->z) < 3.2 ? -0.35 : 0.25;
-        $strafe = $visibleTarget === null ? 0.25 : 0.0;
-        return [$forward, $strafe, max(-1.0, min(1.0, -$error * 2)), $visibleTarget !== null && abs($error) < 0.12];
+        $forward = hypot($visibleTarget['x'] - $this->x, $visibleTarget['z'] - $this->z) < 3.2 ? -0.35 : 0.25;
+        return [$forward, 0.0, max(-1.0, min(1.0, -$error * 2)), abs($error) < 0.12];
     }
 
     private function stepWaves(float $dt): void
