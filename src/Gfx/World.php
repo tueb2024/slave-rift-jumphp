@@ -165,7 +165,7 @@ final class World
         foreach ($enemies as $enemy) {
             $distance = hypot($enemy['x'] - $run->x, $enemy['z'] - $run->z);
             if ($distance > 40.0) continue;
-            if (!$run->lineClear(self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
+            if (!$this->enemyLineClear($run, self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
             $point = Mat4::project($vp, [$enemy['x'], $enemy['y'] + 0.10, $enemy['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
             $sprite = self::ENEMY_SPRITES[$enemy['type']] ?? self::ENEMY_SPRITES['guardian'];
@@ -182,7 +182,10 @@ final class World
             $sourceY = (int)floor($row * $cellH);
             $sourceW = (int)floor(($column + 1) * $cellW) - $sourceX;
             $sourceH = (int)floor(($row + 1) * $cellH) - $sourceY;
-            $spriteH = (int)max(18, min(126, (205.0 / max(1.25, $distance)) * $sprite['scale']));
+            // Approximate a ~1.5 world-unit sprite in the 67-degree camera.
+            // The old 205/d factor made a nearby human-sized enemy only a few
+            // dozen pixels tall, and distant enemies nearly impossible to spot.
+            $spriteH = (int)max(24, min(160, (480.0 / max(1.25, $distance)) * $sprite['scale']));
             $spriteW = (int)max(12, round($spriteH * $cellW / $cellH));
             $x = (int)round($point[0] - $spriteW / 2);
             $y = (int)round($point[1] - $spriteH * 0.55);
@@ -190,6 +193,52 @@ final class World
             $r->copy($tex['texture'], [$sourceX, $sourceY, $sourceW, $sourceH], $x, $y, $spriteW, $spriteH);
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
         }
+    }
+
+    /** Test sprite visibility against actual brush faces, not their coarse AABBs. */
+    private function enemyLineClear(Run $run, array $a, array $b): bool
+    {
+        foreach ($run->map->solids as $solid) {
+            $lo = 0.001; $hi = 0.999;
+            for ($axis = 0; $axis < 3; $axis++) {
+                $d = $b[$axis] - $a[$axis];
+                if (abs($d) < 1e-8) {
+                    if ($a[$axis] < $solid['min'][$axis] || $a[$axis] > $solid['max'][$axis]) { $lo = 2; break; }
+                } else {
+                    $t0 = ($solid['min'][$axis] - $a[$axis]) / $d;
+                    $t1 = ($solid['max'][$axis] - $a[$axis]) / $d;
+                    $lo = max($lo, min($t0, $t1)); $hi = min($hi, max($t0, $t1));
+                }
+                if ($lo > $hi) break;
+            }
+            if ($lo > $hi) continue;
+
+            $triangles = $solid['triangles'] ?? [];
+            if ($triangles === []) return false;
+            for ($i = 0, $n = count($triangles); $i + 2 < $n; $i += 3) {
+                if ($this->segmentHitsTriangle($a, $b, $triangles[$i]['p'], $triangles[$i + 1]['p'], $triangles[$i + 2]['p'])) return false;
+            }
+        }
+        return true;
+    }
+
+    private function segmentHitsTriangle(array $a, array $b, array $v0, array $v1, array $v2): bool
+    {
+        $d = [$b[0] - $a[0], $b[1] - $a[1], $b[2] - $a[2]];
+        $e1 = [$v1[0] - $v0[0], $v1[1] - $v0[1], $v1[2] - $v0[2]];
+        $e2 = [$v2[0] - $v0[0], $v2[1] - $v0[1], $v2[2] - $v0[2]];
+        $p = [$d[1] * $e2[2] - $d[2] * $e2[1], $d[2] * $e2[0] - $d[0] * $e2[2], $d[0] * $e2[1] - $d[1] * $e2[0]];
+        $det = $e1[0] * $p[0] + $e1[1] * $p[1] + $e1[2] * $p[2];
+        if (abs($det) < 1e-8) return false;
+        $inv = 1.0 / $det;
+        $tvec = [$a[0] - $v0[0], $a[1] - $v0[1], $a[2] - $v0[2]];
+        $u = ($tvec[0] * $p[0] + $tvec[1] * $p[1] + $tvec[2] * $p[2]) * $inv;
+        if ($u < 0.0 || $u > 1.0) return false;
+        $q = [$tvec[1] * $e1[2] - $tvec[2] * $e1[1], $tvec[2] * $e1[0] - $tvec[0] * $e1[2], $tvec[0] * $e1[1] - $tvec[1] * $e1[0]];
+        $v = ($d[0] * $q[0] + $d[1] * $q[1] + $d[2] * $q[2]) * $inv;
+        if ($v < 0.0 || $u + $v > 1.0) return false;
+        $t = ($e2[0] * $q[0] + $e2[1] * $q[1] + $e2[2] * $q[2]) * $inv;
+        return $t > 0.001 && $t < 0.999;
     }
 
     private function drawPickupSprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
