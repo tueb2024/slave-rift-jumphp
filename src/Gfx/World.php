@@ -2,6 +2,7 @@
 
 namespace App\Gfx;
 
+use App\Game\BrushMap;
 use App\Game\Run;
 use JumPHP\Gl\Mat4;
 use JumPHP\Gl\WebGl;
@@ -20,16 +21,29 @@ final class World
     {
         if (!$gl->isAvailable()) return;
         if ($this->ids === []) {
+            $materialMap = function (string $material) use ($run): BrushMap {
+                $m = new BrushMap();
+                $m->solids = array_values(array_filter($run->map->solids, static function (array $solid) use ($material): bool {
+                    return strtolower((string)($solid['material'] ?? 'stone')) === $material;
+                }));
+                return $m;
+            };
             $this->ids = [
                 'program' => $gl->program(Meshes::VERTEX, Meshes::FRAGMENT),
-                'world' => $gl->buffer(Meshes::world($run->map), true),
+                'worldStone' => $gl->buffer(Meshes::world($materialMap('stone')), true),
+                'worldMetal' => $gl->buffer(Meshes::world($materialMap('metal')), true),
+                'worldCeil' => $gl->buffer(Meshes::world($materialMap('ceil')), true),
+                'worldCrate' => $gl->buffer(Meshes::world($materialMap('crate')), true),
                 'guardian' => $gl->buffer(Meshes::enemy('guardian'), true),
                 'runner' => $gl->buffer(Meshes::enemy('runner'), true),
                 'brute' => $gl->buffer(Meshes::enemy('brute'), true),
                 'xp' => $gl->buffer(Meshes::pickup(false), true),
                 'health' => $gl->buffer(Meshes::pickup(true), true),
                 'pulse' => $gl->buffer(Meshes::pulse(), true),
-                'worldTex' => $gl->texture('assets/textures/rift-stone.png', false, true),
+                'stoneTex' => $gl->texture('assets/textures/rift-stone.png', false, true),
+                'metalTex' => $gl->texture('assets/textures/quadcompati/metal_panel.png', false, true),
+                'ceilTex' => $gl->texture('assets/textures/quadcompati/ceil1_1.png', false, true),
+                'crateTex' => $gl->texture('assets/textures/quadcompati/crate0_side.png', false, true),
             ];
         }
         $gl->setLayer('below', 'native', self::KEY);
@@ -73,7 +87,7 @@ final class World
         $gl->clear([18, 13, 22]);
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
         $common = ['u_viewProj' => $vp, 'u_eye' => self::eye($run), 'u_fog' => $fog];
-        $draw = function (int $buffer, array $model, float $flash = 0.0, bool $textured = false) use ($gl, $common): void {
+        $draw = function (int $buffer, array $model, float $flash = 0.0, bool $textured = false, string $texture = 'stoneTex') use ($gl, $common): void {
             $gl->draw($this->ids['program'], [
                 'attributes' => [
                     'a_pos' => [$buffer, 3, Meshes::STRIDE, 0],
@@ -82,11 +96,14 @@ final class World
                     'a_uv' => [$buffer, 2, Meshes::STRIDE, 9],
                 ],
                 'uniforms' => $common + ['u_model' => $model, 'u_flash' => $flash, 'u_useTex' => $textured ? 1.0 : 0.0],
-                'textures' => ['u_tex' => $this->ids['worldTex']],
+                'textures' => ['u_tex' => $this->ids[$texture]],
             ]);
         };
 
-        $draw($this->ids['world'], Mat4::identity(), 0.0, true);
+        $draw($this->ids['worldStone'], Mat4::identity(), 0.0, true, 'stoneTex');
+        $draw($this->ids['worldMetal'], Mat4::identity(), 0.0, true, 'metalTex');
+        $draw($this->ids['worldCeil'], Mat4::identity(), 0.0, true, 'ceilTex');
+        $draw($this->ids['worldCrate'], Mat4::identity(), 0.0, true, 'crateTex');
         foreach ($run->enemies as $enemy) {
             $draw($this->ids[$enemy['type']], Mat4::multiply(
                 Mat4::translate($enemy['x'], $enemy['y'], $enemy['z']),
