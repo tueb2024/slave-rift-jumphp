@@ -69,6 +69,9 @@ final class PlayScene extends AbstractScene
         if (!$this->sdl()->hasTexture('weapons')) {
             $this->sdl()->loadTexture('weapons', 'assets/sprites/weapons/fps-weapons-cc0.png');
         }
+        if (!$this->sdl()->hasTexture('muzzle_flash')) {
+            $this->sdl()->loadTexture('muzzle_flash', 'assets/sprites/effects/muzzle-large-fire.png');
+        }
         RiftSfx::register($this->sound());
     }
 
@@ -218,6 +221,13 @@ final class PlayScene extends AbstractScene
         $drawH = $drawW;
         $r->copy($weapon['texture'], [$weaponFrame * 64, $weaponRow * 64, 64, 64],
             (int)($cx - $drawW / 2), (int)($h - $drawH + 48 + $kick + $bob), $drawW, $drawH);
+        if ($run->muzzle > 0) {
+            $flash = $this->sdl()->getTexture('muzzle_flash');
+            $flashFrame = min(2, max(0, (int)floor((0.12 - min(0.12, $run->muzzle)) / 0.04)));
+            $flashSize = max(38, min(104, (int)round($h * 0.28)));
+            $r->copy($flash['texture'], [$flashFrame * 80, 0, 80, 80],
+                (int)($cx - $flashSize / 2), (int)($h - 177 + $bob), $flashSize, $flashSize);
+        }
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
             $r->fillRect($w - 33, $h - 37, 8, 20, $run->pulse > 0 ? [180,255,255] : [70,180,195]);
