@@ -55,15 +55,20 @@ final class Run
     public bool $pulseUnlocked = false;
     public int $autoTier = 0;
     public string $autoWeapon = 'LOCKED';
-    public float $specialCooldown = 0.0;
-    public float $specialCooldownMax = 7.5;
+    public int $autoGuns = 1;
+    public int $flameRank = 0;
+    public int $shurikenRank = 0;
+    public float $flameActive = 0.0;
     public array $choices = [];
-    public string $message = 'COLT .45 - MANUAL FIRE';
+    public string $message = 'COLT .45 AUTO - KEYBOARD CONTROL';
     public float $messageTime = 4.0;
 
     private float $manualClock = 0.0;
     private float $autoClock = 0.0;
     private float $pulseClock = 1.0;
+    private float $flameCooldownClock = 4.5;
+    private float $flameTickClock = 0.0;
+    private float $shurikenClock = 3.0;
     private float $spawnClock = 0.4;
     private float $invincible = 0.0;
     private int $nextId = 1;
@@ -92,7 +97,7 @@ final class Run
         $this->losTests = $this->collisionTests = $this->neighborChecks = 0;
         $this->time += $dt;
         $this->waveTime += $dt;
-        foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible', 'specialCooldown'] as $field) {
+        foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible'] as $field) {
             $this->$field = max(0.0, $this->$field - $dt);
         }
         if ($this->comboTime > 0) {
@@ -139,14 +144,16 @@ final class Run
         $this->autoClock -= $dt;
         $this->pulseClock -= $dt;
 
-        // Layer 1: the Colt is always player-controlled and rewards aim.
-        if ($fire && $this->manualClock <= 0) $this->fireColt();
-        // Layer 2: automatic weapons appear after the first level-up and grow to a full "sulfateuse".
+        // Every weapon is automatic. The keyboard controls position and facing;
+        // the simulation owns all weapon clocks so browser frame drops cannot change cadence.
+        if ($this->manualClock <= 0) $this->fireColt();
         if ($this->autoTier > 0 && $this->autoClock <= 0) $this->fireAutoWeapon();
-        // Layer 3: pulse remains a separate radial survivor-style weapon.
         if ($this->pulseUnlocked && $this->pulseClock <= 0) $this->firePulse();
-        // Layer 4: right-click special, deliberately active rather than automatic.
-        if ($special && $this->specialCooldown <= 0) $this->fireSpecial();
+        if ($this->flameRank > 0) $this->stepFlamethrower($dt);
+        if ($this->shurikenRank > 0) {
+            $this->shurikenClock -= $dt;
+            if ($this->shurikenClock <= 0) $this->fireShuriken();
+        }
 
         $this->stepPickups($dt);
     }
@@ -159,40 +166,93 @@ final class Run
             'POWER' => $this->damageRank++,
             'HASTE' => $this->hasteRank++,
             'MAGNET' => $this->magnetRank++,
-            'PULSE' => $this->pulseRank++,
-            default => $this->maxHealth += 20,
+            'PULSE' => $this->upgradePulse(),
+            'FLAMETHROWER' => $this->upgradeFlamethrower(),
+            'SHURIKEN' => $this->upgradeShuriken(),
+            'STEN' => $this->setAutoTier(1),
+            'SMG' => $this->setAutoTier(2),
+            'MACHINE GUN' => $this->setAutoTier(3),
+            'SULFATEUSE' => $this->setAutoTier(4),
+            'AKIMBO' => $this->autoGuns = max(2, $this->autoGuns),
+            'TRIPLE GUN' => $this->autoGuns = max(3, $this->autoGuns),
+            default => $this->upgradeVitality(),
         };
-        if ($choice === 'VITALITY') $this->health = min($this->maxHealth, $this->health + 40);
-        if ($choice === 'PULSE') $this->pulseUnlocked = true;
         $this->choices = [];
         $this->state = 'play';
-        $this->syncArsenal();
-        $this->message = $choice . ' UPGRADED / ' . $this->arsenalLabel();
+        $this->message = $choice . ' / ' . $this->arsenalLabel();
         $this->messageTime = 2.4;
         $this->checkLevel();
         return true;
     }
 
+    private function upgradeVitality(): void
+    {
+        $this->maxHealth += 20;
+        $this->health = min($this->maxHealth, $this->health + 40);
+    }
+
+    private function upgradePulse(): void
+    {
+        $this->pulseUnlocked = true;
+        $this->pulseRank++;
+        $this->pulseClock = min($this->pulseClock, 0.35);
+    }
+
+    private function upgradeFlamethrower(): void
+    {
+        $this->flameRank = min(3, $this->flameRank + 1);
+        $this->flameCooldownClock = min($this->flameCooldownClock, 0.45);
+    }
+
+    private function upgradeShuriken(): void
+    {
+        $this->shurikenRank = min(3, $this->shurikenRank + 1);
+        $this->shurikenClock = min($this->shurikenClock, 0.45);
+    }
+
+    private function setAutoTier(int $tier): void
+    {
+        $this->autoTier = max($this->autoTier, min(4, $tier));
+        $this->autoWeapon = match ($this->autoTier) {
+            1 => 'STEN',
+            2 => 'SMG',
+            3 => 'MACHINE GUN',
+            4 => 'SULFATEUSE',
+            default => 'LOCKED',
+        };
+        $this->autoClock = min($this->autoClock, 0.15);
+    }
+
     public function upgradeDescription(string $choice): string
     {
         return match ($choice) {
-            'POWER' => '+35% COLT / AUTO DAMAGE',
-            'HASTE' => 'FASTER AUTO FIRE',
+            'POWER' => '+35% COLT / +28% AUTO / STRONGER SECONDARIES',
+            'HASTE' => 'FASTER COLT / AUTO / SECONDARY CYCLES',
             'MAGNET' => 'WIDER PICKUP RANGE',
             'PULSE' => $this->pulseUnlocked ? 'STRONGER WIDER PULSE' : 'UNLOCK RADIAL PULSE',
+            'FLAMETHROWER' => $this->flameRank === 0 ? 'TRACKING FIRE CONE FOR 2.4s' : 'LONGER / WIDER / HOTTER SWEEP',
+            'SHURIKEN' => $this->shurikenRank === 0 ? 'VOLLEY HITS UP TO 4 TARGETS' : 'MORE TARGETS / FASTER VOLLEY',
+            'STEN' => 'UNLOCK 0.27s AUTO WEAPON',
+            'SMG' => 'EVOLVE AUTO WEAPON TO 0.20s',
+            'MACHINE GUN' => 'EVOLVE AUTO WEAPON TO 0.145s',
+            'SULFATEUSE' => 'EVOLVE AUTO WEAPON TO 0.095s',
+            'AKIMBO' => 'SECOND SULFATEUSE / SPLIT OR FOCUS FIRE',
+            'TRIPLE GUN' => 'THIRD SULFATEUSE',
             default => '+20 MAX HP / HEAL 40',
         };
     }
 
     public function arsenalLabel(): string
     {
-        return match ($this->autoTier) {
-            1 => 'STEN AUTO',
-            2 => 'SMG AUTO',
-            3 => 'MACHINE GUN AUTO',
-            4 => 'SULFATEUSE MAX',
-            default => 'COLT .45 ONLY',
-        };
+        if ($this->autoTier === 0 && $this->flameRank === 0 && $this->shurikenRank === 0 && !$this->pulseUnlocked) {
+            return 'COLT .45 ONLY';
+        }
+        $parts = ['COLT AUTO'];
+        if ($this->autoTier > 0) $parts[] = $this->autoWeapon . ($this->autoGuns > 1 ? ' x' . $this->autoGuns : '');
+        if ($this->flameRank > 0) $parts[] = 'FLAME L' . $this->flameRank;
+        if ($this->shurikenRank > 0) $parts[] = 'SHURIKEN L' . $this->shurikenRank;
+        if ($this->pulseUnlocked) $parts[] = 'PULSE L' . max(1, $this->pulseRank);
+        return implode(' + ', $parts);
     }
 
     /** Demo controls, also used by the integration smoke test. */
@@ -268,10 +328,6 @@ final class Run
                 $this->spawnClock = 0.0;
                 $this->message = 'WAVE ' . $this->wave . ($this->wave % 4 === 0 ? ' - BRUTE SURGE' : '');
                 $this->messageTime = 2.5;
-                if ($this->wave >= 3 && !$this->pulseUnlocked) {
-                    $this->pulseUnlocked = true;
-                    $this->message = 'PULSE UNLOCKED - RADIAL BLAST';
-                }
             }
             return;
         }
@@ -520,11 +576,14 @@ final class Run
     private function fireColt(): void
     {
         $target = $this->findTarget(19.0, 0.14);
+        if ($target === null) {
+            $this->manualClock = 0.20;
+            return;
+        }
+        $enemy = $this->enemies[$target];
         $this->shots++;
         $this->muzzle = 0.12;
-        $this->manualClock = 0.34;
-        if ($target === null) return;
-        $enemy = $this->enemies[$target];
+        $this->manualClock = max(0.34, 0.70 * pow(0.92, $this->hasteRank));
         $this->addVisualTrace($enemy, 0.15, 'pistol');
         $this->damage($target, (int)round(38 * (1 + $this->damageRank * 0.35)));
         $this->hits++;
@@ -533,61 +592,95 @@ final class Run
     private function fireAutoWeapon(): void
     {
         $cone = match ($this->autoTier) { 1 => 0.50, 2 => 0.68, 3 => 0.90, default => 1.15 };
-        $target = $this->findTarget(16.0, $cone);
-        if ($target === null) { $this->autoClock = 0.04; return; }
-        $enemy = $this->enemies[$target];
-        $sample = $this->autoTier <= 1 ? 1 : ($this->autoTier <= 3 ? 2 : 3);
-        if ($this->shots % $sample === 0) $this->addVisualTrace($enemy, 0.12, 'auto');
+        $targets = $this->findTargets(16.0, $cone, max(1, $this->autoGuns));
+        if ($targets === []) { $this->autoClock = 0.08; return; }
         $baseDamage = match ($this->autoTier) { 1 => 9, 2 => 11, 3 => 13, default => 15 };
         $baseRate = match ($this->autoTier) { 1 => 0.27, 2 => 0.20, 3 => 0.145, default => 0.095 };
-        $this->damage($target, (int)round($baseDamage * (1 + $this->damageRank * 0.28)));
-        $this->shots++;
-        $this->hits++;
+        for ($gun = 0; $gun < max(1, $this->autoGuns); $gun++) {
+            $target = $targets[$gun] ?? $targets[0];
+            if (!isset($this->enemies[$target])) continue;
+            $enemy = $this->enemies[$target];
+            $sample = $this->autoTier <= 1 ? 1 : ($this->autoTier <= 3 ? 2 : 3);
+            if (($this->shots + $gun) % $sample === 0) {
+                $lateral = ($gun - (max(1, $this->autoGuns) - 1) / 2) * 0.18;
+                $this->addVisualTrace($enemy, 0.12, 'auto', $lateral);
+            }
+            $this->damage($target, (int)round($baseDamage * (1 + $this->damageRank * 0.28)));
+            $this->shots++;
+            $this->hits++;
+        }
         $this->muzzle = max($this->muzzle, 0.055);
         $this->autoClock = max(0.065, $baseRate * pow(0.86, $this->hasteRank));
     }
 
-    private function fireSpecial(): void
+    private function stepFlamethrower(float $dt): void
     {
-        $primary = $this->findTarget(22.0, 0.42);
-        $this->specialCooldown = $this->specialCooldownMax;
-        $this->specialFlash = 0.35;
-        if ($primary === null) {
-            $this->message = 'RIFT LANCE - NO LOCK';
-            $this->messageTime = 1.0;
+        if ($this->flameActive > 0.0) {
+            $this->flameActive = max(0.0, $this->flameActive - $dt);
+            $this->flameTickClock -= $dt;
+            if ($this->flameTickClock <= 0.0) {
+                $this->fireFlameTick();
+                $this->flameTickClock += 0.12;
+            }
             return;
         }
-        $hit = [$primary];
-        $anchor = $this->enemies[$primary];
-        // Heavy piercing/chain weapon: strongest nearby targets are struck after the aimed primary.
-        $candidates = [];
-        foreach ($this->enemies as $id => $enemy) {
-            if ($id === $primary) continue;
-            $d = hypot($enemy['x'] - $anchor['x'], $enemy['z'] - $anchor['z']);
-            if ($d <= 4.2 && $this->lineClear([$anchor['x'], $anchor['y'], $anchor['z']], [$enemy['x'], $enemy['y'], $enemy['z']])) {
-                $candidates[$id] = $d;
-            }
-        }
-        asort($candidates);
-        foreach (array_slice(array_keys($candidates), 0, 3) as $id) $hit[] = $id;
-        foreach ($hit as $index => $id) {
-            if (!isset($this->enemies[$id])) continue;
-            $enemy = $this->enemies[$id];
-            $this->addVisualTrace($enemy, 0.2, 'special');
-            $this->damage($id, max(38, 110 - $index * 22));
-        }
-        $this->message = 'RIFT LANCE';
-        $this->messageTime = 0.7;
+        $this->flameCooldownClock -= $dt;
+        if ($this->flameCooldownClock > 0.0) return;
+        $this->flameActive = 2.4 + ($this->flameRank - 1) * 0.45;
+        $this->flameCooldownClock = max(5.4, 8.0 - ($this->flameRank - 1) * 0.7 - $this->hasteRank * 0.15);
+        $this->flameTickClock = 0.0;
+        $this->specialFlash = max($this->specialFlash, 0.18);
     }
 
-    private function addVisualTrace(array $enemy, float $height, string $type): void
+    private function fireFlameTick(): void
+    {
+        $range = 5.2 + ($this->flameRank - 1) * 0.7;
+        $cone = 0.48 + ($this->flameRank - 1) * 0.10;
+        $limit = 6 + ($this->flameRank - 1) * 2;
+        $targets = $this->findTargets($range, $cone, $limit);
+        $baseDamage = 6 + ($this->flameRank - 1) * 2;
+        foreach ($targets as $index => $id) {
+            if (!isset($this->enemies[$id])) continue;
+            $enemy = $this->enemies[$id];
+            if ($index < 3) $this->addVisualTrace($enemy, 0.10, 'flame', ($index - 1) * 0.08);
+            $this->damage($id, (int)round($baseDamage * (1 + $this->damageRank * 0.18)));
+            $this->hits++;
+        }
+        if ($targets !== []) {
+            $this->shots++;
+            $this->muzzle = max($this->muzzle, 0.035);
+        }
+    }
+
+    private function fireShuriken(): void
+    {
+        $count = 4 + ($this->shurikenRank - 1) * 2;
+        $targets = $this->findTargets(18.0, 1.35, $count);
+        if ($targets === []) {
+            $this->shurikenClock = 0.25;
+            return;
+        }
+        $damage = (int)round((26 + ($this->shurikenRank - 1) * 8) * (1 + $this->damageRank * 0.25));
+        foreach ($targets as $index => $id) {
+            if (!isset($this->enemies[$id])) continue;
+            $enemy = $this->enemies[$id];
+            $this->addVisualTrace($enemy, 0.18, 'shuriken', ($index - (count($targets) - 1) / 2) * 0.04);
+            $this->damage($id, $damage);
+            $this->shots++;
+            $this->hits++;
+        }
+        $this->specialFlash = max($this->specialFlash, 0.12);
+        $this->shurikenClock = max(1.4, 3.1 - ($this->shurikenRank - 1) * 0.4 - $this->hasteRank * 0.12);
+    }
+
+    private function addVisualTrace(array $enemy, float $height, string $type, float $lateral = 0.0): void
     {
         if (count($this->traces) >= self::MAX_VISUAL_TRACES) array_shift($this->traces);
-        $life = $type === 'special' ? 0.08 : 0.06;
+        $life = in_array($type, ['flame', 'shuriken'], true) ? 0.075 : 0.06;
         $this->traces[] = [
-            'startX' => $this->x + sin($this->yaw) * 0.5 - cos($this->yaw) * 0.14,
+            'startX' => $this->x + sin($this->yaw) * 0.5 - cos($this->yaw) * (0.14 + $lateral),
             'startY' => $this->y + 0.18,
-            'startZ' => $this->z + cos($this->yaw) * 0.5 + sin($this->yaw) * 0.14,
+            'startZ' => $this->z + cos($this->yaw) * 0.5 + sin($this->yaw) * (0.14 + $lateral),
             'endX' => $enemy['x'], 'endY' => $enemy['y'] + $height, 'endZ' => $enemy['z'],
             'x' => $enemy['x'], 'y' => $enemy['y'] + $height, 'z' => $enemy['z'],
             'life' => $life, 'totalLife' => $life, 'type' => $type,
@@ -596,19 +689,25 @@ final class Run
 
     private function findTarget(float $range, float $cone): ?int
     {
-        $target = null;
-        $best = INF;
+        return $this->findTargets($range, $cone, 1)[0] ?? null;
+    }
+
+    /** @return list<int> */
+    private function findTargets(float $range, float $cone, int $limit): array
+    {
+        $candidates = [];
         foreach ($this->enemies as $id => $enemy) {
             $d = hypot($enemy['x'] - $this->x, $enemy['z'] - $this->z);
+            if ($d > $range) continue;
             $angle = abs(self::angleDelta(atan2($enemy['x'] - $this->x, $enemy['z'] - $this->z), $this->yaw));
-            if ($d > $range || $angle > $cone) continue;
+            if ($angle > $cone) continue;
             $score = $angle * 7 + $d * 0.14;
-            if ($score < $best && $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) {
-                $target = $id;
-                $best = $score;
+            if ($this->lineClear([$this->x, $this->y + 0.35, $this->z], [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) {
+                $candidates[$id] = $score;
             }
         }
-        return $target;
+        asort($candidates);
+        return array_slice(array_map('intval', array_keys($candidates)), 0, max(1, $limit));
     }
 
     private function firePulse(): void
@@ -618,10 +717,10 @@ final class Run
             if (hypot($enemy['x'] - $this->x, $enemy['z'] - $this->z) <= 3.6 + $this->pulseRank * 0.35 &&
                 $this->lineClear([$this->x, $this->y, $this->z], [$enemy['x'], $enemy['y'], $enemy['z']])) $targets[] = $id;
         }
-        if ($targets === []) return;
+        if ($targets === []) { $this->pulseClock = 0.20; return; }
         foreach ($targets as $id) $this->damage($id, 30 + $this->pulseRank * 14);
         $this->pulse = 0.25;
-        $this->pulseClock = max(1.0, 2.4 - $this->pulseRank * 0.15);
+        $this->pulseClock = max(1.0, 2.4 - $this->pulseRank * 0.15 - $this->hasteRank * 0.04);
     }
 
     private function damage(int $id, int $amount): void
@@ -694,11 +793,19 @@ final class Run
         if ($this->xp < $this->nextXp || $this->state !== 'play') return;
         $this->xp -= $this->nextXp;
         $this->level++;
-        $this->syncArsenal();
         $this->nextXp = 6 + ($this->level - 1) * 4;
-        $pool = ['POWER', 'HASTE', 'MAGNET', 'VITALITY', 'PULSE'];
+
+        $weaponPool = $this->weaponUpgradePool();
         $this->choices = [];
-        for ($i = 0; $i < 3; $i++) {
+        if ($weaponPool !== []) {
+            $index = (int)floor($this->random() * count($weaponPool));
+            $this->choices[] = $weaponPool[$index];
+            array_splice($weaponPool, $index, 1);
+        }
+        $pool = ['POWER', 'HASTE', 'MAGNET', 'VITALITY'];
+        if (!$this->pulseUnlocked || $this->pulseRank < 3) $pool[] = 'PULSE';
+        $pool = array_merge($pool, $weaponPool);
+        while (count($this->choices) < 3 && $pool !== []) {
             $index = (int)floor($this->random() * count($pool));
             $this->choices[] = $pool[$index];
             array_splice($pool, $index, 1);
@@ -706,22 +813,19 @@ final class Run
         $this->state = 'upgrade';
     }
 
-    private function syncArsenal(): void
+    /** @return list<string> */
+    private function weaponUpgradePool(): array
     {
-        $previous = $this->autoTier;
-        $this->autoTier = min(4, max(0, $this->level - 1));
-        $this->autoWeapon = match ($this->autoTier) {
-            1 => 'STEN',
-            2 => 'SMG',
-            3 => 'MACHINE GUN',
-            4 => 'SULFATEUSE',
-            default => 'LOCKED',
-        };
-        if ($this->autoTier > $previous) {
-            $this->message = $this->autoWeapon . ' AUTO FIRE UNLOCKED';
-            $this->messageTime = 3.0;
-            $this->autoClock = 0.1;
-        }
+        $pool = [];
+        if ($this->autoTier === 0 && $this->level >= 5) $pool[] = 'STEN';
+        elseif ($this->autoTier === 1 && $this->level >= 10) $pool[] = 'SMG';
+        elseif ($this->autoTier === 2 && $this->level >= 15) $pool[] = 'MACHINE GUN';
+        elseif ($this->autoTier === 3 && $this->level >= 20) $pool[] = 'SULFATEUSE';
+        if ($this->level >= 3 && $this->flameRank < 3) $pool[] = 'FLAMETHROWER';
+        if ($this->level >= 3 && $this->shurikenRank < 3) $pool[] = 'SHURIKEN';
+        if ($this->autoTier >= 4 && $this->autoGuns < 2) $pool[] = 'AKIMBO';
+        if ($this->autoTier >= 4 && $this->autoGuns === 2 && $this->level >= 28) $pool[] = 'TRIPLE GUN';
+        return $pool;
     }
 
     private function resetCombo(): void

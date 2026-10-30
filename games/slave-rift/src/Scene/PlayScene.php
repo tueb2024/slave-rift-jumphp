@@ -24,8 +24,6 @@ final class PlayScene extends AbstractScene
     private float $frameMs = 16.7;
     private bool $paused = false;
     private bool $jumpPending = false;
-    private bool $autoFirePending = false;
-    private float $autoColtClock = 0.0;
     private float $restartDelay = 0.0;
     private float $pitch = 0.0;
     private float $prevMuzzle = 0.0;
@@ -35,7 +33,6 @@ final class PlayScene extends AbstractScene
     private string $prevState = 'play';
     private int $prevXp = 0;
     private int $upgradeCursor = 0;
-    private const COLT_AUTO_PERIOD = 0.70;
 
     public function enter(array $params = []): void
     {
@@ -48,8 +45,6 @@ final class PlayScene extends AbstractScene
         $this->restartDelay = 0.0;
         $this->paused = false;
         $this->jumpPending = false;
-        $this->autoFirePending = !$this->demo;
-        $this->autoColtClock = self::COLT_AUTO_PERIOD;
         $this->pitch = 0.0;
         $this->prevMuzzle = $this->prevPulse = $this->prevSpecial = 0.0;
         $this->weaponSfxCooldown = 0.0;
@@ -121,31 +116,21 @@ final class PlayScene extends AbstractScene
             return;
         }
 
-        $special = false;
         if ($this->demo) {
             [$forward, $strafe, $turn, $fire] = $this->run->autopilot();
         } else {
             $forward = $this->actions()->axis('move_back', 'move_forward');
             $strafe = $this->actions()->axis('strafe_left', 'strafe_right');
             $turn = $this->actions()->axis('turn_left', 'turn_right');
+            $fire = false; // weapon clocks live in Run; no frame-timed input firing
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
-
-            $this->autoColtClock -= $dt;
-            if ($this->autoColtClock <= 0.0) {
-                $this->autoFirePending = true;
-                do {
-                    $this->autoColtClock += self::COLT_AUTO_PERIOD;
-                } while ($this->autoColtClock <= 0.0);
-            }
-            $fire = $this->autoFirePending;
         }
 
         $beforeState = $this->run->state;
         $beforeXp = $this->run->xp;
-        $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire, $special): void {
-            $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, $special);
+        $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
+            $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, false);
             $this->jumpPending = false;
-            if (!$this->demo) $this->autoFirePending = false;
         });
 
         $this->playAudioEvents($beforeState, $beforeXp, $dt);
@@ -194,7 +179,7 @@ final class PlayScene extends AbstractScene
         if ($run->combo > 0) $font->draw($r, 'CHAIN ' . $run->combo, 170, 13, 1, [255,155,90]);
         Hud::bar($r, $w - 70, 14, 66, 3, min(1.0, $run->xp / $run->nextXp));
 
-        $cross = $run->muzzle > 0 ? [255,225,120] : [185,190,175];
+        $cross = $run->flameActive > 0 ? [255,145,75] : ($run->muzzle > 0 ? [255,225,120] : [185,190,175]);
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross); $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
@@ -204,27 +189,33 @@ final class PlayScene extends AbstractScene
         $drawH = (int)round($h * ($run->autoTier === 0 ? 0.24 : 0.25));
         $drawW = (int)round($drawH * 1254 / 1054);
         $weaponY = $h - $drawH + $kick + $bob;
-        $r->copy($weapon['texture'], [0, 200, 1254, 1054],
-            (int)($cx - $drawW / 2), $weaponY, $drawW, $drawH);
-        if ($run->muzzle > 0) {
-            $flash = $this->sdl()->getTexture('muzzle_flash');
-            $flashFrame = min(2, max(0, (int)floor((0.12 - min(0.12, $run->muzzle)) / 0.04)));
-            $flashSize = max(12, (int)round($h * 0.045));
-            $r->copy($flash['texture'], [$flashFrame * 80, 0, 80, 80],
-                (int)($cx + $drawW * 0.02), (int)($weaponY + $drawH * ($run->autoTier === 0 ? 0.0 : 0.14)), $flashSize, $flashSize);
+        $copies = $run->autoTier >= 4 ? max(1, min(3, $run->autoGuns)) : 1;
+        $spread = (int)round($drawW * 0.22);
+        for ($gun = 0; $gun < $copies; $gun++) {
+            $offset = (int)round(($gun - ($copies - 1) / 2) * $spread);
+            $weaponX = (int)($cx - $drawW / 2 + $offset);
+            $r->copy($weapon['texture'], [0, 200, 1254, 1054], $weaponX, $weaponY, $drawW, $drawH);
+            if ($run->muzzle > 0) {
+                $flash = $this->sdl()->getTexture('muzzle_flash');
+                $flashFrame = min(2, max(0, (int)floor((0.12 - min(0.12, $run->muzzle)) / 0.04)));
+                $flashSize = max(12, (int)round($h * 0.045));
+                $r->copy($flash['texture'], [$flashFrame * 80, 0, 80, 80],
+                    (int)($cx + $drawW * 0.02 + $offset), (int)($weaponY + $drawH * ($run->autoTier === 0 ? 0.0 : 0.14)), $flashSize, $flashSize);
+            }
         }
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
             $r->fillRect($w - 33, $h - 37, 8, 20, $run->pulse > 0 ? [180,255,255] : [70,180,195]);
         }
+        if ($run->flameActive > 0) $font->draw($r, 'FLAME SWEEP', $cx, $h - 40, 1, [255,170,90], 'center');
 
         $r->fillRect(0, $h - 10, $w, 10, [6,5,12,225]);
-        $weaponLabel = 'COLT .45 AUTO' . ($run->autoTier > 0 ? ' + ' . $run->autoWeapon : '') . ($run->pulseUnlocked ? ' + PULSE' : '');
-        $font->draw($r, $weaponLabel, 4, $h - 8, 1, $cyan);
+        $arsenal = $run->arsenalLabel() === 'COLT .45 ONLY' ? 'COLT .45 AUTO' : $run->arsenalLabel();
+        $font->draw($r, $arsenal, 4, $h - 8, 1, $cyan);
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
 
         if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, 29, 1, $cream, 'center', [8,5,12]);
-        if ($run->time < 8 && !$this->demo) $font->draw($r, 'Z/S MOVE / Q/D STRAFE / LEFT-RIGHT TURN / AUTO FIRE / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
+        if ($run->time < 8 && !$this->demo) $font->draw($r, 'Z/S MOVE / Q/D STRAFE / LEFT-RIGHT TURN / WEAPONS AUTO / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
         if ($run->state === 'upgrade') {
@@ -252,7 +243,7 @@ final class PlayScene extends AbstractScene
                 $this->world->mapChunksDrawn, $run->neighborChecks), 4, 28, 1, $cyan);
             $font->draw($r, sprintf('TR %d  COR %d  IMP %d  COL %d  PICK %d', count($run->traces), count($run->corpses),
                 min(count($run->traces), World::MAX_IMPACTS), $run->collisionTests, count($run->pickups)), 4, 38, 1, $cyan);
-            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  COLT %.2fs', Run::TURN_SPEED, self::COLT_AUTO_PERIOD), 4, 48, 1, $cyan);
+            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s', Run::TURN_SPEED, $arsenal), 4, 48, 1, $cyan);
         }
     }
 
