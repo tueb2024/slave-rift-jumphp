@@ -49,12 +49,14 @@ final class Meshes
             vec3 n = normalize(v_normal);
             vec3 lightDir = normalize(vec3(-0.45, 0.80, -0.30));
             float diffuse = max(dot(n, lightDir), 0.0);
-            // Raise the shadow floor by one quantized band while retaining diffuse variation and Quake texture contrast.
-            float band = floor((0.60 + diffuse * 0.42) * 5.0) / 5.0;
+            // Keep Quake's stepped lighting, but lift the floor enough that dark
+            // material texels still describe the room instead of clipping to black.
+            float band = floor((0.78 + diffuse * 0.32) * 5.0) / 5.0;
             float dist = length(u_eye - v_world);
             float fog = clamp((dist - 7.0) / 15.0, 0.0, 1.0);
             vec3 texel = texture2D(u_tex, v_uv).rgb;
             vec3 base = mix(v_color, texel * (0.65 + v_color * 0.45), u_useTex);
+            base = max(base, vec3(0.19));
             vec3 c = base * band + vec3(u_flash * 0.75, u_flash * 0.18, u_flash * 0.08);
             gl_FragColor = vec4(mix(c, u_fog, fog * fog), 1.0);
         }
