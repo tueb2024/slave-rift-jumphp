@@ -56,7 +56,7 @@ final class Meshes
             float fog = clamp((dist - 7.0) / 15.0, 0.0, 1.0);
             vec3 texel = texture2D(u_tex, v_uv).rgb;
             vec3 base = mix(v_color, texel * (0.65 + v_color * 0.45), u_useTex);
-            base = max(base, vec3(0.38));
+            base = min(vec3(1.0), base * 1.35 + vec3(0.20));
             vec3 c = base * band + vec3(u_flash * 0.75, u_flash * 0.18, u_flash * 0.08);
             gl_FragColor = vec4(mix(c, u_fog, fog * fog), 1.0);
         }
