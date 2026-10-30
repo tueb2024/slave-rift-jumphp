@@ -28,6 +28,7 @@ final class Run
     public float $muzzle = 0.0;
     public float $hurt = 0.0;
     public float $pulse = 0.0;
+    public float $specialFlash = 0.0;
     public float $time = 0.0;
     public string $state = 'play';
     public array $enemies = [];
@@ -41,11 +42,16 @@ final class Run
     public int $xp = 0;
     public int $nextXp = 6;
     public bool $pulseUnlocked = false;
+    public int $autoTier = 0;
+    public string $autoWeapon = 'LOCKED';
+    public float $specialCooldown = 0.0;
+    public float $specialCooldownMax = 7.5;
     public array $choices = [];
-    public string $message = 'AUTO FIRE - FACE THE HORDE';
+    public string $message = 'COLT .45 - MANUAL FIRE';
     public float $messageTime = 4.0;
 
-    private float $fireClock = 0.0;
+    private float $manualClock = 0.0;
+    private float $autoClock = 0.0;
     private float $pulseClock = 1.0;
     private float $spawnClock = 0.4;
     private float $invincible = 0.0;
@@ -63,13 +69,13 @@ final class Run
         $this->rng = max(1, $seed % 65521);
     }
 
-    public function step(float $dt, float $forward, float $strafe, float $turn, bool $fire = false, bool $jump = false): void
+    public function step(float $dt, float $forward, float $strafe, float $turn, bool $fire = false, bool $jump = false, bool $special = false): void
     {
         if ($this->state !== 'play') return;
         $dt = max(0.0, min($dt, 0.05));
         $this->time += $dt;
         $this->waveTime += $dt;
-        foreach (['muzzle', 'hurt', 'pulse', 'messageTime', 'invincible'] as $field) {
+        foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible', 'specialCooldown'] as $field) {
             $this->$field = max(0.0, $this->$field - $dt);
         }
         foreach ($this->traces as $i => &$trace) {
@@ -96,11 +102,20 @@ final class Run
             $this->state = 'dead';
             return;
         }
-        $this->fireClock -= $dt;
+
+        $this->manualClock -= $dt;
+        $this->autoClock -= $dt;
         $this->pulseClock -= $dt;
-        // F remains an optional narrow-aim priority modifier; weapons always fire.
-        if ($this->fireClock <= 0) $this->shoot($fire);
+
+        // Layer 1: the Colt is always player-controlled and rewards aim.
+        if ($fire && $this->manualClock <= 0) $this->fireColt();
+        // Layer 2: automatic weapons appear after the first level-up and grow to a full "sulfateuse".
+        if ($this->autoTier > 0 && $this->autoClock <= 0) $this->fireAutoWeapon();
+        // Layer 3: pulse remains a separate radial survivor-style weapon.
         if ($this->pulseUnlocked && $this->pulseClock <= 0) $this->firePulse();
+        // Layer 4: right-click special, deliberately active rather than automatic.
+        if ($special && $this->specialCooldown <= 0) $this->fireSpecial();
+
         $this->stepPickups($dt);
     }
 
@@ -119,8 +134,9 @@ final class Run
         if ($choice === 'PULSE') $this->pulseUnlocked = true;
         $this->choices = [];
         $this->state = 'play';
-        $this->message = $choice . ' UPGRADED';
-        $this->messageTime = 2.0;
+        $this->syncArsenal();
+        $this->message = $choice . ' UPGRADED / ' . $this->arsenalLabel();
+        $this->messageTime = 2.4;
         $this->checkLevel();
         return true;
     }
@@ -128,11 +144,22 @@ final class Run
     public function upgradeDescription(string $choice): string
     {
         return match ($choice) {
-            'POWER' => '+35% RIVET DAMAGE',
+            'POWER' => '+35% COLT / AUTO DAMAGE',
             'HASTE' => 'FASTER AUTO FIRE',
             'MAGNET' => 'WIDER PICKUP RANGE',
-            'PULSE' => $this->pulseUnlocked ? 'STRONGER WIDER PULSE' : 'UNLOCK AREA WEAPON',
+            'PULSE' => $this->pulseUnlocked ? 'STRONGER WIDER PULSE' : 'UNLOCK RADIAL PULSE',
             default => '+20 MAX HP / HEAL 40',
+        };
+    }
+
+    public function arsenalLabel(): string
+    {
+        return match ($this->autoTier) {
+            1 => 'STEN AUTO',
+            2 => 'SMG AUTO',
+            3 => 'MACHINE GUN AUTO',
+            4 => 'SULFATEUSE MAX',
+            default => 'COLT .45 ONLY',
         };
     }
 
@@ -147,7 +174,7 @@ final class Run
         }
         if ($target === null) return [0.25, 0.4, 0.3, false];
         $error = self::angleDelta(atan2($target['x'] - $this->x, $target['z'] - $this->z), $this->yaw);
-        return [$best < 3.2 ? -0.7 : 0.25, 0.65, max(-1.0, min(1.0, -$error * 2)), false];
+        return [$best < 3.2 ? -0.7 : 0.25, 0.65, max(-1.0, min(1.0, -$error * 2)), abs($error) < 0.12];
     }
 
     private function stepWaves(float $dt): void
@@ -163,7 +190,7 @@ final class Run
                 $this->messageTime = 2.5;
                 if ($this->wave >= 3 && !$this->pulseUnlocked) {
                     $this->pulseUnlocked = true;
-                    $this->message = 'PULSE UNLOCKED - CLOSE RANGE BLAST';
+                    $this->message = 'PULSE UNLOCKED - RADIAL BLAST';
                 }
             }
             return;
@@ -229,7 +256,6 @@ final class Run
                 $enemy['cooldown'] = 0.85;
             }
             if ($d < 0.55) continue;
-            // Try both tangents when direct pursuit meets a pillar. No per-enemy pathfinding allocation.
             $angle = atan2($dx, $dz);
             $side = $id % 2 === 0 ? 1 : -1;
             foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3] as $offset) {
@@ -250,28 +276,83 @@ final class Run
         unset($enemy);
     }
 
-    private function shoot(bool $focus): void
+    private function fireColt(): void
+    {
+        $target = $this->findTarget(19.0, 0.14);
+        $this->shots++;
+        $this->muzzle = 0.12;
+        $this->manualClock = 0.34;
+        if ($target === null) return;
+        $enemy = $this->enemies[$target];
+        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.15, 'z' => $enemy['z'], 'life' => 0.09];
+        $this->damage($target, (int)round(38 * (1 + $this->damageRank * 0.35)));
+        $this->hits++;
+    }
+
+    private function fireAutoWeapon(): void
+    {
+        $cone = match ($this->autoTier) { 1 => 0.50, 2 => 0.68, 3 => 0.90, default => 1.15 };
+        $target = $this->findTarget(16.0, $cone);
+        if ($target === null) { $this->autoClock = 0.04; return; }
+        $enemy = $this->enemies[$target];
+        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.12, 'z' => $enemy['z'], 'life' => 0.055];
+        $baseDamage = match ($this->autoTier) { 1 => 9, 2 => 11, 3 => 13, default => 15 };
+        $baseRate = match ($this->autoTier) { 1 => 0.27, 2 => 0.20, 3 => 0.145, default => 0.095 };
+        $this->damage($target, (int)round($baseDamage * (1 + $this->damageRank * 0.28)));
+        $this->shots++;
+        $this->hits++;
+        $this->muzzle = max($this->muzzle, 0.055);
+        $this->autoClock = max(0.065, $baseRate * pow(0.86, $this->hasteRank));
+    }
+
+    private function fireSpecial(): void
+    {
+        $primary = $this->findTarget(22.0, 0.42);
+        $this->specialCooldown = $this->specialCooldownMax;
+        $this->specialFlash = 0.35;
+        if ($primary === null) {
+            $this->message = 'RIFT LANCE - NO LOCK';
+            $this->messageTime = 1.0;
+            return;
+        }
+        $hit = [$primary];
+        $anchor = $this->enemies[$primary];
+        // Heavy piercing/chain weapon: strongest nearby targets are struck after the aimed primary.
+        $candidates = [];
+        foreach ($this->enemies as $id => $enemy) {
+            if ($id === $primary) continue;
+            $d = hypot($enemy['x'] - $anchor['x'], $enemy['z'] - $anchor['z']);
+            if ($d <= 4.2 && $this->lineClear([$anchor['x'], $anchor['y'], $anchor['z']], [$enemy['x'], $enemy['y'], $enemy['z']])) {
+                $candidates[$id] = $d;
+            }
+        }
+        asort($candidates);
+        foreach (array_slice(array_keys($candidates), 0, 3) as $id) $hit[] = $id;
+        foreach ($hit as $index => $id) {
+            if (!isset($this->enemies[$id])) continue;
+            $enemy = $this->enemies[$id];
+            $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.2, 'z' => $enemy['z'], 'life' => 0.18];
+            $this->damage($id, max(38, 110 - $index * 22));
+        }
+        $this->message = 'RIFT LANCE';
+        $this->messageTime = 0.7;
+    }
+
+    private function findTarget(float $range, float $cone): ?int
     {
         $target = null;
         $best = INF;
         foreach ($this->enemies as $id => $enemy) {
             $d = hypot($enemy['x'] - $this->x, $enemy['z'] - $this->z);
             $angle = abs(self::angleDelta(atan2($enemy['x'] - $this->x, $enemy['z'] - $this->z), $this->yaw));
-            if ($d > 15 || $angle > ($focus ? 0.35 : 0.85)) continue;
-            $score = $angle * 5 + $d * 0.20 - ($d < 2.5 ? 2 : 0);
+            if ($d > $range || $angle > $cone) continue;
+            $score = $angle * 7 + $d * 0.14;
             if ($score < $best && $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) {
                 $target = $id;
                 $best = $score;
             }
         }
-        if ($target === null) return; // Ready immediately as soon as a target enters view.
-        $enemy = $this->enemies[$target];
-        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.15, 'z' => $enemy['z'], 'life' => 0.075];
-        $this->damage($target, (int)round(18 * (1 + $this->damageRank * 0.35)));
-        $this->shots++;
-        $this->hits++;
-        $this->muzzle = 0.09;
-        $this->fireClock = max(0.11, 0.30 * pow(0.83, $this->hasteRank));
+        return $target;
     }
 
     private function firePulse(): void
@@ -289,6 +370,7 @@ final class Run
 
     private function damage(int $id, int $amount): void
     {
+        if (!isset($this->enemies[$id])) return;
         $this->enemies[$id]['health'] -= $amount;
         $this->enemies[$id]['flash'] = 0.12;
         if ($this->enemies[$id]['health'] > 0) return;
@@ -297,7 +379,6 @@ final class Run
         $this->kills++;
         $kind = $this->kills % 9 === 0 ? 'health' : 'xp';
         $value = $kind === 'health' ? 18 : ($enemy['type'] === 'brute' ? 5 : 2);
-        // Merge overflow into an existing gem; never silently lose the progression reward.
         if (count($this->pickups) >= self::MAX_PICKUPS) {
             $key = array_key_first($this->pickups);
             if ($kind === 'xp' && $this->pickups[$key]['kind'] === 'xp') $this->pickups[$key]['value'] += $value;
@@ -336,6 +417,7 @@ final class Run
         if ($this->xp < $this->nextXp || $this->state !== 'play') return;
         $this->xp -= $this->nextXp;
         $this->level++;
+        $this->syncArsenal();
         $this->nextXp = 6 + ($this->level - 1) * 4;
         $pool = ['POWER', 'HASTE', 'MAGNET', 'VITALITY', 'PULSE'];
         $this->choices = [];
@@ -344,7 +426,25 @@ final class Run
             $this->choices[] = $pool[$index];
             array_splice($pool, $index, 1);
         }
-        $this->state = 'upgrade'; // Freeze simulation; the scene still accepts upgrade input.
+        $this->state = 'upgrade';
+    }
+
+    private function syncArsenal(): void
+    {
+        $previous = $this->autoTier;
+        $this->autoTier = min(4, max(0, $this->level - 1));
+        $this->autoWeapon = match ($this->autoTier) {
+            1 => 'STEN',
+            2 => 'SMG',
+            3 => 'MACHINE GUN',
+            4 => 'SULFATEUSE',
+            default => 'LOCKED',
+        };
+        if ($this->autoTier > $previous) {
+            $this->message = $this->autoWeapon . ' AUTO FIRE UNLOCKED';
+            $this->messageTime = 3.0;
+            $this->autoClock = 0.1;
+        }
     }
 
     private function movePlayer(float $dx, float $dz): void
@@ -367,7 +467,6 @@ final class Run
             $this->y += $dy;
             return;
         }
-        // Resolve right to the surface instead of stopping one full timestep above it.
         $safe = 0.0; $blocked = 1.0;
         for ($i = 0; $i < 12; $i++) {
             $t = ($safe + $blocked) * 0.5;
@@ -379,7 +478,6 @@ final class Run
         $this->vy = 0.0;
     }
 
-    /** Exact segment / AABB slab test: thin walls cannot be skipped by sampling. */
     public function lineClear(array $a, array $b): bool
     {
         foreach ($this->map->solids as $solid) {
@@ -427,7 +525,6 @@ final class Run
 
     private function random(): float
     {
-        // Product remains below 2^31 on the browser's 32-bit PHP runtime.
         $this->rng = ($this->rng * 25173 + 13849) % 65521;
         return $this->rng / 65521;
     }
