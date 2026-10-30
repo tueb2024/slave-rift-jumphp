@@ -7,22 +7,25 @@ use App\Game\BrushMap;
 /** Procedural meshes and deliberately simple Saturn-ish shaders. */
 final class Meshes
 {
-    public const STRIDE = 9;
+    public const STRIDE = 11;
 
     public const VERTEX = <<<'GLSL'
         attribute vec3 a_pos;
         attribute vec3 a_color;
         attribute vec3 a_normal;
+        attribute vec2 a_uv;
         uniform mat4 u_viewProj;
         uniform mat4 u_model;
         varying vec3 v_color;
         varying vec3 v_normal;
         varying vec3 v_world;
+        varying vec2 v_uv;
         void main() {
             vec4 world = u_model * vec4(a_pos, 1.0);
             v_world = world.xyz;
             v_normal = (u_model * vec4(a_normal, 0.0)).xyz;
             v_color = a_color;
+            v_uv = a_uv;
             gl_Position = u_viewProj * world;
         }
         GLSL;
@@ -36,9 +39,12 @@ final class Meshes
         uniform vec3 u_eye;
         uniform vec3 u_fog;
         uniform float u_flash;
+        uniform float u_useTex;
+        uniform sampler2D u_tex;
         varying vec3 v_color;
         varying vec3 v_normal;
         varying vec3 v_world;
+        varying vec2 v_uv;
         void main() {
             vec3 n = normalize(v_normal);
             vec3 lightDir = normalize(vec3(-0.45, 0.80, -0.30));
@@ -46,7 +52,9 @@ final class Meshes
             float band = floor((0.28 + diffuse * 0.82) * 5.0) / 5.0;
             float dist = length(u_eye - v_world);
             float fog = clamp((dist - 7.0) / 15.0, 0.0, 1.0);
-            vec3 c = v_color * band + vec3(u_flash * 0.75, u_flash * 0.18, u_flash * 0.08);
+            vec3 texel = texture2D(u_tex, v_uv).rgb;
+            vec3 base = mix(v_color, texel * (0.65 + v_color * 0.45), u_useTex);
+            vec3 c = base * band + vec3(u_flash * 0.75, u_flash * 0.18, u_flash * 0.08);
             gl_FragColor = vec4(mix(c, u_fog, fog * fog), 1.0);
         }
         GLSL;
@@ -110,6 +118,18 @@ final class Meshes
     /** @param float[] $p @param float[] $c @param float[] $n */
     private static function vertex(array &$out, array $p, array $c, array $n): void
     {
-        array_push($out, $p[0], $p[1], $p[2], $c[0], $c[1], $c[2], $n[0], $n[1], $n[2]);
+        [$u, $v] = self::uv($p, $n);
+        array_push($out, $p[0], $p[1], $p[2], $c[0], $c[1], $c[2], $n[0], $n[1], $n[2], $u, $v);
+    }
+
+    /** Cheap planar mapping: one 64px-ish repeat every two world units. */
+    private static function uv(array $p, array $n): array
+    {
+        $ax = abs($n[0]);
+        $ay = abs($n[1]);
+        $az = abs($n[2]);
+        if ($ay >= $ax && $ay >= $az) return [$p[0] * 0.5, $p[2] * 0.5];
+        if ($ax >= $az) return [$p[2] * 0.5, $p[1] * 0.5];
+        return [$p[0] * 0.5, $p[1] * 0.5];
     }
 }
