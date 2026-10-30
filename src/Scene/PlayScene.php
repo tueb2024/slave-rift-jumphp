@@ -31,13 +31,14 @@ final class PlayScene extends AbstractScene
     private float $prevSpecial = 0.0;
     private string $prevState = 'play';
     private int $prevXp = 0;
+    private int $upgradeCursor = 0;
     private const MOUSE_SENS_REL = 0.0027;
     private const MOUSE_SENS_ABS = 0.0052;
 
     public function enter(array $params = []): void
     {
         $this->demo = (bool)($params['demo'] ?? false);
-        $map = BrushMap::load($this->engine->config->path('assets/maps/rift01.map'));
+        $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
         $this->run = new Run($map, (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520))));
         $this->world ??= new World();
         $this->step = new FixedStep(60, 8);
@@ -49,6 +50,7 @@ final class PlayScene extends AbstractScene
         $this->prevMuzzle = $this->prevPulse = $this->prevSpecial = 0.0;
         $this->prevState = 'play';
         $this->prevXp = 0;
+        $this->upgradeCursor = 0;
         $this->world->prepare($this->engine->gl(), $this->run);
         $this->loadAssetLayer();
 
@@ -65,7 +67,10 @@ final class PlayScene extends AbstractScene
     private function loadAssetLayer(): void
     {
         if (!$this->sdl()->hasTexture('weapons')) {
-            $this->sdl()->loadTexture('weapons', 'assets/sprites/weapons/weapons.png');
+            $this->sdl()->loadTexture('weapons', 'assets/sprites/weapons/fps-weapons-cc0.png');
+        }
+        if (!$this->sdl()->hasTexture('muzzle_flash')) {
+            $this->sdl()->loadTexture('muzzle_flash', 'assets/sprites/effects/muzzle-large-fire.png');
         }
         RiftSfx::register($this->sound());
     }
@@ -79,11 +84,26 @@ final class PlayScene extends AbstractScene
         }
         if ($this->paused) return;
         if ($this->run->state === 'upgrade') {
+            $mouse = $this->engine->input->getMouse();
+            $wheel = $this->engine->input instanceof \App\Input\WheelInputManager ? $this->engine->input->consumeWheelY() : 0;
+            if ($wheel !== 0 && count($this->run->choices) > 0) {
+                $count = count($this->run->choices);
+                $delta = $wheel > 0 ? -1 : 1;
+                $this->upgradeCursor = ($this->upgradeCursor + $delta + $count) % $count;
+            }
             foreach (['upgrade_one', 'upgrade_two', 'upgrade_three'] as $slot => $action) {
-                if (($this->demo && $slot === 0) || $this->actions()->isPressed($action)) {
+                if ($this->actions()->isPressed($action)) {
+                    $this->upgradeCursor = $slot;
                     $this->run->chooseUpgrade($slot);
-                    break;
+                    return;
                 }
+            }
+            if ($this->demo) {
+                $this->run->chooseUpgrade(0);
+                return;
+            }
+            if ($mouse->isPressed(1)) {
+                $this->run->chooseUpgrade($this->upgradeCursor);
             }
             return;
         }
@@ -120,7 +140,6 @@ final class PlayScene extends AbstractScene
                     @\SDL_SetRelativeMouseMode(true);
                 }
             }
-            // Browser fallback: JumPHP always updates Mouse::x/y from SDL_MOUSEMOTION even when relative state is empty.
             if (!$relativeWorked) {
                 if ($this->mouseX !== null && $this->mouseY !== null) {
                     $dx = max(-48.0, min(48.0, $mouse->x - $this->mouseX));
@@ -135,7 +154,8 @@ final class PlayScene extends AbstractScene
                 $this->mouseY = $mouse->y;
             }
             $this->run->yaw += $mx;
-            $this->pitch = max(-1.20, min(1.20, $this->pitch - $my));
+            // Normal FPS convention: mouse up looks up, mouse down looks down.
+            $this->pitch = max(-1.20, min(1.20, $this->pitch + $my));
         }
 
         $beforeState = $this->run->state;
@@ -161,7 +181,10 @@ final class PlayScene extends AbstractScene
         }
         if ($this->run->pulse > $this->prevPulse + 0.01) $this->sound()->playSfx('pulse_sfx', 0, false);
         if ($this->run->specialFlash > $this->prevSpecial + 0.01) $this->sound()->playSfx('special_sfx', 0, false);
-        if ($beforeState === 'play' && $this->run->state === 'upgrade') $this->sound()->playSfx('level_up', 0, false);
+        if ($beforeState === 'play' && $this->run->state === 'upgrade') {
+            $this->upgradeCursor = 0;
+            $this->sound()->playSfx('level_up', 0, false);
+        }
         if ($this->run->xp > $beforeXp) $this->sound()->playSfx('pickup_xp', 0, false);
         $this->prevMuzzle = $this->run->muzzle;
         $this->prevPulse = $this->run->pulse;
@@ -180,8 +203,10 @@ final class PlayScene extends AbstractScene
         $r->fillRect(0, 0, $w, 23, [6,5,12,225]);
         $font->draw($r, 'HP ' . $run->health . '/' . $run->maxHealth, 4, 3, 1, $cream);
         $font->draw($r, 'W' . $run->wave . '  K' . $run->kills . '  ' . $this->clock($run->time), $w - 4, 3, 1, $cream, 'right');
+        $font->draw($r, 'SCORE ' . number_format($run->score, 0, '.', ' ') . '  x' . number_format($run->multiplier, 1), $cx, 3, 1, [255,205,90], 'center');
         Hud::bar($r, 4, 13, 82, 4, max(0.0, $run->health / $run->maxHealth));
         $font->draw($r, 'LV' . $run->level . ' XP ' . $run->xp . '/' . $run->nextXp, 96, 13, 1, $cyan);
+        if ($run->combo > 0) $font->draw($r, 'CHAIN ' . $run->combo, 170, 13, 1, [255,155,90]);
         Hud::bar($r, $w - 70, 14, 66, 3, min(1.0, $run->xp / $run->nextXp));
 
         $cross = $run->specialFlash > 0 ? [170,255,255] : ($run->muzzle > 0 ? [255,225,120] : [185,190,175]);
@@ -191,13 +216,19 @@ final class PlayScene extends AbstractScene
         $kick = $run->muzzle > 0 ? 5 : 0;
         $bob = (int)round(sin($run->time * 6) * 1.5);
         $weapon = $this->sdl()->getTexture('weapons');
-        $weaponIndex = $run->autoTier >= 3 ? 2 : ($run->autoTier > 0 ? 1 : 0);
-        $drawW = $run->autoTier >= 3 ? 188 : 174;
-        $drawH = $drawW * 160 / 256;
-        $r->copy($weapon['texture'], [$weaponIndex * 256, 0, 256, 160], $cx - $drawW / 2, $h - $drawH + 8 + $kick + $bob, $drawW, $drawH);
+        // CC0 sheet: rows are knife, pistol, machine gun, chain gun; five 64px animation frames each.
+        $weaponRow = $run->autoTier >= 3 ? 3 : ($run->autoTier > 0 ? 2 : 1);
+        $weaponFrame = $run->muzzle > 0 ? 2 : 0;
+        $drawW = $run->autoTier >= 3 ? 238 : 218;
+        $drawH = $drawW;
+        $r->copy($weapon['texture'], [$weaponFrame * 64, $weaponRow * 64, 64, 64],
+            (int)($cx - $drawW / 2), (int)($h - $drawH + 48 + $kick + $bob), $drawW, $drawH);
         if ($run->muzzle > 0) {
-            $r->fillRect($cx - 7, $h - $drawH + 4 + $kick + $bob, 14, 7, [255,190,55]);
-            $r->fillRect($cx - 2, $h - $drawH - 1 + $kick + $bob, 4, 14, [255,245,175]);
+            $flash = $this->sdl()->getTexture('muzzle_flash');
+            $flashFrame = min(2, max(0, (int)floor((0.12 - min(0.12, $run->muzzle)) / 0.04)));
+            $flashSize = max(38, min(104, (int)round($h * 0.28)));
+            $r->copy($flash['texture'], [$flashFrame * 80, 0, 80, 80],
+                (int)($cx - $flashSize / 2), (int)($h - 177 + $bob), $flashSize, $flashSize);
         }
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
@@ -212,17 +243,19 @@ final class PlayScene extends AbstractScene
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
 
         if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, 29, 1, $cream, 'center', [8,5,12]);
-        if ($run->time < 8 && !$this->demo) $font->draw($r, 'MOUSE LOOK / LMB COLT / RMB SPECIAL / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
+        if ($run->time < 8 && !$this->demo) $font->draw($r, 'ZQSD MOVE / MOUSE LOOK / LMB COLT / RMB SPECIAL / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
         if ($run->state === 'upgrade') {
             $r->fillRect(12, 42, $w - 24, 104, [8,6,16,245]);
             $font->draw($r, 'LEVEL ' . $run->level . ' - CHOOSE', $cx, 49, 2, $cyan, 'center');
             foreach ($run->choices as $slot => $choice) {
-                $font->draw($r, ($slot + 1) . '  ' . $choice, 24, 72 + $slot * 22, 1, $cream);
+                $selected = $slot === $this->upgradeCursor;
+                $prefix = $selected ? '> ' : '  ';
+                $font->draw($r, $prefix . ($slot + 1) . '  ' . $choice, 24, 72 + $slot * 22, 1, $selected ? $cyan : $cream);
                 $font->draw($r, $run->upgradeDescription($choice), 24, 81 + $slot * 22, 1, $cyan);
             }
-            $font->draw($r, '1 / 2 / 3  (OR R / T / Y)', $cx, 135, 1, $cream, 'center');
+            $font->draw($r, 'WHEEL SELECT / LMB CONFIRM  (1/2/3 FALLBACK)', $cx, 135, 1, $cream, 'center');
         } elseif ($run->state === 'dead') {
             $r->fillRect(26, 56, $w - 52, 69, [8,5,12,235]);
             $font->draw($r, 'RIFT CLAIMED YOU', $cx, 65, 2, [245,90,76], 'center');

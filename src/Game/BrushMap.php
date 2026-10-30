@@ -3,11 +3,11 @@
 namespace App\Game;
 
 /**
- * Quake .map reader for a clean-room JumPHP prototype.
+ * Quake .map reader for Slave Rift.
  *
- * Milestone 0.2 keeps collision deliberately conservative (brush AABBs) but no
- * longer flattens rendering to boxes. Convex worldspawn brushes are rebuilt
- * from their planes, triangulated, and sent to the renderer as real 3D faces.
+ * Worldspawn brushes are rebuilt from their planes. Brush entities such as
+ * doors/lifts are deliberately ignored for collision in this lightweight
+ * runtime, while Quake deathmatch starts are retained as wave spawn anchors.
  */
 final class BrushMap
 {
@@ -16,39 +16,49 @@ final class BrushMap
 
     /** @var array<int,array{min:float[],max:float[],material:string,color:int[],triangles:array<int,array{p:float[],n:float[],color:int[]}>>} */
     public array $solids = [];
+    /** @var array<int,float[]> */
+    public array $spawnPoints = [];
     public array $playerStart = [0.0, 0.75, -4.5];
     public float $playerYaw = 0.0;
     public array $guardianStart = [0.0, 0.75, 4.5];
+    private bool $hasExplicitPlayerStart = false;
 
     public static function load(string $path): self
     {
         $map = new self();
         $text = file_get_contents($path);
-        if ($text === false) {
-            throw new \RuntimeException("Cannot read map: {$path}");
-        }
+        if ($text === false) throw new \RuntimeException("Cannot read map: {$path}");
 
         $depth = 0;
         $props = [];
         $brush = [];
+        $entityClass = '';
 
         foreach (preg_split('/\R/', $text) ?: [] as $raw) {
             $line = trim(preg_replace('~//.*$~', '', $raw) ?? '');
             if ($line === '') continue;
             if ($line === '{') {
                 $depth++;
-                if ($depth === 1) $props = [];
-                elseif ($depth === 2) $brush = [];
+                if ($depth === 1) {
+                    $props = [];
+                    $entityClass = '';
+                } elseif ($depth === 2) {
+                    $brush = [];
+                }
                 continue;
             }
             if ($line === '}') {
-                if ($depth === 2 && $brush !== []) $map->addBrush($brush);
-                elseif ($depth === 1) $map->finishEntity($props);
+                if ($depth === 2 && $brush !== [] && ($entityClass === '' || $entityClass === 'worldspawn')) {
+                    $map->addBrush($brush);
+                } elseif ($depth === 1) {
+                    $map->finishEntity($props);
+                }
                 $depth--;
                 continue;
             }
             if ($depth === 1 && preg_match('/^"([^"]+)"\s+"([^"]*)"/', $line, $m)) {
                 $props[$m[1]] = $m[2];
+                if ($m[1] === 'classname') $entityClass = $m[2];
                 continue;
             }
             if ($depth === 2) {
@@ -128,13 +138,11 @@ final class BrushMap
             $center = [0.0, 0.0, 0.0];
             foreach ($onFace as $p) $center = self::add($center, $p);
             $center = self::scale($center, 1.0 / count($onFace));
-
             $ref = abs($plane['n'][2]) < 0.9 ? [0.0, 0.0, 1.0] : [0.0, 1.0, 0.0];
             $u = self::normalize(self::cross($ref, $plane['n']));
             $v = self::cross($plane['n'], $u);
             usort($onFace, function (array $a, array $b) use ($center, $u, $v): int {
-                $da = self::sub($a, $center);
-                $db = self::sub($b, $center);
+                $da = self::sub($a, $center); $db = self::sub($b, $center);
                 return atan2(self::dot($da, $v), self::dot($da, $u)) <=> atan2(self::dot($db, $v), self::dot($db, $u));
             });
 
@@ -150,7 +158,7 @@ final class BrushMap
         $this->solids[] = [
             'min' => [$qMin[0] / self::UNITS, $qMin[2] / self::UNITS, -$qMax[1] / self::UNITS],
             'max' => [$qMax[0] / self::UNITS, $qMax[2] / self::UNITS, -$qMin[1] / self::UNITS],
-            'material' => $dominantMaterial,
+            'material' => self::materialGroup($dominantMaterial),
             'color' => self::materialColor($dominantMaterial),
             'triangles' => $triangles,
         ];
@@ -167,9 +175,25 @@ final class BrushMap
         if ($class === 'info_player_start') {
             $this->playerStart = $p;
             $this->playerYaw = -deg2rad((float)($props['angle'] ?? 0));
+            $this->hasExplicitPlayerStart = true;
+        } elseif ($class === 'info_player_deathmatch') {
+            $this->spawnPoints[] = $p;
+            if (!$this->hasExplicitPlayerStart && count($this->spawnPoints) === 1) {
+                $this->playerStart = $p;
+                $this->playerYaw = -deg2rad((float)($props['angle'] ?? 0));
+            }
         } elseif ($class === 'monster_guardian') {
             $this->guardianStart = $p;
         }
+    }
+
+    private static function materialGroup(string $name): string
+    {
+        $key = strtolower(basename(str_replace('\\', '/', $name)));
+        if (str_contains($key, 'metal') || str_contains($key, 'tech') || str_contains($key, 'trim')) return 'metal';
+        if (str_contains($key, 'crate') || str_contains($key, 'box') || str_contains($key, 'wood')) return 'crate';
+        if (str_contains($key, 'ceil') || str_contains($key, 'sky')) return 'ceil';
+        return 'stone';
     }
 
     private static function toWorld(array $p): array { return [$p[0] / self::UNITS, $p[2] / self::UNITS, -$p[1] / self::UNITS]; }
@@ -177,9 +201,7 @@ final class BrushMap
 
     private static function intersect3(array $a, array $b, array $c): ?array
     {
-        $bc = self::cross($b['n'], $c['n']);
-        $ca = self::cross($c['n'], $a['n']);
-        $ab = self::cross($a['n'], $b['n']);
+        $bc = self::cross($b['n'], $c['n']); $ca = self::cross($c['n'], $a['n']); $ab = self::cross($a['n'], $b['n']);
         $den = self::dot($a['n'], $bc);
         if (abs($den) < 1e-8) return null;
         return self::scale(self::add(self::add(self::scale($bc, $a['d']), self::scale($ca, $b['d'])), self::scale($ab, $c['d'])), 1.0 / $den);
@@ -208,14 +230,13 @@ final class BrushMap
     private static function materialColor(string $name): array
     {
         $key = strtolower(basename(str_replace('\\', '/', $name)));
+        if (str_contains($key, 'metal')) return [92, 112, 124];
+        if (str_contains($key, 'brick')) return [116, 90, 82];
+        if (str_contains($key, 'city')) return [94, 106, 114];
+        if (str_contains($key, 'floor')) return [84, 76, 93];
         return match ($key) {
-            'basalt' => [72, 65, 78],
-            'rust' => [148, 74, 48],
-            'sand' => [172, 142, 82],
-            'city4_1' => [94, 106, 114],
-            'sfloor4_6' => [84, 76, 93],
-            'metal', 'tech', 'trim' => [92, 112, 124],
-            default => [112, 105, 118],
+            'basalt' => [72, 65, 78], 'rust' => [148, 74, 48], 'sand' => [172, 142, 82],
+            'metal', 'tech', 'trim' => [92, 112, 124], default => [112, 105, 118],
         };
     }
 }

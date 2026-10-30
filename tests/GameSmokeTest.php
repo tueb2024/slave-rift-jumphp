@@ -15,6 +15,7 @@ final class GameSmokeTest extends GameTestCase
         self::assertGreaterThan(3.0, $run->time);
         self::assertGreaterThan(0, $run->shots);
         self::assertGreaterThan(0, $run->kills);
+        self::assertGreaterThan(0, $run->score);
         self::assertLessThanOrEqual(48, count($run->enemies));
         $this->game->shot('survival-demo');
     }

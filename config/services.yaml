@@ -7,3 +7,7 @@ services:
   App\:
     resource: '../src/*'
     exclude: '../src/Game'
+
+  JumPHP\Input\InputManager:
+    class: App\Input\WheelInputManager
+    public: true

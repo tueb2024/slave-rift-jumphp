@@ -1,0 +1,30 @@
+name: Apply asset layer
+
+on:
+  push:
+    branches: [asset-wave-pass]
+    paths:
+      - '.github/workflows/apply-asset-layer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: asset-wave-pass
+      - name: Patch source files
+        run: python3 tools/apply_asset_patch.py
+      - name: Sync playground package
+        run: php tools/sync-package.php
+      - name: Commit integrated layer
+        run: |
+          git config user.name 'slave-rift-asset-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src games/slave-rift/src games/slave-rift/assets games/slave-rift/config games/slave-rift/composer.json games/slave-rift/patches
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Use Quake DM1, spatial waves and CC0 FPS sprites'
+          git push origin HEAD:asset-wave-pass

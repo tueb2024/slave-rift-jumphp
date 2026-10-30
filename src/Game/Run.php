@@ -25,6 +25,10 @@ final class Run
     public int $shots = 0;
     public int $hits = 0;
     public int $kills = 0;
+    public int $score = 0;
+    public int $combo = 0;
+    public float $comboTime = 0.0;
+    public float $multiplier = 1.0;
     public float $muzzle = 0.0;
     public float $hurt = 0.0;
     public float $pulse = 0.0;
@@ -32,6 +36,8 @@ final class Run
     public float $time = 0.0;
     public string $state = 'play';
     public array $enemies = [];
+    /** @var array<int,array<string,mixed>> Short-lived visual death animations; excluded from live enemy pressure. */
+    public array $corpses = [];
     public array $pickups = [];
     public array $traces = [];
     public int $wave = 1;
@@ -64,7 +70,9 @@ final class Run
 
     public function __construct(public readonly BrushMap $map, int $seed = 1337)
     {
-        [$this->x, $this->y, $this->z] = $map->playerStart;
+        // Quake deathmatch maps often use info_player_start as an intermission
+        // camera. DM1's is above empty space, so use a real deathmatch spawn.
+        [$this->x, $this->y, $this->z] = $map->spawnPoints[0] ?? $map->playerStart;
         $this->yaw = $map->playerYaw;
         $this->rng = max(1, $seed % 65521);
     }
@@ -78,11 +86,20 @@ final class Run
         foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible', 'specialCooldown'] as $field) {
             $this->$field = max(0.0, $this->$field - $dt);
         }
+        if ($this->comboTime > 0) {
+            $this->comboTime = max(0.0, $this->comboTime - $dt);
+            if ($this->comboTime === 0.0) $this->resetCombo();
+        }
         foreach ($this->traces as $i => &$trace) {
             $trace['life'] -= $dt;
             if ($trace['life'] <= 0) unset($this->traces[$i]);
         }
         unset($trace);
+        foreach ($this->corpses as $i => &$corpse) {
+            $corpse['age'] += $dt;
+            if ($corpse['age'] >= 0.64) unset($this->corpses[$i]);
+        }
+        unset($corpse);
         $this->yaw -= max(-1.0, min(1.0, $turn)) * self::TURN_SPEED * $dt;
         $length = max(1.0, hypot($forward, $strafe));
         $dx = (sin($this->yaw) * $forward - cos($this->yaw) * $strafe) / $length * self::MOVE_SPEED * $dt;
@@ -168,13 +185,61 @@ final class Run
     {
         $target = null;
         $best = INF;
+        $visibleTarget = null;
+        $visibleScore = INF;
         foreach ($this->enemies as $enemy) {
             $d = hypot($enemy['x'] - $this->x, $enemy['z'] - $this->z);
             if ($d < $best) { $target = $enemy; $best = $d; }
+            if ($d <= 19.0 && $this->lineClear(
+                [$this->x, $this->y + 0.35, $this->z],
+                [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']],
+            )) {
+                $angle = abs(self::angleDelta(atan2($enemy['x'] - $this->x, $enemy['z'] - $this->z), $this->yaw));
+                $score = $d + $angle * 5.0;
+                if ($score < $visibleScore) { $visibleTarget = $enemy; $visibleScore = $score; }
+            }
         }
         if ($target === null) return [0.25, 0.4, 0.3, false];
-        $error = self::angleDelta(atan2($target['x'] - $this->x, $target['z'] - $this->z), $this->yaw);
-        return [$best < 3.2 ? -0.7 : 0.25, 0.65, max(-1.0, min(1.0, -$error * 2)), abs($error) < 0.12];
+        if ($visibleTarget === null) {
+            // Use the map's deathmatch points as safe exploration waypoints while
+            // every live enemy is hidden behind geometry.
+            $goalX = $target['x'];
+            $goalZ = $target['z'];
+            $waypointDistance = INF;
+            foreach ($this->map->spawnPoints as $point) {
+                $distance = hypot($point[0] - $this->x, $point[2] - $this->z);
+                if ($distance < 6.0 || $distance >= $waypointDistance) continue;
+                $goalX = $point[0];
+                $goalZ = $point[2];
+                $waypointDistance = $distance;
+            }
+
+            $goalAngle = atan2($goalX - $this->x, $goalZ - $this->z);
+            $bestHeading = null;
+            $bestPathScore = INF;
+            for ($i = 0; $i < 24; $i++) {
+                $heading = $goalAngle + $i * (M_PI / 12.0);
+                $probeX = $this->x + sin($heading);
+                $probeZ = $this->z + cos($heading);
+                if ($this->collides($probeX, $this->y, $probeZ, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) continue;
+                if (!$this->collides($probeX, $this->y - 0.12, $probeZ, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) continue;
+                $remaining = hypot($goalX - $probeX, $goalZ - $probeZ);
+                $score = $remaining + abs(self::angleDelta($heading, $goalAngle)) * 0.16;
+                if ($score < $bestPathScore) {
+                    $bestPathScore = $score;
+                    $bestHeading = $heading;
+                }
+            }
+            if ($bestHeading === null) return [0.18, sin($this->time * 0.8) * 0.55, 0.68, false];
+            $error = self::angleDelta($bestHeading, $this->yaw);
+            return [0.72, 0.0, max(-1.0, min(1.0, -$error * 1.5)), false];
+        }
+        // Prefer an enemy the weapons can actually hit. The nearest enemy may be
+        // on the other side of a DM1 wall, where it would otherwise hold aim forever.
+        $aimTarget = $visibleTarget;
+        $error = self::angleDelta(atan2($aimTarget['x'] - $this->x, $aimTarget['z'] - $this->z), $this->yaw);
+        $forward = hypot($visibleTarget['x'] - $this->x, $visibleTarget['z'] - $this->z) < 3.2 ? -0.35 : 0.25;
+        return [$forward, 0.0, max(-1.0, min(1.0, -$error * 2)), abs($error) < 0.12];
     }
 
     private function stepWaves(float $dt): void
@@ -196,9 +261,11 @@ final class Run
             return;
         }
         if (($this->remaining === 0 && $this->enemies === []) || $this->waveTime >= 26.0) {
+            $waveBonus = (int)round(($this->wave * 150 + $this->combo * 50) * $this->multiplier);
+            $this->score += $waveBonus;
             $this->intermission = 4.0;
             $this->health = min($this->maxHealth, $this->health + 10);
-            $this->message = 'RIFT BREATHER - HEAL +10';
+            $this->message = 'WAVE BONUS +' . $waveBonus . ' / HEAL +10';
             $this->messageTime = 3.0;
             return;
         }
@@ -213,28 +280,71 @@ final class Run
 
     private function spawnEnemy(): bool
     {
+        if ($this->map->spawnPoints !== []) {
+            $candidates = [];
+            foreach ($this->map->spawnPoints as $point) {
+                [$x, $mapY, $z] = $point;
+                $y = $mapY - 0.20;
+                $distance = hypot($x - $this->x, $z - $this->z);
+                if ($distance < 4.5 || $distance > 34.0) continue;
+                if ($this->collides($x, $y, $z, 0.42, 0.55)) continue;
+                $occupied = false;
+                foreach ($this->enemies as $enemy) {
+                    if (hypot($x - $enemy['x'], $z - $enemy['z']) < 1.1 && abs($y - $enemy['y']) < 1.4) {
+                        $occupied = true;
+                        break;
+                    }
+                }
+                if ($occupied) continue;
+                $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
+                $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
+                $distanceScore = abs($distance - 12.0) * 0.28;
+                $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
+                $visibilityPenalty = $visible ? 2.4 : -1.3;
+                $candidates[] = [
+                    'score' => $distanceScore + $frontPenalty + $visibilityPenalty + $this->random() * 0.55,
+                    'x' => $x, 'y' => $y, 'z' => $z,
+                ];
+            }
+            if ($candidates !== []) {
+                usort($candidates, static fn (array $a, array $b): int => $a['score'] <=> $b['score']);
+                $spawn = $candidates[0];
+                return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z']);
+            }
+        }
         for ($attempt = 0; $attempt < 20; $attempt++) {
             $a = $this->random() * M_PI * 2;
             $r = 6.0 + $this->random() * 4.0;
-            $x = max(-10.8, min(10.8, $this->x + sin($a) * $r));
-            $z = max(-10.8, min(10.8, $this->z + cos($a) * $r));
-            if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, 0.56, $z, 0.42, 0.55)) continue;
-            $roll = $this->random();
-            $type = $this->wave >= 3 && $roll < 0.22 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian');
-            if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
-            [$hp, $speed, $damage, $radius] = match ($type) {
-                'runner' => [24, 2.05, 7, 0.23],
-                'brute' => [135, 0.85, 18, 0.40],
-                default => [48, 1.25, 10, 0.30],
-            };
-            $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
-            $id = $this->nextId++;
-            $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => 0.55, 'z' => $z,
-                'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
-                'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0];
-            return true;
+            $x = $this->x + sin($a) * $r;
+            $z = $this->z + cos($a) * $r;
+            $ground = $this->supportHeight($x, $z, 0.42, $this->y + 2.0);
+            $y = $ground + 0.55;
+            if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, $y, $z, 0.42, 0.55)) continue;
+            return $this->spawnEnemyAt($x, $y, $z);
         }
         return false;
+    }
+
+    private function spawnEnemyAt(float $x, float $y, float $z): bool
+    {
+        $roll = $this->random();
+        $type = $this->wave >= 2 && $roll < 0.14 ? 'enforcer'
+            : ($this->wave >= 3 && $roll < 0.30 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian'));
+        if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
+        [$hp, $speed, $damage, $radius] = match ($type) {
+            'runner' => [24, 2.05, 7, 0.23],
+            'brute' => [135, 0.85, 18, 0.40],
+            'enforcer' => [48, 1.0, 6, 0.27],
+            default => [48, 1.25, 10, 0.30],
+        };
+        $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
+        $id = $this->nextId++;
+        $yaw = atan2($this->x - $x, $this->z - $z);
+        $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
+            'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
+            'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0,
+            'yaw' => $yaw, 'attackTime' => 0.0, 'moving' => false, 'animState' => 'idle'];
+        return true;
     }
 
     private function stepEnemies(float $dt): void
@@ -242,36 +352,52 @@ final class Run
         foreach ($this->enemies as $id => &$enemy) {
             $enemy['flash'] = max(0.0, $enemy['flash'] - $dt);
             $enemy['cooldown'] -= $dt;
+            $enemy['attackTime'] = max(0.0, $enemy['attackTime'] - $dt);
             $enemy['age'] += $dt;
+            $enemy['moving'] = false;
             $dx = $this->x - $enemy['x'];
             $dz = $this->z - $enemy['z'];
             $d = max(0.001, hypot($dx, $dz));
-            if ($d < $enemy['radius'] + 0.55 && abs($this->y - $enemy['y']) < 1.1 &&
-                $enemy['cooldown'] <= 0 && $this->lineClear([$enemy['x'], $enemy['y'], $enemy['z']], [$this->x, $this->y, $this->z])) {
+            $angle = atan2($dx, $dz);
+            $enemy['yaw'] = $angle;
+            $ranged = $enemy['type'] === 'enforcer';
+            $attackRange = $ranged ? ($d > 2.5 && $d < 12.0) : ($d < $enemy['radius'] + 0.55 && abs($this->y - $enemy['y']) < 1.1);
+            $attackVisible = $this->lineClear(
+                [$enemy['x'], $enemy['y'] + ($ranged ? 0.28 : 0.0), $enemy['z']],
+                [$this->x, $this->y + ($ranged ? 0.35 : 0.0), $this->z],
+            );
+            if ($attackRange && $enemy['cooldown'] <= 0 && $attackVisible) {
                 if ($this->invincible <= 0) {
                     $this->health -= $enemy['damage'];
                     $this->hurt = 0.25;
                     $this->invincible = 0.40;
+                    $this->resetCombo();
                 }
-                $enemy['cooldown'] = 0.85;
+                $enemy['cooldown'] = $ranged ? 1.45 : 0.85;
+                $enemy['attackTime'] = 0.32;
             }
-            if ($d < 0.55) continue;
-            $angle = atan2($dx, $dz);
-            $side = $id % 2 === 0 ? 1 : -1;
-            foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3] as $offset) {
-                $speed = $enemy['speed'] * $dt;
-                $nx = $enemy['x'] + sin($angle + $offset) * $speed;
-                $nz = $enemy['z'] + cos($angle + $offset) * $speed;
-                $ny = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23) + 0.55;
-                if ($this->collides($nx, $ny, $nz, $enemy['radius'], 0.55)) continue;
-                $blocked = false;
-                foreach ($this->enemies as $otherId => $other) {
-                    if ($otherId === $id) continue;
-                    $spacing = ($enemy['radius'] + $other['radius']) * 0.8;
-                    if (hypot($nx - $other['x'], $nz - $other['z']) < $spacing) { $blocked = true; break; }
+            if ($d >= 0.55) {
+                $side = $id % 2 === 0 ? 1 : -1;
+                foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3] as $offset) {
+                    $speed = $enemy['speed'] * $dt;
+                    $nx = $enemy['x'] + sin($angle + $offset) * $speed;
+                    $nz = $enemy['z'] + cos($angle + $offset) * $speed;
+                    $ny = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23) + 0.55;
+                    if ($this->collides($nx, $ny, $nz, $enemy['radius'], 0.55)) continue;
+                    $blocked = false;
+                    foreach ($this->enemies as $otherId => $other) {
+                        if ($otherId === $id) continue;
+                        $spacing = ($enemy['radius'] + $other['radius']) * 0.8;
+                        if (hypot($nx - $other['x'], $nz - $other['z']) < $spacing) { $blocked = true; break; }
+                    }
+                    if (!$blocked) {
+                        $enemy['x'] = $nx; $enemy['y'] = $ny; $enemy['z'] = $nz;
+                        $enemy['moving'] = true;
+                        break;
+                    }
                 }
-                if (!$blocked) { $enemy['x'] = $nx; $enemy['y'] = $ny; $enemy['z'] = $nz; break; }
             }
+            $enemy['animState'] = $enemy['flash'] > 0 ? 'pain' : ($enemy['attackTime'] > 0 ? 'attack' : ($enemy['moving'] ? 'walk' : 'idle'));
         }
         unset($enemy);
     }
@@ -284,7 +410,7 @@ final class Run
         $this->manualClock = 0.34;
         if ($target === null) return;
         $enemy = $this->enemies[$target];
-        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.15, 'z' => $enemy['z'], 'life' => 0.09];
+        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.15, 'z' => $enemy['z'], 'life' => 0.09, 'totalLife' => 0.09];
         $this->damage($target, (int)round(38 * (1 + $this->damageRank * 0.35)));
         $this->hits++;
     }
@@ -295,7 +421,7 @@ final class Run
         $target = $this->findTarget(16.0, $cone);
         if ($target === null) { $this->autoClock = 0.04; return; }
         $enemy = $this->enemies[$target];
-        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.12, 'z' => $enemy['z'], 'life' => 0.055];
+        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.12, 'z' => $enemy['z'], 'life' => 0.09, 'totalLife' => 0.09];
         $baseDamage = match ($this->autoTier) { 1 => 9, 2 => 11, 3 => 13, default => 15 };
         $baseRate = match ($this->autoTier) { 1 => 0.27, 2 => 0.20, 3 => 0.145, default => 0.095 };
         $this->damage($target, (int)round($baseDamage * (1 + $this->damageRank * 0.28)));
@@ -331,7 +457,7 @@ final class Run
         foreach ($hit as $index => $id) {
             if (!isset($this->enemies[$id])) continue;
             $enemy = $this->enemies[$id];
-            $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.2, 'z' => $enemy['z'], 'life' => 0.18];
+            $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.2, 'z' => $enemy['z'], 'life' => 0.18, 'totalLife' => 0.18];
             $this->damage($id, max(38, 110 - $index * 22));
         }
         $this->message = 'RIFT LANCE';
@@ -373,10 +499,30 @@ final class Run
         if (!isset($this->enemies[$id])) return;
         $this->enemies[$id]['health'] -= $amount;
         $this->enemies[$id]['flash'] = 0.12;
+        $this->enemies[$id]['animState'] = 'pain';
         if ($this->enemies[$id]['health'] > 0) return;
         $enemy = $this->enemies[$id];
         unset($this->enemies[$id]);
+        $this->corpses[] = array_merge($enemy, ['age' => 0.0, 'animState' => 'death']);
         $this->kills++;
+        $this->combo++;
+        $this->comboTime = 3.5;
+        $this->multiplier = match (true) {
+            $this->combo >= 24 => 10.0,
+            $this->combo >= 16 => 5.0,
+            $this->combo >= 11 => 3.0,
+            $this->combo >= 7 => 2.0,
+            $this->combo >= 4 => 1.5,
+            $this->combo >= 2 => 1.2,
+            default => 1.0,
+        };
+        $baseScore = match ($enemy['type']) {
+            'runner' => 100,
+            'brute' => 800,
+            'enforcer' => 400,
+            default => 250,
+        };
+        $this->score += (int)round(($baseScore + $this->wave * 25) * $this->multiplier);
         $kind = $this->kills % 9 === 0 ? 'health' : 'xp';
         $value = $kind === 'health' ? 18 : ($enemy['type'] === 'brute' ? 5 : 2);
         if (count($this->pickups) >= self::MAX_PICKUPS) {
@@ -445,6 +591,13 @@ final class Run
             $this->messageTime = 3.0;
             $this->autoClock = 0.1;
         }
+    }
+
+    private function resetCombo(): void
+    {
+        $this->combo = 0;
+        $this->comboTime = 0.0;
+        $this->multiplier = 1.0;
     }
 
     private function movePlayer(float $dx, float $dz): void

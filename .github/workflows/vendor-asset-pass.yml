@@ -1,0 +1,44 @@
+name: Vendor asset pass
+
+on:
+  push:
+    branches: [asset-wave-pass]
+    paths:
+      - '.github/workflows/vendor-asset-pass.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: asset-wave-pass
+      - name: Fetch verified upstream assets
+        run: |
+          set -eux
+          mkdir -p assets/maps assets/sprites/enemies assets/sprites/weapons
+          curl -fL --retry 3 'https://raw.githubusercontent.com/fzwoch/quake_map_source/master/dm1.map' -o assets/maps/quake-dm1.map
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/fps_weapons_0.png' -o assets/sprites/weapons/fps-weapons-cc0.png
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/demonario.png' -o assets/sprites/enemies/demonario.png
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/eviloogie.png' -o assets/sprites/enemies/eviloogie.png
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/smorficus.png' -o assets/sprites/enemies/smorficus.png
+          php tools/sync-package.php
+          sha256sum assets/maps/quake-dm1.map assets/sprites/weapons/fps-weapons-cc0.png assets/sprites/enemies/*.png > assets/VENDORED.sha256
+          cp assets/VENDORED.sha256 games/slave-rift/assets/VENDORED.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asset-pass-preview
+          path: |
+            assets/sprites/
+            assets/maps/quake-dm1.map
+      - name: Commit vendored files
+        run: |
+          git config user.name 'slave-rift-asset-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add assets games/slave-rift patches composer.json config src tools
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Vendor Quake DM1 and CC0 FPS sprite sheets'
+          git push origin HEAD:asset-wave-pass
