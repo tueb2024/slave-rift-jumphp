@@ -22,15 +22,12 @@ final class PlayScene extends AbstractScene
     private bool $demo = false;
     private bool $debug = false;
     private float $frameMs = 16.7;
-    private string $mouseBackend = 'ABSOLUTE';
-    private int $mouseRx = 0;
-    private int $mouseRy = 0;
     private bool $paused = false;
     private bool $jumpPending = false;
+    private bool $autoFirePending = false;
+    private float $autoColtClock = 0.0;
     private float $restartDelay = 0.0;
     private float $pitch = 0.0;
-    private ?float $mouseX = null;
-    private ?float $mouseY = null;
     private float $prevMuzzle = 0.0;
     private float $prevPulse = 0.0;
     private float $prevSpecial = 0.0;
@@ -38,10 +35,7 @@ final class PlayScene extends AbstractScene
     private string $prevState = 'play';
     private int $prevXp = 0;
     private int $upgradeCursor = 0;
-    // SDL/browser deltas are already relative to the previous poll; keep this
-    // frame-rate independent and conservative for both pointer-lock and fallback.
-    private const MOUSE_SENS_REL = 0.0025;
-    private const MOUSE_SENS_ABS = 0.0035;
+    private const COLT_AUTO_PERIOD = 0.70;
 
     public function enter(array $params = []): void
     {
@@ -54,8 +48,9 @@ final class PlayScene extends AbstractScene
         $this->restartDelay = 0.0;
         $this->paused = false;
         $this->jumpPending = false;
+        $this->autoFirePending = !$this->demo;
+        $this->autoColtClock = self::COLT_AUTO_PERIOD;
         $this->pitch = 0.0;
-        $this->mouseX = $this->mouseY = null;
         $this->prevMuzzle = $this->prevPulse = $this->prevSpecial = 0.0;
         $this->weaponSfxCooldown = 0.0;
         $this->prevState = 'play';
@@ -63,8 +58,6 @@ final class PlayScene extends AbstractScene
         $this->upgradeCursor = 0;
         $this->world->prepare($this->engine->gl(), $this->run);
         $this->loadAssetLayer();
-
-        if (!$this->demo && function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(true);
 
         if (!isset($this->music)) {
             $this->music = new RiftMusic($this->sound());
@@ -91,40 +84,37 @@ final class PlayScene extends AbstractScene
     public function update(float $dt): void
     {
         $this->frameMs = $this->frameMs * 0.9 + $dt * 1000.0 * 0.1;
-        if ($this->actions()->isPressed('pause_game')) {
-            $this->paused = !$this->paused;
-            $this->mouseX = $this->mouseY = null;
-            if (!$this->demo && function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(!$this->paused);
-        }
+        if ($this->actions()->isPressed('pause_game')) $this->paused = !$this->paused;
         if ($this->paused) return;
+
         if ($this->run->state === 'upgrade') {
-            $mouse = $this->engine->input->getMouse();
-            if (!$this->demo && $mouse->x >= 12 && $mouse->x < $this->width() - 12) {
-                foreach ($this->run->choices as $slot => $_choice) {
-                    if ($mouse->y >= 68 + $slot * 22 && $mouse->y < 90 + $slot * 22) {
-                        $this->upgradeCursor = $slot;
-                        break;
-                    }
+            if ($this->demo) {
+                $this->run->chooseUpgrade(0);
+                return;
+            }
+            $count = count($this->run->choices);
+            if ($count > 0) {
+                if ($this->actions()->isPressed('upgrade_prev')) {
+                    $this->upgradeCursor = ($this->upgradeCursor - 1 + $count) % $count;
+                }
+                if ($this->actions()->isPressed('upgrade_next')) {
+                    $this->upgradeCursor = ($this->upgradeCursor + 1) % $count;
+                }
+                if ($this->actions()->isPressed('upgrade_select')) {
+                    $this->run->chooseUpgrade($this->upgradeCursor);
+                    return;
                 }
             }
             foreach (['upgrade_one', 'upgrade_two', 'upgrade_three'] as $slot => $action) {
                 if ($this->actions()->isPressed($action)) {
                     $this->upgradeCursor = $slot;
                     $this->run->chooseUpgrade($slot);
-                    if (function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(true);
                     return;
                 }
             }
-            if ($this->demo) {
-                $this->run->chooseUpgrade(0);
-                return;
-            }
-            if ($mouse->isPressed(1)) {
-                $this->run->chooseUpgrade($this->upgradeCursor);
-                if (function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(true);
-            }
             return;
         }
+
         if ($this->run->state === 'dead') {
             $this->restartDelay += $dt;
             if (($this->demo && $this->restartDelay > 1.0) || $this->actions()->isPressed('restart')) $this->enter(['demo' => $this->demo]);
@@ -138,41 +128,16 @@ final class PlayScene extends AbstractScene
             $forward = $this->actions()->axis('move_back', 'move_forward');
             $strafe = $this->actions()->axis('strafe_left', 'strafe_right');
             $turn = $this->actions()->axis('turn_left', 'turn_right');
-            $mouse = $this->engine->input->getMouse();
-            $fire = $this->actions()->isHeld('fire') || $mouse->isHeld(1);
-            $special = $mouse->isHeld(3) || $this->actions()->isHeld('special_fire');
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
 
-            $mx = 0.0; $my = 0.0;
-            $relativeWorked = false;
-            $this->mouseRx = $this->mouseRy = 0;
-            if (function_exists('SDL_GetRelativeMouseState')) {
-                $rx = 0; $ry = 0;
-                @\SDL_GetRelativeMouseState($rx, $ry);
-                $this->mouseRx = (int)$rx; $this->mouseRy = (int)$ry;
-                if ($rx !== 0 || $ry !== 0) {
-                    $mx = max(-300, min(300, (int)$rx)) * self::MOUSE_SENS_REL;
-                    $my = max(-300, min(300, (int)$ry)) * self::MOUSE_SENS_REL;
-                    $relativeWorked = true;
-                }
+            $this->autoColtClock -= $dt;
+            if ($this->autoColtClock <= 0.0) {
+                $this->autoFirePending = true;
+                do {
+                    $this->autoColtClock += self::COLT_AUTO_PERIOD;
+                } while ($this->autoColtClock <= 0.0);
             }
-            if (!$relativeWorked) {
-                if (function_exists('SDL_SetRelativeMouseMode') && ($mouse->isPressed(1) || $mouse->isPressed(3))) @\SDL_SetRelativeMouseMode(true);
-                if ($this->mouseX !== null && $this->mouseY !== null) {
-                    $dx = $mouse->x - $this->mouseX;
-                    $dy = $mouse->y - $this->mouseY;
-                    // Ignore only a large pointer-lock recenter, not a fast turn.
-                    if (abs($dx) <= 320 && abs($dy) <= 320) {
-                        $mx = max(-240.0, min(240.0, $dx)) * self::MOUSE_SENS_ABS;
-                        $my = max(-240.0, min(240.0, $dy)) * self::MOUSE_SENS_ABS;
-                    }
-                }
-            }
-            $this->mouseX = $mouse->x;
-            $this->mouseY = $mouse->y;
-            $this->mouseBackend = $relativeWorked ? 'RELATIVE' : 'ABSOLUTE';
-            $this->run->yaw -= $mx;
-            $this->pitch = max(-1.20, min(1.20, $this->pitch - $my));
+            $fire = $this->autoFirePending;
         }
 
         $beforeState = $this->run->state;
@@ -180,12 +145,10 @@ final class PlayScene extends AbstractScene
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire, $special): void {
             $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, $special);
             $this->jumpPending = false;
+            if (!$this->demo) $this->autoFirePending = false;
         });
 
         $this->playAudioEvents($beforeState, $beforeXp, $dt);
-        if (!$this->demo && $beforeState === 'play' && $this->run->state === 'upgrade' && function_exists('SDL_SetRelativeMouseMode')) {
-            @\SDL_SetRelativeMouseMode(false);
-        }
         if ($this->run->wave !== $this->musicWave) {
             $this->musicWave = $this->run->wave;
             $this->music->onWaveStart($this->musicWave);
@@ -231,7 +194,7 @@ final class PlayScene extends AbstractScene
         if ($run->combo > 0) $font->draw($r, 'CHAIN ' . $run->combo, 170, 13, 1, [255,155,90]);
         Hud::bar($r, $w - 70, 14, 66, 3, min(1.0, $run->xp / $run->nextXp));
 
-        $cross = $run->specialFlash > 0 ? [170,255,255] : ($run->muzzle > 0 ? [255,225,120] : [185,190,175]);
+        $cross = $run->muzzle > 0 ? [255,225,120] : [185,190,175];
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross); $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
@@ -256,14 +219,12 @@ final class PlayScene extends AbstractScene
         }
 
         $r->fillRect(0, $h - 10, $w, 10, [6,5,12,225]);
-        $weaponLabel = 'COLT .45' . ($run->autoTier > 0 ? ' + ' . $run->autoWeapon : '') . ($run->pulseUnlocked ? ' + PULSE' : '');
+        $weaponLabel = 'COLT .45 AUTO' . ($run->autoTier > 0 ? ' + ' . $run->autoWeapon : '') . ($run->pulseUnlocked ? ' + PULSE' : '');
         $font->draw($r, $weaponLabel, 4, $h - 8, 1, $cyan);
-        $special = $run->specialCooldown <= 0.0 ? 'RMB RIFT LANCE READY' : 'RIFT ' . number_format($run->specialCooldown, 1) . 's';
-        $font->draw($r, $special, $w - 4, $h - 18, 1, $run->specialCooldown <= 0 ? [170,255,255] : $cream, 'right');
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
 
         if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, 29, 1, $cream, 'center', [8,5,12]);
-        if ($run->time < 8 && !$this->demo) $font->draw($r, 'ZQSD MOVE / MOUSE LOOK / LMB COLT / RMB SPECIAL / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
+        if ($run->time < 8 && !$this->demo) $font->draw($r, 'Z/S MOVE / Q/D STRAFE / LEFT-RIGHT TURN / AUTO FIRE / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
         if ($run->state === 'upgrade') {
@@ -275,7 +236,7 @@ final class PlayScene extends AbstractScene
                 $font->draw($r, $prefix . ($slot + 1) . '  ' . $choice, 24, 72 + $slot * 22, 1, $selected ? $cyan : $cream);
                 $font->draw($r, $run->upgradeDescription($choice), 24, 81 + $slot * 22, 1, $cyan);
             }
-            $font->draw($r, 'HOVER SELECT / LMB CONFIRM  (1/2/3 FALLBACK)', $cx, 135, 1, $cream, 'center');
+            $font->draw($r, 'UP-DOWN CHOOSE / ENTER OR SPACE CONFIRM', $cx, 135, 1, $cream, 'center');
         } elseif ($run->state === 'dead') {
             $r->fillRect(26, 56, $w - 52, 69, [8,5,12,235]);
             $font->draw($r, 'RIFT CLAIMED YOU', $cx, 65, 2, [245,90,76], 'center');
@@ -291,9 +252,7 @@ final class PlayScene extends AbstractScene
                 $this->world->mapChunksDrawn, $run->neighborChecks), 4, 28, 1, $cyan);
             $font->draw($r, sprintf('TR %d  COR %d  IMP %d  COL %d  PICK %d', count($run->traces), count($run->corpses),
                 min(count($run->traces), World::MAX_IMPACTS), $run->collisionTests, count($run->pickups)), 4, 38, 1, $cyan);
-            $mouse = $this->engine->input->getMouse();
-            $font->draw($r, sprintf('MOUSE %s RX %d RY %d X %.0f Y %.0f', $this->mouseBackend,
-                $this->mouseRx, $this->mouseRy, $mouse->x, $mouse->y), 4, 48, 1, $cyan);
+            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  COLT %.2fs', Run::TURN_SPEED, self::COLT_AUTO_PERIOD), 4, 48, 1, $cyan);
         }
     }
 
