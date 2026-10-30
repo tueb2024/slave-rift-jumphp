@@ -80,14 +80,54 @@ final class Meshes
     }
 
     /** @return float[] */
-    public static function guardian(): array
+    public static function enemy(string $type): array
     {
         $out = [];
+        if ($type === 'runner') {
+            self::boxInto($out, [-0.24,-0.25,-0.32], [0.24,0.12,0.32], [75,170,130]);
+            self::boxInto($out, [-0.16,0.10,-0.16], [0.16,0.40,0.16], [170,238,128]);
+            self::boxInto($out, [-0.36,-0.55,-0.13], [-0.14,-0.20,0.13], [48,95,76]);
+            self::boxInto($out, [0.14,-0.55,-0.13], [0.36,-0.20,0.13], [48,95,76]);
+            return $out;
+        }
+        if ($type === 'brute') {
+            self::boxInto($out, [-0.46,-0.55,-0.35], [0.46,0.65,0.35], [102,76,152]);
+            self::boxInto($out, [-0.29,0.65,-0.24], [0.29,1.0,0.24], [202,147,81]);
+            self::boxInto($out, [-0.70,-0.32,-0.22], [-0.46,0.65,0.22], [170,100,47]);
+            self::boxInto($out, [0.46,-0.32,-0.22], [0.70,0.65,0.22], [170,100,47]);
+            return $out;
+        }
         self::boxInto($out, [-0.30, -0.55, -0.20], [0.30, 0.35, 0.20], [120, 50, 48]);
         self::boxInto($out, [-0.20, 0.35, -0.17], [0.20, 0.72, 0.17], [190, 142, 92]);
         self::boxInto($out, [-0.28, 0.66, -0.12], [0.28, 0.80, 0.12], [58, 168, 150]);
         self::boxInto($out, [-0.48, -0.42, -0.12], [-0.30, 0.20, 0.12], [91, 42, 54]);
         self::boxInto($out, [0.30, -0.30, -0.12], [0.52, 0.13, 0.12], [91, 42, 54]);
+        return $out;
+    }
+
+    /** Original low-poly pickup meshes; no external artwork. */
+    public static function pickup(bool $health): array
+    {
+        $out = [];
+        if ($health) {
+            self::boxInto($out, [-0.20,-0.08,-0.08], [0.20,0.08,0.08], [235,65,75]);
+            self::boxInto($out, [-0.08,-0.20,-0.08], [0.08,0.20,0.08], [235,65,75]);
+        } else {
+            self::boxInto($out, [-0.10,-0.16,-0.10], [0.10,0.16,0.10], [70,230,225]);
+        }
+        return $out;
+    }
+
+    public static function pulse(): array
+    {
+        $out = [];
+        for ($i = 0; $i < 24; $i++) {
+            $a = $i * M_PI / 12; $b = ($i + 1) * M_PI / 12;
+            foreach ([[sin($a),0,cos($a)], [sin($b),0,cos($b)], [sin($a)*0.94,0,cos($a)*0.94],
+                [sin($b),0,cos($b)], [sin($b)*0.94,0,cos($b)*0.94], [sin($a)*0.94,0,cos($a)*0.94]] as $p) {
+                self::vertex($out, $p, [0.2,0.95,1.0], [0,1,0]);
+            }
+        }
         return $out;
     }
 

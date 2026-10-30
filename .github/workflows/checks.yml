@@ -1,0 +1,79 @@
+name: Survival checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  simulation:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.2', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: Lint PHP
+        run: find src tools tests games/slave-rift/src -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Simulation regressions
+        run: php tools/simulation-test.php
+      - name: Verify playground package
+        run: php tools/sync-package.php --check
+
+  jumphp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: game
+      - uses: actions/checkout@v4
+        with:
+          repository: davidnurdin/jumPhp
+          ref: 28ea932981fb0b6d8dc41f2c9739f941cb4befea
+          path: runtime
+      - name: Stage game with local engine
+        run: |
+          cp -a game/games/slave-rift runtime/games/slave-rift
+          python3 - <<'PY'
+          import json
+          p = 'runtime/games/slave-rift/composer.json'
+          with open(p) as f: c = json.load(f)
+          c['repositories'] = [
+              {'type': 'path', 'url': '../../engine'},
+              {'type': 'vcs', 'url': 'https://github.com/davidnurdin/php-wasm-network'}
+          ]
+          with open(p, 'w') as f: json.dump(c, f, indent=2)
+          PY
+      - name: Build official SDL and OpenGL runtime
+        working-directory: runtime
+        run: docker build -t jumphp/desktop:dev --build-context ext=docker/ext docker/desktop
+      - name: Install engine tests and game
+        working-directory: runtime
+        run: |
+          docker run --rm -v "$PWD:/workspace" -w /workspace/engine jumphp/desktop:dev composer install --no-interaction --no-progress
+          bin/jumphp install slave-rift
+      - name: JumPHP integration tests and 600-frame software smoke
+        working-directory: runtime
+        env:
+          JUMPHP_GL: '0'
+        run: bin/jumphp test slave-rift
+      - name: 900-frame OpenGL smoke and screenshot
+        working-directory: runtime
+        env:
+          JUMPHP_GL: '1'
+          JUMPHP_SCENE: App\Scene\PlayScene
+          JUMPHP_SCENE_PARAMS: '{"demo":true,"seed":1337}'
+        run: bin/jumphp shot slave-rift 900 var/screenshots/survival-gl.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jumphp-screenshots
+          path: runtime/games/slave-rift/var/screenshots/
+          if-no-files-found: ignore

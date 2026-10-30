@@ -8,3 +8,7 @@ actions:
   jump: [Space, pad0:b]
   fire: [F, pad0:a, touch:tap]
   restart: [Return, pad0:start]
+  upgrade_one: ['1', R, pad0:a]
+  upgrade_two: ['2', T, pad0:b]
+  upgrade_three: ['3', Y, pad0:x]
+  pause_game: [P]
