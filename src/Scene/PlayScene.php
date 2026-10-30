@@ -231,18 +231,20 @@ final class PlayScene extends AbstractScene
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross); $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
-        $kick = $run->muzzle > 0 ? 5 : 0;
-        $bob = (int)round(sin($run->time * 6) * 1.5);
+        $kick = $run->muzzle > 0 ? (int)round($h * 0.008) : 0;
+        $bob = (int)round(sin($run->time * 6) * $h * 0.004);
         $weapon = $this->sdl()->getTexture($run->autoTier === 0 ? 'industrial_pistol' : 'industrial_smg');
-        $drawW = 250; $drawH = 250;
-        $r->copy($weapon['texture'], [0, 0, 1254, 1254],
-            (int)($cx - $drawW / 2), (int)($h - $drawH + 45 + $kick + $bob), $drawW, $drawH);
+        $drawH = (int)round($h * ($run->autoTier === 0 ? 0.24 : 0.25));
+        $drawW = (int)round($drawH * 1254 / 1054);
+        $weaponY = $h - $drawH + $kick + $bob;
+        $r->copy($weapon['texture'], [0, 200, 1254, 1054],
+            (int)($cx - $drawW / 2), $weaponY, $drawW, $drawH);
         if ($run->muzzle > 0) {
             $flash = $this->sdl()->getTexture('muzzle_flash');
             $flashFrame = min(2, max(0, (int)floor((0.12 - min(0.12, $run->muzzle)) / 0.04)));
-            $flashSize = 48;
+            $flashSize = max(12, (int)round($h * 0.045));
             $r->copy($flash['texture'], [$flashFrame * 80, 0, 80, 80],
-                (int)($cx + 2), (int)($h - 177 + $bob), $flashSize, $flashSize);
+                (int)($cx + $drawW * 0.02), (int)($weaponY + $drawH * ($run->autoTier === 0 ? 0.0 : 0.14)), $flashSize, $flashSize);
         }
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
