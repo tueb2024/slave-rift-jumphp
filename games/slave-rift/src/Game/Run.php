@@ -355,7 +355,7 @@ final class Run
         $this->manualClock = 0.34;
         if ($target === null) return;
         $enemy = $this->enemies[$target];
-        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.15, 'z' => $enemy['z'], 'life' => 0.09];
+        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.15, 'z' => $enemy['z'], 'life' => 0.09, 'totalLife' => 0.09];
         $this->damage($target, (int)round(38 * (1 + $this->damageRank * 0.35)));
         $this->hits++;
     }
@@ -366,7 +366,7 @@ final class Run
         $target = $this->findTarget(16.0, $cone);
         if ($target === null) { $this->autoClock = 0.04; return; }
         $enemy = $this->enemies[$target];
-        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.12, 'z' => $enemy['z'], 'life' => 0.055];
+        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.12, 'z' => $enemy['z'], 'life' => 0.09, 'totalLife' => 0.09];
         $baseDamage = match ($this->autoTier) { 1 => 9, 2 => 11, 3 => 13, default => 15 };
         $baseRate = match ($this->autoTier) { 1 => 0.27, 2 => 0.20, 3 => 0.145, default => 0.095 };
         $this->damage($target, (int)round($baseDamage * (1 + $this->damageRank * 0.28)));
@@ -402,7 +402,7 @@ final class Run
         foreach ($hit as $index => $id) {
             if (!isset($this->enemies[$id])) continue;
             $enemy = $this->enemies[$id];
-            $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.2, 'z' => $enemy['z'], 'life' => 0.18];
+            $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.2, 'z' => $enemy['z'], 'life' => 0.18, 'totalLife' => 0.18];
             $this->damage($id, max(38, 110 - $index * 22));
         }
         $this->message = 'RIFT LANCE';

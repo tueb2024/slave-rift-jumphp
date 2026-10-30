@@ -96,6 +96,7 @@ final class World
             $r->clear(self::KEY);
             $this->draw3d($gl, $r, $run, $pitch);
             $this->drawEnemySprites($engine, $r, $run, $pitch);
+            $this->drawImpactSprites($engine, $r, $run, $pitch);
             return;
         }
         $this->drawFallback($r, $run);
@@ -185,6 +186,26 @@ final class World
             $tex = $sdl->getTexture($sprite['texture']);
             $r->copy($tex['texture'], [$sourceX, $sourceY, $sourceW, $sourceH], $x, $y, $spriteW, $spriteH);
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
+        }
+    }
+
+    private function drawImpactSprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
+    {
+        if ($run->traces === []) return;
+        $sdl = $engine->sdl;
+        if (!$sdl->hasTexture('hit_spark')) $sdl->loadTexture('hit_spark', 'assets/sprites/effects/spark-impact.png');
+        $texture = $sdl->getTexture('hit_spark');
+        $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
+        foreach ($run->traces as $trace) {
+            $point = Mat4::project($vp, [$trace['x'], $trace['y'], $trace['z']], $r->getWidth(), $r->getHeight());
+            if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
+            $distance = hypot($trace['x'] - $run->x, $trace['z'] - $run->z);
+            $duration = max(1 / 60, (float)($trace['totalLife'] ?? 0.09));
+            $elapsed = max(0.0, $duration - (float)$trace['life']);
+            $frame = min(8, (int)floor($elapsed / $duration * 9));
+            $size = (int)max(18, min(46, 150.0 / max(1.25, $distance)));
+            $r->copy($texture['texture'], [$frame * 32, 0, 32, 32],
+                (int)round($point[0] - $size / 2), (int)round($point[1] - $size / 2), $size, $size);
         }
     }
 

@@ -26,6 +26,8 @@ Slave Rift uses only assets that are either original project work or from source
 
 - `sprites/effects/muzzle-large-fire.png`: three-frame muzzle-flash strip from **Gun Muzzle Flash Effects (Fire and Ion and Melee)** by Reactorcore, CC0. The image is 240×80 (three 80×80 frames) and is drawn over the weapon during firing. The PNG was extracted from the source archive without pixel edits.
   - Source: https://opengameart.org/node/179598
+- `sprites/effects/spark-impact.png`: **Spark effect** by kurohina, CC0. The image is 288×32 (nine 32×32 frames) and plays at confirmed enemy-hit positions. The source PNG was copied without pixel edits.
+  - Source: https://opengameart.org/content/spark-effect
 
 ## Enemy sprites
 
