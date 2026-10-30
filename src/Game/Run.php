@@ -328,11 +328,13 @@ final class Run
     private function spawnEnemyAt(float $x, float $y, float $z): bool
     {
         $roll = $this->random();
-        $type = $this->wave >= 3 && $roll < 0.22 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian');
+        $type = $this->wave >= 2 && $roll < 0.14 ? 'enforcer'
+            : ($this->wave >= 3 && $roll < 0.30 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian'));
         if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
         [$hp, $speed, $damage, $radius] = match ($type) {
             'runner' => [24, 2.05, 7, 0.23],
             'brute' => [135, 0.85, 18, 0.40],
+            'enforcer' => [48, 1.0, 6, 0.27],
             default => [48, 1.25, 10, 0.30],
         };
         $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
@@ -358,15 +360,20 @@ final class Run
             $d = max(0.001, hypot($dx, $dz));
             $angle = atan2($dx, $dz);
             $enemy['yaw'] = $angle;
-            if ($d < $enemy['radius'] + 0.55 && abs($this->y - $enemy['y']) < 1.1 &&
-                $enemy['cooldown'] <= 0 && $this->lineClear([$enemy['x'], $enemy['y'], $enemy['z']], [$this->x, $this->y, $this->z])) {
+            $ranged = $enemy['type'] === 'enforcer';
+            $attackRange = $ranged ? ($d > 2.5 && $d < 12.0) : ($d < $enemy['radius'] + 0.55 && abs($this->y - $enemy['y']) < 1.1);
+            $attackVisible = $this->lineClear(
+                [$enemy['x'], $enemy['y'] + ($ranged ? 0.28 : 0.0), $enemy['z']],
+                [$this->x, $this->y + ($ranged ? 0.35 : 0.0), $this->z],
+            );
+            if ($attackRange && $enemy['cooldown'] <= 0 && $attackVisible) {
                 if ($this->invincible <= 0) {
                     $this->health -= $enemy['damage'];
                     $this->hurt = 0.25;
                     $this->invincible = 0.40;
                     $this->resetCombo();
                 }
-                $enemy['cooldown'] = 0.85;
+                $enemy['cooldown'] = $ranged ? 1.45 : 0.85;
                 $enemy['attackTime'] = 0.32;
             }
             if ($d >= 0.55) {
@@ -512,6 +519,7 @@ final class Run
         $baseScore = match ($enemy['type']) {
             'runner' => 100,
             'brute' => 800,
+            'enforcer' => 400,
             default => 250,
         };
         $this->score += (int)round(($baseScore + $this->wave * 25) * $this->multiplier);

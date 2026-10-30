@@ -82,4 +82,11 @@ check($dm1->shots > 0 && $dm1->hits > 0 && $dm1->kills > 0, 'DM1 demo makes comb
 check($dm1->score > 0 && $dm1->multiplier >= 1.0, 'DM1 demo rewards kills with score');
 check($sawDeathAnimation, 'DM1 enemy kills leave a short visual death animation');
 
+$rangedWave = new Run($dm1->map, 3);
+$rangedWave->wave = 2;
+$rangedWave->remaining = 100;
+for ($i = 0; $i < 30; $i++) $rangedWave->step(1 / 60, 0, 0, 0);
+check(count(array_filter($rangedWave->enemies, static fn (array $enemy): bool => $enemy['type'] === 'enforcer')) > 0,
+    'DM1 wave two can spawn the ranged enforcer');
+
 echo json_encode(['checks'=>$count,'brushes'=>count($run->map->solids)], JSON_PRETTY_PRINT) . "\n";

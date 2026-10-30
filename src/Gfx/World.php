@@ -34,6 +34,12 @@ final class World
             'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [5, 6, 7], 'pain' => [9]],
             'deathRow' => 11, 'deathFrames' => 6,
         ],
+        'enforcer' => [
+            'texture' => 'enemy_enforcer', 'path' => 'assets/sprites/enemies/nmn-cc0/enforcer-guard.png',
+            'width' => 516, 'height' => 836, 'directions' => 8, 'rows' => 13, 'scale' => 1.08,
+            'clips' => ['idle' => [0], 'walk' => [7, 8, 9, 10, 11, 12], 'attack' => [1, 2, 3, 4, 5], 'pain' => [5]],
+            'deathRow' => 6, 'deathFrames' => 6,
+        ],
     ];
 
     /** @var array<string,int> */
