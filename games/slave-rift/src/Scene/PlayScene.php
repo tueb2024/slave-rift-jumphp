@@ -32,8 +32,10 @@ final class PlayScene extends AbstractScene
     private string $prevState = 'play';
     private int $prevXp = 0;
     private int $upgradeCursor = 0;
-    private const MOUSE_SENS_REL = 0.0027;
-    private const MOUSE_SENS_ABS = 0.0052;
+    // SDL/browser deltas are already relative to the previous poll; keep this
+    // frame-rate independent and conservative for both pointer-lock and fallback.
+    private const MOUSE_SENS_REL = 0.0010;
+    private const MOUSE_SENS_ABS = 0.0015;
 
     public function enter(array $params = []): void
     {
@@ -129,8 +131,8 @@ final class PlayScene extends AbstractScene
             if (function_exists('SDL_GetRelativeMouseState')) {
                 $rx = 0; $ry = 0;
                 @\SDL_GetRelativeMouseState($rx, $ry);
-                $rx = max(-160, min(160, (int)$rx));
-                $ry = max(-160, min(160, (int)$ry));
+                $rx = max(-80, min(80, (int)$rx));
+                $ry = max(-80, min(80, (int)$ry));
                 if ($rx !== 0 || $ry !== 0) {
                     $mx = $rx * self::MOUSE_SENS_REL;
                     $my = $ry * self::MOUSE_SENS_REL;
@@ -142,8 +144,8 @@ final class PlayScene extends AbstractScene
             }
             if (!$relativeWorked) {
                 if ($this->mouseX !== null && $this->mouseY !== null) {
-                    $dx = max(-48.0, min(48.0, $mouse->x - $this->mouseX));
-                    $dy = max(-48.0, min(48.0, $mouse->y - $this->mouseY));
+                    $dx = max(-32.0, min(32.0, $mouse->x - $this->mouseX));
+                    $dy = max(-32.0, min(32.0, $mouse->y - $this->mouseY));
                     $mx = $dx * self::MOUSE_SENS_ABS;
                     $my = $dy * self::MOUSE_SENS_ABS;
                 }
