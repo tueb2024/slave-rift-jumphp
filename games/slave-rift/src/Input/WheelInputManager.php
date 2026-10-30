@@ -17,7 +17,9 @@ final class WheelInputManager extends InputManager
 
     public function poll(?Renderer $renderer = null): void
     {
-        $controls = $this->getControls();
+        // TouchControls is optional in JumPHP's browser runtime; it exists in
+        // the pinned desktop engine but not in every hosted runtime build.
+        $controls = method_exists($this, 'getControls') ? $this->getControls() : null;
         $controls?->beforeEvents();
         $keyboard = $this->getKeyboard();
         $mouse = $this->getMouse();

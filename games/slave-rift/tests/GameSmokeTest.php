@@ -2,11 +2,23 @@
 
 namespace App\Tests;
 
+use App\Input\WheelInputManager;
 use App\Scene\PlayScene;
+use JumPHP\Input\InputManager;
 use JumPHP\Testing\GameTestCase;
 
 final class GameSmokeTest extends GameTestCase
 {
+    public function testInjectedInputManagerMatchesEngineContract(): void
+    {
+        $input = $this->game->engine->input;
+        self::assertInstanceOf(InputManager::class, $input);
+        self::assertInstanceOf(WheelInputManager::class, $input);
+        foreach (['poll', 'endFrame', 'pressKey', 'getKeyboard', 'getMouse', 'getTouch', 'getGamepad', 'getActions'] as $method) {
+            self::assertTrue(method_exists($input, $method), 'Injected InputManager must provide ' . $method . '().');
+        }
+    }
+
     public function testDemoSpawnsAndFires(): void
     {
         $this->game->start(PlayScene::class, ['demo'=>true, 'seed'=>1337]);
