@@ -287,9 +287,11 @@ final class Run
         };
         $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
         $id = $this->nextId++;
+        $yaw = atan2($this->x - $x, $this->z - $z);
         $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
             'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
-            'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0];
+            'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0,
+            'yaw' => $yaw, 'attackTime' => 0.0, 'moving' => false, 'animState' => 'idle'];
         return true;
     }
 
@@ -298,10 +300,14 @@ final class Run
         foreach ($this->enemies as $id => &$enemy) {
             $enemy['flash'] = max(0.0, $enemy['flash'] - $dt);
             $enemy['cooldown'] -= $dt;
+            $enemy['attackTime'] = max(0.0, $enemy['attackTime'] - $dt);
             $enemy['age'] += $dt;
+            $enemy['moving'] = false;
             $dx = $this->x - $enemy['x'];
             $dz = $this->z - $enemy['z'];
             $d = max(0.001, hypot($dx, $dz));
+            $angle = atan2($dx, $dz);
+            $enemy['yaw'] = $angle;
             if ($d < $enemy['radius'] + 0.55 && abs($this->y - $enemy['y']) < 1.1 &&
                 $enemy['cooldown'] <= 0 && $this->lineClear([$enemy['x'], $enemy['y'], $enemy['z']], [$this->x, $this->y, $this->z])) {
                 if ($this->invincible <= 0) {
@@ -310,24 +316,30 @@ final class Run
                     $this->invincible = 0.40;
                 }
                 $enemy['cooldown'] = 0.85;
+                $enemy['attackTime'] = 0.32;
             }
-            if ($d < 0.55) continue;
-            $angle = atan2($dx, $dz);
-            $side = $id % 2 === 0 ? 1 : -1;
-            foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3] as $offset) {
-                $speed = $enemy['speed'] * $dt;
-                $nx = $enemy['x'] + sin($angle + $offset) * $speed;
-                $nz = $enemy['z'] + cos($angle + $offset) * $speed;
-                $ny = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23) + 0.55;
-                if ($this->collides($nx, $ny, $nz, $enemy['radius'], 0.55)) continue;
-                $blocked = false;
-                foreach ($this->enemies as $otherId => $other) {
-                    if ($otherId === $id) continue;
-                    $spacing = ($enemy['radius'] + $other['radius']) * 0.8;
-                    if (hypot($nx - $other['x'], $nz - $other['z']) < $spacing) { $blocked = true; break; }
+            if ($d >= 0.55) {
+                $side = $id % 2 === 0 ? 1 : -1;
+                foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3] as $offset) {
+                    $speed = $enemy['speed'] * $dt;
+                    $nx = $enemy['x'] + sin($angle + $offset) * $speed;
+                    $nz = $enemy['z'] + cos($angle + $offset) * $speed;
+                    $ny = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23) + 0.55;
+                    if ($this->collides($nx, $ny, $nz, $enemy['radius'], 0.55)) continue;
+                    $blocked = false;
+                    foreach ($this->enemies as $otherId => $other) {
+                        if ($otherId === $id) continue;
+                        $spacing = ($enemy['radius'] + $other['radius']) * 0.8;
+                        if (hypot($nx - $other['x'], $nz - $other['z']) < $spacing) { $blocked = true; break; }
+                    }
+                    if (!$blocked) {
+                        $enemy['x'] = $nx; $enemy['y'] = $ny; $enemy['z'] = $nz;
+                        $enemy['moving'] = true;
+                        break;
+                    }
                 }
-                if (!$blocked) { $enemy['x'] = $nx; $enemy['y'] = $ny; $enemy['z'] = $nz; break; }
             }
+            $enemy['animState'] = $enemy['flash'] > 0 ? 'pain' : ($enemy['attackTime'] > 0 ? 'attack' : ($enemy['moving'] ? 'walk' : 'idle'));
         }
         unset($enemy);
     }
@@ -429,6 +441,7 @@ final class Run
         if (!isset($this->enemies[$id])) return;
         $this->enemies[$id]['health'] -= $amount;
         $this->enemies[$id]['flash'] = 0.12;
+        $this->enemies[$id]['animState'] = 'pain';
         if ($this->enemies[$id]['health'] > 0) return;
         $enemy = $this->enemies[$id];
         unset($this->enemies[$id]);

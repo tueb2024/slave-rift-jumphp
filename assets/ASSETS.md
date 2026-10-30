@@ -40,19 +40,19 @@ The uploaded Duke Nukem 3D Overlord sprite set is used only as a private visual/
 
 ### CC0 directional enemy candidates
 
-These are selected replacement candidates for the next renderer pass. They are vendored as source sheets only; the current enemy-to-sheet mapping remains unchanged until each animation row and scale is wired into gameplay. The OpenGameArt pages identify Pawel “Nmn” Zarczynski as the author and release these works under CC0. The original cyan chroma key was converted to transparent alpha; sprite pixels and layout were otherwise retained.
+These are selected replacement candidates for the renderer. Three are now active: the grunt for runners, the rat-man for guardians, and the leader for brutes. The remaining sheets are staged for later enemy roles. The OpenGameArt pages identify Pawel “Nmn” Zarczynski as the author and release these works under CC0. The original cyan chroma key was converted to transparent alpha; sprite pixels and layout were otherwise retained.
 
-| Local file | Original title / source | Dimensions | Directions / animation notes | Intended role |
+| Local file | Original title / source | Dimensions | Frames / directions / animation notes | Intended role |
 | --- | --- | ---: | --- | --- |
-| `sprites/enemies/nmn-cc0/mutant-grunt.png` | [Monster Mutant Grunt for FPS game](https://opengameart.org/content/monster-mutant-grunt-for-fps-game) | 814×1227 | 8 rotational columns; multiple action rows, including walk and death | standard / ranged |
-| `sprites/enemies/nmn-cc0/mutant-leader.png` | [Monster Mutant Leader for FPS Game](https://opengameart.org/content/monster-mutant-leader-for-fps-game) | 889×1493 | 8 rotational columns; multiple action rows, including walk and death | heavy / elite |
-| `sprites/enemies/nmn-cc0/melee-mutant.png` | [Monster close combat mutant for FPS game using sprites](https://opengameart.org/content/monster-close-combat-mutant-for-fps-game-using-sprites) | 844×737 | 8 rotations; the author notes that five symmetrical poses are mirrored | light / melee |
-| `sprites/enemies/nmn-cc0/ratman.png` | [Monster Rat-man for fps game of 2.5 kind](https://opengameart.org/content/monster-rat-man-for-fps-game-of-25-kind) | 592×658 | 8 directional columns; multiple action and death poses | standard |
-| `sprites/enemies/nmn-cc0/enforcer-guard.png` | [Human guard for Sprite Based FPS](https://opengameart.org/content/human-guard-for-sprite-based-fps) | 516×836 | 8 rotational columns; includes movement, attack, crouch/jump and death poses | ranged / human elite |
-| `sprites/enemies/nmn-cc0/harkubus-heavy.png` | [Monster for 3d fps based on sprites – Harkubus](https://opengameart.org/content/monster-for-3d-fps-based-on-sprites-harkubus) | 716×1272 | Five visible directional columns and multiple action rows; exact clip mapping needs verification | heavy / boss candidate |
-| `sprites/enemies/nmn-cc0/grell-flyer.png` | [Monster for 3d shooter – Sprite](https://opengameart.org/content/monster-for-3d-shooter-sprite) | 378×696 | Five visible columns; several flight, attack and death poses | flying / ranged |
+| `sprites/enemies/nmn-cc0/mutant-grunt.png` | [Monster Mutant Grunt for FPS game](https://opengameart.org/content/monster-mutant-grunt-for-fps-game) | 814×1227 | 96 cells (8×12); 8 rotational views; idle, 4 walk rows, 3 attack rows, pain and death rows wired | runner |
+| `sprites/enemies/nmn-cc0/mutant-leader.png` | [Monster Mutant Leader for FPS Game](https://opengameart.org/content/monster-mutant-leader-for-fps-game) | 889×1493 | 96 cells (8×12); 8 rotational views; idle, 4 walk rows, 3 attack rows, pain and death rows wired | brute |
+| `sprites/enemies/nmn-cc0/melee-mutant.png` | [Monster close combat mutant for FPS game using sprites](https://opengameart.org/content/monster-close-combat-mutant-for-fps-game-using-sprites) | 844×737 | Mixed 5/8 view layout; the author notes that five symmetrical poses are mirrored; clip map pending | melee candidate |
+| `sprites/enemies/nmn-cc0/ratman.png` | [Monster Rat-man for fps game of 2.5 kind](https://opengameart.org/content/monster-rat-man-for-fps-game-of-25-kind) | 592×658 | 72 cells (8×9); 8 directional views; idle, 4 walk rows, 3 attack rows, pain and death rows wired | guardian |
+| `sprites/enemies/nmn-cc0/enforcer-guard.png` | [Human guard for Sprite Based FPS](https://opengameart.org/content/human-guard-for-sprite-based-fps) | 516×836 | 8 rotational views; movement, attack, crouch/jump and death poses; clip map pending | ranged / human elite candidate |
+| `sprites/enemies/nmn-cc0/harkubus-heavy.png` | [Monster for 3d fps based on sprites – Harkubus](https://opengameart.org/content/monster-for-3d-fps-based-on-sprites-harkubus) | 716×1272 | Five visible directional columns and multiple action rows; exact clip map needs verification | heavy / boss candidate |
+| `sprites/enemies/nmn-cc0/grell-flyer.png` | [Monster for 3d shooter – Sprite](https://opengameart.org/content/monster-for-3d-shooter-sprite) | 378×696 | Five visible columns; several flight, attack and death poses; exact clip map needs verification | flying / ranged candidate |
 
-All seven sheets are by Nmn (Pawel Zarczynski), CC0. The local files are compact (under 1 MB total). Animation row indices and per-cell bounds still need an explicit manifest before runtime integration; the intended roles above are design candidates, not new gameplay assignments.
+All seven sheets are by Nmn (Pawel Zarczynski), CC0. The local files are compact (under 1 MB total). The active sheets use camera-relative direction columns and state-selected row groups; exact clip ordering is a visual mapping of the provided sheet, since the source pages do not publish row names. Unassigned sheets remain candidates, not gameplay assignments.
 
 ## Audio
 
