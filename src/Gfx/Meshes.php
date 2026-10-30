@@ -56,7 +56,17 @@ final class Meshes
     {
         $out = [];
         foreach ($map->solids as $solid) {
-            self::boxInto($out, $solid['min'], $solid['max'], $solid['color']);
+            if (($solid['triangles'] ?? []) !== []) {
+                foreach ($solid['triangles'] as $vertex) {
+                    self::vertex($out, $vertex['p'], [
+                        $vertex['color'][0] / 255,
+                        $vertex['color'][1] / 255,
+                        $vertex['color'][2] / 255,
+                    ], $vertex['n']);
+                }
+            } else {
+                self::boxInto($out, $solid['min'], $solid['max'], $solid['color']);
+            }
         }
         return $out;
     }
@@ -65,13 +75,9 @@ final class Meshes
     public static function guardian(): array
     {
         $out = [];
-        // broad low-poly torso
         self::boxInto($out, [-0.30, -0.55, -0.20], [0.30, 0.35, 0.20], [120, 50, 48]);
-        // head
         self::boxInto($out, [-0.20, 0.35, -0.17], [0.20, 0.72, 0.17], [190, 142, 92]);
-        // crown / alien crest
         self::boxInto($out, [-0.28, 0.66, -0.12], [0.28, 0.80, 0.12], [58, 168, 150]);
-        // asymmetric arms make the silhouette readable
         self::boxInto($out, [-0.48, -0.42, -0.12], [-0.30, 0.20, 0.12], [91, 42, 54]);
         self::boxInto($out, [0.30, -0.30, -0.12], [0.52, 0.13, 0.12], [91, 42, 54]);
         return $out;
@@ -84,7 +90,6 @@ final class Meshes
         [$x1, $y1, $z1] = $max;
         $c = [$rgb[0] / 255, $rgb[1] / 255, $rgb[2] / 255];
         $faces = [
-            // four corners, normal
             [[$x0,$y0,$z0],[$x0,$y1,$z0],[$x1,$y1,$z0],[$x1,$y0,$z0],[0,0,-1]],
             [[$x1,$y0,$z1],[$x1,$y1,$z1],[$x0,$y1,$z1],[$x0,$y0,$z1],[0,0,1]],
             [[$x0,$y0,$z1],[$x0,$y1,$z1],[$x0,$y1,$z0],[$x0,$y0,$z0],[-1,0,0]],
