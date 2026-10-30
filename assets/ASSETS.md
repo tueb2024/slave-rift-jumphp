@@ -61,6 +61,16 @@ These are selected replacement sheets for the renderer. Four are now active: the
 
 All seven sheets are by Nmn (Pawel Zarczynski), CC0. The local files are compact (under 1 MB total). The active sheets use camera-relative direction columns and state-selected row groups; exact clip ordering is a visual mapping of the provided sheet, since the source pages do not publish row names. Unassigned sheets remain candidates, not gameplay assignments.
 
+## Original FPS weapon
+
+- Name: Industrial pistol view sprite
+- Author: OpenAI image generation, directed for Slave Rift
+- Source: original generated artwork (no external game asset)
+- License: project-owned generated artwork; redistributable with Slave Rift
+- Local file: `assets/sprites/weapons/industrial-pistol-original.png`
+- Usage: first-person starting pistol
+- Modification: none; transparent RGBA output used directly
+
 ## Audio
 
 - Gameplay SFX and drum voices are generated at runtime by `src/Audio/RiftSfx.php` as original 44.1 kHz PCM.
