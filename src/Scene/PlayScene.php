@@ -68,11 +68,11 @@ final class PlayScene extends AbstractScene
 
     private function loadAssetLayer(): void
     {
-        if (!$this->sdl()->hasTexture('weapons')) {
-            $this->sdl()->loadTexture('weapons', 'assets/sprites/weapons/fps-weapons-cc0.png');
-        }
         if (!$this->sdl()->hasTexture('industrial_pistol')) {
             $this->sdl()->loadTexture('industrial_pistol', 'assets/sprites/weapons/industrial-pistol-original.png');
+        }
+        if (!$this->sdl()->hasTexture('industrial_smg')) {
+            $this->sdl()->loadTexture('industrial_smg', 'assets/sprites/weapons/industrial-smg-original.png');
         }
         if (!$this->sdl()->hasTexture('muzzle_flash')) {
             $this->sdl()->loadTexture('muzzle_flash', 'assets/sprites/effects/muzzle-large-fire.png');
@@ -221,20 +221,10 @@ final class PlayScene extends AbstractScene
 
         $kick = $run->muzzle > 0 ? 5 : 0;
         $bob = (int)round(sin($run->time * 6) * 1.5);
-        $weapon = $this->sdl()->getTexture($run->autoTier === 0 ? 'industrial_pistol' : 'weapons');
-        // CC0 sheet: rows are knife, pistol, machine gun, chain gun; five 64px animation frames each.
-        $weaponRow = $run->autoTier >= 3 ? 3 : ($run->autoTier > 0 ? 2 : 1);
-        $weaponFrame = $run->muzzle > 0 ? 2 : 0;
-        $drawW = $run->autoTier >= 3 ? 238 : 218;
-        $drawH = $drawW;
-        if ($run->autoTier === 0) {
-            $drawW = 250; $drawH = 250;
-            $r->copy($weapon['texture'], [0, 0, 1254, 1254],
-                (int)($cx - $drawW / 2), (int)($h - $drawH + 45 + $kick + $bob), $drawW, $drawH);
-        } else {
-            $r->copy($weapon['texture'], [$weaponFrame * 64, $weaponRow * 64, 64, 64],
-                (int)($cx - $drawW / 2), (int)($h - $drawH + 48 + $kick + $bob), $drawW, $drawH);
-        }
+        $weapon = $this->sdl()->getTexture($run->autoTier === 0 ? 'industrial_pistol' : 'industrial_smg');
+        $drawW = 250; $drawH = 250;
+        $r->copy($weapon['texture'], [0, 0, 1254, 1254],
+            (int)($cx - $drawW / 2), (int)($h - $drawH + 45 + $kick + $bob), $drawW, $drawH);
         if ($run->muzzle > 0) {
             $flash = $this->sdl()->getTexture('muzzle_flash');
             $flashFrame = min(2, max(0, (int)floor((0.12 - min(0.12, $run->muzzle)) / 0.04)));
