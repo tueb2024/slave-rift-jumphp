@@ -1,4 +1,7 @@
-// SLAVE RIFT original test map — no third-party game data.
+// SLAVE RIFT test map.
+// Base room: original project geometry.
+// Two decorative convex brushes below are adapted from spirit1dm2 by spirit,
+// GPL-2.0 source: https://github.com/dfsp-spirit/spirit-quake-maps-gpl
 {
 "classname" "worldspawn"
 // floor
@@ -72,6 +75,25 @@
 ( 56 112   0 ) ( 56 176   0 ) ( 56 176 16 ) sand 0 0 0 1 1
 ( 56 176   0 ) ( -56 176   0 ) ( -56 176 16 ) sand 0 0 0 1 1
 ( -56 176   0 ) ( -56 112   0 ) ( -56 112 16 ) sand 0 0 0 1 1
+}
+
+// Spirit-derived wedge A (adapted from spirit1dm2 brush geometry)
+{
+( -11 -120 50 ) ( -11 -109 50 ) ( -11 -120 95 ) city4_1 0 0 0 1 1
+( -45 -134 50 ) ( -45 -134 95 ) ( 22 -134 50 ) city4_1 0 0 0 1 1
+( 22 -112 62 ) ( 22 -123 62 ) ( -45 -112 62 ) city4_1 0 0 0 1 1
+( 22 -67 95 ) ( -45 -67 95 ) ( 22 -67 50 ) city4_1 0 0 0 1 1
+( 134 45 62 ) ( 0 45 -6 ) ( 134 0 62 ) city4_1 0 0 0 1 1
+( -11 22 0 ) ( 123 22 62 ) ( -11 -22 0 ) city4_1 0 0 0 1 1
+}
+
+// Spirit-derived wedge B (adapted from spirit1dm2 brush geometry)
+{
+( -43 117 22 ) ( -54 117 22 ) ( -43 117 -22 ) sfloor4_6 0 0 0 1 1
+( 2 27 22 ) ( 2 27 -22 ) ( 2 -40 22 ) sfloor4_6 0 0 0 1 1
+( -54 -40 0 ) ( -43 -40 0 ) ( -54 27 0 ) sfloor4_6 0 0 0 1 1
+( -21 -40 -22 ) ( -21 27 -22 ) ( -21 -40 22 ) sfloor4_6 0 0 0 1 1
+( 35 -40 0 ) ( 35 117 67 ) ( 80 -40 0 ) sfloor4_6 0 0 0 1 1
 }
 }
 {

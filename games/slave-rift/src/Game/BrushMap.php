@@ -3,24 +3,21 @@
 namespace App\Game;
 
 /**
- * Tiny, deliberately restricted reader for Quake .map text.
+ * Quake .map reader for a clean-room JumPHP prototype.
  *
- * Milestone 0.1 accepts axis-aligned convex worldspawn brushes only.  We still
- * parse normal plane syntax, but derive an AABB from every point mentioned by
- * the brush instead of solving arbitrary plane intersections.  That makes the
- * limitation explicit and deterministic while keeping the file a genuine
- * brush-map source that can grow into a full importer later.
+ * Milestone 0.2 keeps collision deliberately conservative (brush AABBs) but no
+ * longer flattens rendering to boxes. Convex worldspawn brushes are rebuilt
+ * from their planes, triangulated, and sent to the renderer as real 3D faces.
  */
 final class BrushMap
 {
     public const UNITS = 32.0;
+    private const EPS = 0.01;
 
-    /** @var array<int,array{min:float[],max:float[],material:string,color:int[]}> */
+    /** @var array<int,array{min:float[],max:float[],material:string,color:int[],triangles:array<int,array{p:float[],n:float[],color:int[]}>>} */
     public array $solids = [];
-    /** @var float[] */
     public array $playerStart = [0.0, 0.75, -4.5];
     public float $playerYaw = 0.0;
-    /** @var float[] */
     public array $guardianStart = [0.0, 0.75, 4.5];
 
     public static function load(string $path): self
@@ -34,73 +31,128 @@ final class BrushMap
         $depth = 0;
         $props = [];
         $brush = [];
-        $material = 'stone';
 
         foreach (preg_split('/\R/', $text) ?: [] as $raw) {
             $line = trim(preg_replace('~//.*$~', '', $raw) ?? '');
-            if ($line === '') {
-                continue;
-            }
+            if ($line === '') continue;
             if ($line === '{') {
                 $depth++;
-                if ($depth === 1) {
-                    $props = [];
-                } elseif ($depth === 2) {
-                    $brush = [];
-                    $material = 'stone';
-                }
+                if ($depth === 1) $props = [];
+                elseif ($depth === 2) $brush = [];
                 continue;
             }
             if ($line === '}') {
-                if ($depth === 2 && $brush !== []) {
-                    $map->addBrush($brush, $material);
-                } elseif ($depth === 1) {
-                    $map->finishEntity($props);
-                }
+                if ($depth === 2 && $brush !== []) $map->addBrush($brush);
+                elseif ($depth === 1) $map->finishEntity($props);
                 $depth--;
                 continue;
             }
-
             if ($depth === 1 && preg_match('/^"([^"]+)"\s+"([^"]*)"/', $line, $m)) {
                 $props[$m[1]] = $m[2];
                 continue;
             }
-
             if ($depth === 2) {
                 preg_match_all('/\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)/', $line, $points, PREG_SET_ORDER);
-                foreach ($points as $p) {
-                    $brush[] = [(float)$p[1], (float)$p[2], (float)$p[3]];
+                if (count($points) < 3) continue;
+                $material = 'stone';
+                if (preg_match('/\)\s+([A-Za-z0-9_.\-\/]+)\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+/', $line, $m)) $material = $m[1];
+                $brush[] = [
+                    'points' => [
+                        [(float)$points[0][1], (float)$points[0][2], (float)$points[0][3]],
+                        [(float)$points[1][1], (float)$points[1][2], (float)$points[1][3]],
+                        [(float)$points[2][1], (float)$points[2][2], (float)$points[2][3]],
+                    ],
+                    'material' => $material,
+                ];
+            }
+        }
+
+        if ($map->solids === []) throw new \RuntimeException('Map contains no supported world brushes.');
+        return $map;
+    }
+
+    /** @param array<int,array{points:array<int,float[]>,material:string}> $faces */
+    private function addBrush(array $faces): void
+    {
+        $planes = [];
+        $allPoints = [];
+        foreach ($faces as $face) {
+            [$a, $b, $c] = $face['points'];
+            array_push($allPoints, $a, $b, $c);
+            $n = self::cross(self::sub($b, $a), self::sub($c, $a));
+            $len = self::length($n);
+            if ($len < 1e-8) continue;
+            $n = self::scale($n, 1.0 / $len);
+            $planes[] = ['n' => $n, 'd' => self::dot($n, $a), 'material' => $face['material']];
+        }
+        if (count($planes) < 4) return;
+
+        $centroid = [0.0, 0.0, 0.0];
+        foreach ($allPoints as $p) $centroid = self::add($centroid, $p);
+        $centroid = self::scale($centroid, 1.0 / max(1, count($allPoints)));
+        foreach ($planes as &$plane) {
+            if (self::dot($plane['n'], $centroid) > $plane['d']) {
+                $plane['n'] = self::scale($plane['n'], -1.0);
+                $plane['d'] = -$plane['d'];
+            }
+        }
+        unset($plane);
+
+        $vertices = [];
+        $count = count($planes);
+        for ($i = 0; $i < $count - 2; $i++) {
+            for ($j = $i + 1; $j < $count - 1; $j++) {
+                for ($k = $j + 1; $k < $count; $k++) {
+                    $p = self::intersect3($planes[$i], $planes[$j], $planes[$k]);
+                    if ($p !== null && self::insideAll($p, $planes)) self::appendUnique($vertices, $p);
                 }
-                if (preg_match('/\)\s+([A-Za-z0-9_.-]+)\s+[-\d.]+\s+[-\d.]+\s+[-\d.]+/', $line, $m)) {
-                    $material = $m[1];
+            }
+        }
+        if (count($vertices) < 4) return;
+
+        $xs = array_column($vertices, 0);
+        $ys = array_column($vertices, 1);
+        $zs = array_column($vertices, 2);
+        $qMin = [min($xs), min($ys), min($zs)];
+        $qMax = [max($xs), max($ys), max($zs)];
+        $triangles = [];
+        $dominantMaterial = $planes[0]['material'] ?? 'stone';
+
+        foreach ($planes as $plane) {
+            $onFace = [];
+            foreach ($vertices as $p) {
+                if (abs(self::dot($plane['n'], $p) - $plane['d']) <= self::EPS * 4) $onFace[] = $p;
+            }
+            if (count($onFace) < 3) continue;
+
+            $center = [0.0, 0.0, 0.0];
+            foreach ($onFace as $p) $center = self::add($center, $p);
+            $center = self::scale($center, 1.0 / count($onFace));
+
+            $ref = abs($plane['n'][2]) < 0.9 ? [0.0, 0.0, 1.0] : [0.0, 1.0, 0.0];
+            $u = self::normalize(self::cross($ref, $plane['n']));
+            $v = self::cross($plane['n'], $u);
+            usort($onFace, function (array $a, array $b) use ($center, $u, $v): int {
+                $da = self::sub($a, $center);
+                $db = self::sub($b, $center);
+                return atan2(self::dot($da, $v), self::dot($da, $u)) <=> atan2(self::dot($db, $v), self::dot($db, $u));
+            });
+
+            $worldNormal = self::normalToWorld($plane['n']);
+            $color = self::materialColor($plane['material']);
+            for ($i = 1; $i < count($onFace) - 1; $i++) {
+                foreach ([$onFace[0], $onFace[$i], $onFace[$i + 1]] as $p) {
+                    $triangles[] = ['p' => self::toWorld($p), 'n' => $worldNormal, 'color' => $color];
                 }
             }
         }
 
-        if ($map->solids === []) {
-            throw new \RuntimeException('Map contains no supported world brushes.');
-        }
-        return $map;
-    }
-
-    /** @param array<int,float[]> $points */
-    private function addBrush(array $points, string $material): void
-    {
-        $xs = array_column($points, 0);
-        $ys = array_column($points, 1);
-        $zs = array_column($points, 2);
-        $qMin = [min($xs), min($ys), min($zs)];
-        $qMax = [max($xs), max($ys), max($zs)];
-
-        // Quake X/Y/Z -> JumPHP X/Y/Z.  Z is vertical in Quake; world Z is
-        // negated Quake Y so yaw zero can look towards +Z.
-        $min = [$qMin[0] / self::UNITS, $qMin[2] / self::UNITS, -$qMax[1] / self::UNITS];
-        $max = [$qMax[0] / self::UNITS, $qMax[2] / self::UNITS, -$qMin[1] / self::UNITS];
         $this->solids[] = [
-            'min' => $min,
-            'max' => $max,
-            'material' => $material,
-            'color' => self::materialColor($material),
+            'min' => [$qMin[0] / self::UNITS, $qMin[2] / self::UNITS, -$qMax[1] / self::UNITS],
+            'max' => [$qMax[0] / self::UNITS, $qMax[2] / self::UNITS, -$qMin[1] / self::UNITS],
+            'material' => $dominantMaterial,
+            'color' => self::materialColor($dominantMaterial),
+            'triangles' => $triangles,
         ];
     }
 
@@ -108,31 +160,61 @@ final class BrushMap
     private function finishEntity(array $props): void
     {
         $class = $props['classname'] ?? '';
-        if (!isset($props['origin'])) {
-            return;
-        }
+        if (!isset($props['origin'])) return;
         $q = array_map('floatval', preg_split('/\s+/', trim($props['origin'])) ?: []);
-        if (count($q) < 3) {
-            return;
-        }
-        $p = [$q[0] / self::UNITS, $q[2] / self::UNITS, -$q[1] / self::UNITS];
+        if (count($q) < 3) return;
+        $p = self::toWorld([$q[0], $q[1], $q[2]]);
         if ($class === 'info_player_start') {
             $this->playerStart = $p;
-            // Quake angle 90 points +Y; after our Y->-Z conversion this maps
-            // naturally to a negative yaw from +Z.
             $this->playerYaw = -deg2rad((float)($props['angle'] ?? 0));
         } elseif ($class === 'monster_guardian') {
             $this->guardianStart = $p;
         }
     }
 
-    /** @return int[] */
+    private static function toWorld(array $p): array { return [$p[0] / self::UNITS, $p[2] / self::UNITS, -$p[1] / self::UNITS]; }
+    private static function normalToWorld(array $n): array { return self::normalize([$n[0], $n[2], -$n[1]]); }
+
+    private static function intersect3(array $a, array $b, array $c): ?array
+    {
+        $bc = self::cross($b['n'], $c['n']);
+        $ca = self::cross($c['n'], $a['n']);
+        $ab = self::cross($a['n'], $b['n']);
+        $den = self::dot($a['n'], $bc);
+        if (abs($den) < 1e-8) return null;
+        return self::scale(self::add(self::add(self::scale($bc, $a['d']), self::scale($ca, $b['d'])), self::scale($ab, $c['d'])), 1.0 / $den);
+    }
+
+    private static function insideAll(array $p, array $planes): bool
+    {
+        foreach ($planes as $plane) if (self::dot($plane['n'], $p) - $plane['d'] > self::EPS) return false;
+        return true;
+    }
+
+    private static function appendUnique(array &$vertices, array $p): void
+    {
+        foreach ($vertices as $v) if (self::length(self::sub($v, $p)) < self::EPS * 2) return;
+        $vertices[] = $p;
+    }
+
+    private static function add(array $a, array $b): array { return [$a[0] + $b[0], $a[1] + $b[1], $a[2] + $b[2]]; }
+    private static function sub(array $a, array $b): array { return [$a[0] - $b[0], $a[1] - $b[1], $a[2] - $b[2]]; }
+    private static function scale(array $a, float $s): array { return [$a[0] * $s, $a[1] * $s, $a[2] * $s]; }
+    private static function dot(array $a, array $b): float { return $a[0] * $b[0] + $a[1] * $b[1] + $a[2] * $b[2]; }
+    private static function cross(array $a, array $b): array { return [$a[1] * $b[2] - $a[2] * $b[1], $a[2] * $b[0] - $a[0] * $b[2], $a[0] * $b[1] - $a[1] * $b[0]]; }
+    private static function length(array $a): float { return sqrt(self::dot($a, $a)); }
+    private static function normalize(array $a): array { $l = max(1e-9, self::length($a)); return self::scale($a, 1.0 / $l); }
+
     private static function materialColor(string $name): array
     {
-        return match (strtolower($name)) {
+        $key = strtolower(basename(str_replace('\\', '/', $name)));
+        return match ($key) {
             'basalt' => [72, 65, 78],
             'rust' => [148, 74, 48],
             'sand' => [172, 142, 82],
+            'city4_1' => [94, 106, 114],
+            'sfloor4_6' => [84, 76, 93],
+            'metal', 'tech', 'trim' => [92, 112, 124],
             default => [112, 105, 118],
         };
     }
