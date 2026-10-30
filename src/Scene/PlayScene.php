@@ -31,6 +31,7 @@ final class PlayScene extends AbstractScene
     private float $prevSpecial = 0.0;
     private string $prevState = 'play';
     private int $prevXp = 0;
+    private int $upgradeCursor = 0;
     private const MOUSE_SENS_REL = 0.0027;
     private const MOUSE_SENS_ABS = 0.0052;
 
@@ -49,6 +50,7 @@ final class PlayScene extends AbstractScene
         $this->prevMuzzle = $this->prevPulse = $this->prevSpecial = 0.0;
         $this->prevState = 'play';
         $this->prevXp = 0;
+        $this->upgradeCursor = 0;
         $this->world->prepare($this->engine->gl(), $this->run);
         $this->loadAssetLayer();
 
@@ -79,11 +81,26 @@ final class PlayScene extends AbstractScene
         }
         if ($this->paused) return;
         if ($this->run->state === 'upgrade') {
+            $mouse = $this->engine->input->getMouse();
+            $wheel = property_exists($mouse, 'wheelY') ? (int)$mouse->wheelY : 0;
+            if ($wheel !== 0 && count($this->run->choices) > 0) {
+                $count = count($this->run->choices);
+                $delta = $wheel > 0 ? -1 : 1;
+                $this->upgradeCursor = ($this->upgradeCursor + $delta + $count) % $count;
+            }
             foreach (['upgrade_one', 'upgrade_two', 'upgrade_three'] as $slot => $action) {
-                if (($this->demo && $slot === 0) || $this->actions()->isPressed($action)) {
+                if ($this->actions()->isPressed($action)) {
+                    $this->upgradeCursor = $slot;
                     $this->run->chooseUpgrade($slot);
-                    break;
+                    return;
                 }
+            }
+            if ($this->demo) {
+                $this->run->chooseUpgrade(0);
+                return;
+            }
+            if ($mouse->isPressed(1)) {
+                $this->run->chooseUpgrade($this->upgradeCursor);
             }
             return;
         }
@@ -120,7 +137,6 @@ final class PlayScene extends AbstractScene
                     @\SDL_SetRelativeMouseMode(true);
                 }
             }
-            // Browser fallback: JumPHP always updates Mouse::x/y from SDL_MOUSEMOTION even when relative state is empty.
             if (!$relativeWorked) {
                 if ($this->mouseX !== null && $this->mouseY !== null) {
                     $dx = max(-48.0, min(48.0, $mouse->x - $this->mouseX));
@@ -135,7 +151,8 @@ final class PlayScene extends AbstractScene
                 $this->mouseY = $mouse->y;
             }
             $this->run->yaw += $mx;
-            $this->pitch = max(-1.20, min(1.20, $this->pitch - $my));
+            // Normal FPS convention: mouse up looks up, mouse down looks down.
+            $this->pitch = max(-1.20, min(1.20, $this->pitch + $my));
         }
 
         $beforeState = $this->run->state;
@@ -161,7 +178,10 @@ final class PlayScene extends AbstractScene
         }
         if ($this->run->pulse > $this->prevPulse + 0.01) $this->sound()->playSfx('pulse_sfx', 0, false);
         if ($this->run->specialFlash > $this->prevSpecial + 0.01) $this->sound()->playSfx('special_sfx', 0, false);
-        if ($beforeState === 'play' && $this->run->state === 'upgrade') $this->sound()->playSfx('level_up', 0, false);
+        if ($beforeState === 'play' && $this->run->state === 'upgrade') {
+            $this->upgradeCursor = 0;
+            $this->sound()->playSfx('level_up', 0, false);
+        }
         if ($this->run->xp > $beforeXp) $this->sound()->playSfx('pickup_xp', 0, false);
         $this->prevMuzzle = $this->run->muzzle;
         $this->prevPulse = $this->run->pulse;
@@ -212,17 +232,19 @@ final class PlayScene extends AbstractScene
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
 
         if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, 29, 1, $cream, 'center', [8,5,12]);
-        if ($run->time < 8 && !$this->demo) $font->draw($r, 'MOUSE LOOK / LMB COLT / RMB SPECIAL / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
+        if ($run->time < 8 && !$this->demo) $font->draw($r, 'ZQSD MOVE / MOUSE LOOK / LMB COLT / RMB SPECIAL / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
         if ($run->state === 'upgrade') {
             $r->fillRect(12, 42, $w - 24, 104, [8,6,16,245]);
             $font->draw($r, 'LEVEL ' . $run->level . ' - CHOOSE', $cx, 49, 2, $cyan, 'center');
             foreach ($run->choices as $slot => $choice) {
-                $font->draw($r, ($slot + 1) . '  ' . $choice, 24, 72 + $slot * 22, 1, $cream);
+                $selected = $slot === $this->upgradeCursor;
+                $prefix = $selected ? '> ' : '  ';
+                $font->draw($r, $prefix . ($slot + 1) . '  ' . $choice, 24, 72 + $slot * 22, 1, $selected ? $cyan : $cream);
                 $font->draw($r, $run->upgradeDescription($choice), 24, 81 + $slot * 22, 1, $cyan);
             }
-            $font->draw($r, '1 / 2 / 3  (OR R / T / Y)', $cx, 135, 1, $cream, 'center');
+            $font->draw($r, 'WHEEL SELECT / LMB CONFIRM  (1/2/3 FALLBACK)', $cx, 135, 1, $cream, 'center');
         } elseif ($run->state === 'dead') {
             $r->fillRect(26, 56, $w - 52, 69, [8,5,12,235]);
             $font->draw($r, 'RIFT CLAIMED YOU', $cx, 65, 2, [245,90,76], 'center');
