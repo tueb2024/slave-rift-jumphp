@@ -79,6 +79,7 @@ for ($i = 0; $i < 600 && $dm1->state !== 'dead'; $i++) {
 }
 check($dm1->grounded && $dm1->y > -10 && $dm1->y < 20, 'DM1 player spawn stays on the arena floor');
 check($dm1->shots > 0 && $dm1->hits > 0 && $dm1->kills > 0, 'DM1 demo makes combat progress');
+check($dm1->score > 0 && $dm1->multiplier >= 1.0, 'DM1 demo rewards kills with score');
 check($sawDeathAnimation, 'DM1 enemy kills leave a short visual death animation');
 
 echo json_encode(['checks'=>$count,'brushes'=>count($run->map->solids)], JSON_PRETTY_PRINT) . "\n";

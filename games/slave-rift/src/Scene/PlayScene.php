@@ -203,8 +203,10 @@ final class PlayScene extends AbstractScene
         $r->fillRect(0, 0, $w, 23, [6,5,12,225]);
         $font->draw($r, 'HP ' . $run->health . '/' . $run->maxHealth, 4, 3, 1, $cream);
         $font->draw($r, 'W' . $run->wave . '  K' . $run->kills . '  ' . $this->clock($run->time), $w - 4, 3, 1, $cream, 'right');
+        $font->draw($r, 'SCORE ' . number_format($run->score, 0, '.', ' ') . '  x' . number_format($run->multiplier, 1), $cx, 3, 1, [255,205,90], 'center');
         Hud::bar($r, 4, 13, 82, 4, max(0.0, $run->health / $run->maxHealth));
         $font->draw($r, 'LV' . $run->level . ' XP ' . $run->xp . '/' . $run->nextXp, 96, 13, 1, $cyan);
+        if ($run->combo > 0) $font->draw($r, 'CHAIN ' . $run->combo, 270, 13, 1, [255,155,90]);
         Hud::bar($r, $w - 70, 14, 66, 3, min(1.0, $run->xp / $run->nextXp));
 
         $cross = $run->specialFlash > 0 ? [170,255,255] : ($run->muzzle > 0 ? [255,225,120] : [185,190,175]);

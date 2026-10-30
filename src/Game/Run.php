@@ -25,6 +25,10 @@ final class Run
     public int $shots = 0;
     public int $hits = 0;
     public int $kills = 0;
+    public int $score = 0;
+    public int $combo = 0;
+    public float $comboTime = 0.0;
+    public float $multiplier = 1.0;
     public float $muzzle = 0.0;
     public float $hurt = 0.0;
     public float $pulse = 0.0;
@@ -81,6 +85,10 @@ final class Run
         $this->waveTime += $dt;
         foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible', 'specialCooldown'] as $field) {
             $this->$field = max(0.0, $this->$field - $dt);
+        }
+        if ($this->comboTime > 0) {
+            $this->comboTime = max(0.0, $this->comboTime - $dt);
+            if ($this->comboTime === 0.0) $this->resetCombo();
         }
         foreach ($this->traces as $i => &$trace) {
             $trace['life'] -= $dt;
@@ -253,9 +261,11 @@ final class Run
             return;
         }
         if (($this->remaining === 0 && $this->enemies === []) || $this->waveTime >= 26.0) {
+            $waveBonus = (int)round(($this->wave * 150 + $this->combo * 50) * $this->multiplier);
+            $this->score += $waveBonus;
             $this->intermission = 4.0;
             $this->health = min($this->maxHealth, $this->health + 10);
-            $this->message = 'RIFT BREATHER - HEAL +10';
+            $this->message = 'WAVE BONUS +' . $waveBonus . ' / HEAL +10';
             $this->messageTime = 3.0;
             return;
         }
@@ -354,6 +364,7 @@ final class Run
                     $this->health -= $enemy['damage'];
                     $this->hurt = 0.25;
                     $this->invincible = 0.40;
+                    $this->resetCombo();
                 }
                 $enemy['cooldown'] = 0.85;
                 $enemy['attackTime'] = 0.32;
@@ -487,6 +498,23 @@ final class Run
         unset($this->enemies[$id]);
         $this->corpses[] = array_merge($enemy, ['age' => 0.0, 'animState' => 'death']);
         $this->kills++;
+        $this->combo++;
+        $this->comboTime = 3.5;
+        $this->multiplier = match (true) {
+            $this->combo >= 24 => 10.0,
+            $this->combo >= 16 => 5.0,
+            $this->combo >= 11 => 3.0,
+            $this->combo >= 7 => 2.0,
+            $this->combo >= 4 => 1.5,
+            $this->combo >= 2 => 1.2,
+            default => 1.0,
+        };
+        $baseScore = match ($enemy['type']) {
+            'runner' => 100,
+            'brute' => 800,
+            default => 250,
+        };
+        $this->score += (int)round(($baseScore + $this->wave * 25) * $this->multiplier);
         $kind = $this->kills % 9 === 0 ? 'health' : 'xp';
         $value = $kind === 'health' ? 18 : ($enemy['type'] === 'brute' ? 5 : 2);
         if (count($this->pickups) >= self::MAX_PICKUPS) {
@@ -555,6 +583,13 @@ final class Run
             $this->messageTime = 3.0;
             $this->autoClock = 0.1;
         }
+    }
+
+    private function resetCombo(): void
+    {
+        $this->combo = 0;
+        $this->comboTime = 0.0;
+        $this->multiplier = 1.0;
     }
 
     private function movePlayer(float $dx, float $dz): void
