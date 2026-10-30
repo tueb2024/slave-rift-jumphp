@@ -82,7 +82,7 @@ final class PlayScene extends AbstractScene
         if ($this->paused) return;
         if ($this->run->state === 'upgrade') {
             $mouse = $this->engine->input->getMouse();
-            $wheel = property_exists($mouse, 'wheelY') ? (int)$mouse->wheelY : 0;
+            $wheel = $this->engine->input instanceof \App\Input\WheelInputManager ? $this->engine->input->consumeWheelY() : 0;
             if ($wheel !== 0 && count($this->run->choices) > 0) {
                 $count = count($this->run->choices);
                 $delta = $wheel > 0 ? -1 : 1;
