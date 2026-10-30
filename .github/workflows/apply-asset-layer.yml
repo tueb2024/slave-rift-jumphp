@@ -1,0 +1,224 @@
+name: Apply asset layer
+
+on:
+  push:
+    branches: [asset-wave-pass]
+    paths:
+      - '.github/workflows/apply-asset-layer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: asset-wave-pass
+      - name: Integrate Quake map, wave director and CC0 sprites
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          # PlayScene: real Quake DM1 + CC0 64x64 weapon grid.
+          p = Path('src/Scene/PlayScene.php')
+          s = p.read_text()
+          s = s.replace("assets/maps/rift01.map", "assets/maps/quake-dm1.map")
+          s = s.replace("assets/sprites/weapons/weapons.png", "assets/sprites/weapons/fps-weapons-cc0.png")
+          old = '''        $weapon = $this->sdl()->getTexture('weapons');
+        $weaponIndex = $run->autoTier >= 3 ? 2 : ($run->autoTier > 0 ? 1 : 0);
+        $drawW = $run->autoTier >= 3 ? 188 : 174;
+        $drawH = $drawW * 160 / 256;
+        $r->copy($weapon['texture'], [$weaponIndex * 256, 0, 256, 160], $cx - $drawW / 2, $h - $drawH + 8 + $kick + $bob, $drawW, $drawH);
+        if ($run->muzzle > 0) {
+            $r->fillRect($cx - 7, $h - $drawH + 4 + $kick + $bob, 14, 7, [255,190,55]);
+            $r->fillRect($cx - 2, $h - $drawH - 1 + $kick + $bob, 4, 14, [255,245,175]);
+        }
+'''
+          new = '''        $weapon = $this->sdl()->getTexture('weapons');
+        // CC0 sheet: rows are knife, pistol, machine gun, chain gun; five 64px animation frames each.
+        $weaponRow = $run->autoTier >= 3 ? 3 : ($run->autoTier > 0 ? 2 : 1);
+        $weaponFrame = $run->muzzle > 0 ? 2 : 0;
+        $drawW = $run->autoTier >= 3 ? 238 : 218;
+        $drawH = $drawW;
+        $r->copy($weapon['texture'], [$weaponFrame * 64, $weaponRow * 64, 64, 64],
+            (int)($cx - $drawW / 2), (int)($h - $drawH + 48 + $kick + $bob), $drawW, $drawH);
+'''
+          if old not in s:
+              raise SystemExit('weapon render block not found')
+          p.write_text(s.replace(old, new))
+
+          # Run: spawn waves from the actual Quake deathmatch starts, scored against player position/view/visibility.
+          p = Path('src/Game/Run.php')
+          s = p.read_text()
+          old = '''    private function spawnEnemy(): bool
+    {
+        for ($attempt = 0; $attempt < 20; $attempt++) {
+            $a = $this->random() * M_PI * 2;
+            $r = 6.0 + $this->random() * 4.0;
+            $x = max(-10.8, min(10.8, $this->x + sin($a) * $r));
+            $z = max(-10.8, min(10.8, $this->z + cos($a) * $r));
+            if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, 0.56, $z, 0.42, 0.55)) continue;
+            $roll = $this->random();
+            $type = $this->wave >= 3 && $roll < 0.22 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian');
+            if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
+            [$hp, $speed, $damage, $radius] = match ($type) {
+                'runner' => [24, 2.05, 7, 0.23],
+                'brute' => [135, 0.85, 18, 0.40],
+                default => [48, 1.25, 10, 0.30],
+            };
+            $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
+            $id = $this->nextId++;
+            $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => 0.55, 'z' => $z,
+                'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
+                'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0];
+            return true;
+        }
+        return false;
+    }
+'''
+          new = '''    private function spawnEnemy(): bool
+    {
+        if ($this->map->spawnPoints !== []) {
+            $candidates = [];
+            foreach ($this->map->spawnPoints as $point) {
+                [$x, $mapY, $z] = $point;
+                $y = $mapY - 0.20; // Quake player origins sit ~24 units above the floor; enemies are shorter here.
+                $distance = hypot($x - $this->x, $z - $this->z);
+                if ($distance < 4.5 || $distance > 34.0) continue;
+                if ($this->collides($x, $y, $z, 0.42, 0.55)) continue;
+                $occupied = false;
+                foreach ($this->enemies as $enemy) {
+                    if (hypot($x - $enemy['x'], $z - $enemy['z']) < 1.1 && abs($y - $enemy['y']) < 1.4) {
+                        $occupied = true;
+                        break;
+                    }
+                }
+                if ($occupied) continue;
+
+                $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
+                $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
+                $distanceScore = abs($distance - 12.0) * 0.28;
+                $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
+                $visibilityPenalty = $visible ? 2.4 : -1.3;
+                $candidates[] = [
+                    'score' => $distanceScore + $frontPenalty + $visibilityPenalty + $this->random() * 0.55,
+                    'x' => $x, 'y' => $y, 'z' => $z,
+                ];
+            }
+            if ($candidates !== []) {
+                usort($candidates, static fn (array $a, array $b): int => $a['score'] <=> $b['score']);
+                $spawn = $candidates[0];
+                return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z']);
+            }
+        }
+
+        // Generic fallback for maps without explicit deathmatch starts.
+        for ($attempt = 0; $attempt < 20; $attempt++) {
+            $a = $this->random() * M_PI * 2;
+            $r = 6.0 + $this->random() * 4.0;
+            $x = $this->x + sin($a) * $r;
+            $z = $this->z + cos($a) * $r;
+            $ground = $this->supportHeight($x, $z, 0.42, $this->y + 2.0);
+            $y = $ground + 0.55;
+            if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, $y, $z, 0.42, 0.55)) continue;
+            return $this->spawnEnemyAt($x, $y, $z);
+        }
+        return false;
+    }
+
+    private function spawnEnemyAt(float $x, float $y, float $z): bool
+    {
+        $roll = $this->random();
+        $type = $this->wave >= 3 && $roll < 0.22 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian');
+        if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
+        [$hp, $speed, $damage, $radius] = match ($type) {
+            'runner' => [24, 2.05, 7, 0.23],
+            'brute' => [135, 0.85, 18, 0.40],
+            default => [48, 1.25, 10, 0.30],
+        };
+        $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
+        $id = $this->nextId++;
+        $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
+            'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
+            'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0];
+        return true;
+    }
+'''
+          if old not in s:
+              raise SystemExit('spawnEnemy block not found')
+          p.write_text(s.replace(old, new))
+
+          # World: remove blocky enemies from the GL pass and draw CC0 sprite billboards in the native overlay.
+          p = Path('src/Gfx/World.php')
+          s = p.read_text()
+          s = s.replace('''            $this->draw3d($gl, $r, $run, $pitch);\n            return;''', '''            $this->draw3d($gl, $r, $run, $pitch);\n            $this->drawEnemySprites($engine, $r, $run, $pitch);\n            return;''')
+          enemy_block = '''        foreach ($run->enemies as $enemy) {
+            $draw($this->ids[$enemy['type']], Mat4::multiply(
+                Mat4::translate($enemy['x'], $enemy['y'], $enemy['z']),
+                Mat4::rotateY(atan2($run->x - $enemy['x'], $run->z - $enemy['z'])),
+                Mat4::rotateZ(sin($enemy['age'] * 9) * 0.045),
+            ), $enemy['flash'] > 0 ? 1.0 : 0.0);
+        }
+'''
+          if enemy_block not in s:
+              raise SystemExit('GL enemy block not found')
+          s = s.replace(enemy_block, '        // Enemies are drawn as Build/Doom-style alpha billboards in the native overlay.\n')
+          marker = '    private function drawFallback(Renderer $r, Run $run): void\n'
+          method = r'''    private function drawEnemySprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
+    {
+        $sdl = $engine->sdl;
+        foreach ([
+            'enemy_runner' => 'assets/sprites/enemies/eviloogie.png',
+            'enemy_guardian' => 'assets/sprites/enemies/smorficus.png',
+            'enemy_brute' => 'assets/sprites/enemies/demonario.png',
+        ] as $name => $path) {
+            if (!$sdl->hasTexture($name)) $sdl->loadTexture($name, $path);
+        }
+
+        $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
+        $enemies = array_values($run->enemies);
+        usort($enemies, static function (array $a, array $b) use ($run): int {
+            $da = hypot($a['x'] - $run->x, $a['z'] - $run->z);
+            $db = hypot($b['x'] - $run->x, $b['z'] - $run->z);
+            return $db <=> $da;
+        });
+
+        foreach ($enemies as $enemy) {
+            $distance = hypot($enemy['x'] - $run->x, $enemy['z'] - $run->z);
+            if ($distance > 40.0) continue;
+            if (!$run->lineClear(self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
+            $point = Mat4::project($vp, [$enemy['x'], $enemy['y'] + 0.10, $enemy['z']], $r->getWidth(), $r->getHeight());
+            if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
+
+            $frame = ((int)floor($enemy['age'] * 6.0)) % 4;
+            [$textureName, $cellW, $cellH, $scale] = match ($enemy['type']) {
+                'runner' => ['enemy_runner', 68, 95, 0.88],
+                'brute' => ['enemy_brute', 96, 110, 1.40],
+                default => ['enemy_guardian', 86, 135, 1.10],
+            };
+            $spriteH = (int)max(18, min(118, (205.0 / max(1.25, $distance)) * $scale));
+            $spriteW = (int)max(12, round($spriteH * $cellW / $cellH));
+            $x = (int)round($point[0] - $spriteW / 2);
+            $y = (int)round($point[1] - $spriteH * 0.55);
+            $tex = $sdl->getTexture($textureName);
+            $r->copy($tex['texture'], [$frame * $cellW, 0, $cellW, $cellH], $x, $y, $spriteW, $spriteH);
+            if ($enemy['flash'] > 0) {
+                $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
+            }
+        }
+    }
+
+'''
+          if marker not in s:
+              raise SystemExit('World insertion marker not found')
+          p.write_text(s.replace(marker, method + marker))
+          PY
+
+          php tools/sync-package.php
+          git config user.name 'slave-rift-asset-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add src games/slave-rift/src games/slave-rift/assets games/slave-rift/config games/slave-rift/composer.json games/slave-rift/patches
+          git commit -m 'Use Quake DM1, spatial waves and CC0 FPS sprites'
+          git push origin HEAD:asset-wave-pass
