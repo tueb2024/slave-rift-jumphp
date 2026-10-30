@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#120d16"/>
-  <path d="M90 510 L300 180 L520 510 Z" fill="#4b394d"/>
-  <path d="M390 510 L610 120 L850 510 Z" fill="#8f4d3c"/>
-  <path d="M710 510 L930 220 L1110 510 Z" fill="#356f6a"/>
-  <rect x="80" y="70" width="1040" height="5" fill="#f4c978"/>
-  <text x="90" y="155" fill="#f4c978" font-family="system-ui,sans-serif" font-size="88" font-weight="800">SLAVE RIFT</text>
-  <text x="94" y="215" fill="#d1bca7" font-family="system-ui,sans-serif" font-size="28">JumPHP · convex brush geometry · WebGL</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360"><rect width="640" height="360" fill="#100e1c"/><path d="M0 360L240 170H400L640 360" fill="#4b3e43"/><path d="M0 0L220 140V240L0 360M640 0L420 140V240L640 360" fill="#69504b"/><g fill="#a94b46"><path d="M220 200h40v70h-40zM380 200h40v70h-40z"/></g><g fill="#63c5a1"><path d="M290 220h25v45h-25zM340 220h25v45h-25z"/></g><path d="M298 360v-65h44v65M310 295v-35h20v35" fill="#bf945d"/><text x="320" y="65" text-anchor="middle" font-family="monospace" font-size="45" font-weight="bold" fill="#e9cd91">SLAVE RIFT</text><text x="320" y="105" text-anchor="middle" font-family="monospace" font-size="20" fill="#78e7da">HORDE SURVIVAL / PHP FPS</text></svg>

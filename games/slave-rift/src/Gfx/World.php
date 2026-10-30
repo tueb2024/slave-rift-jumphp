@@ -8,7 +8,7 @@ use JumPHP\Gl\WebGl;
 use JumPHP\Kernel\Engine;
 use JumPHP\Renderer\Renderer;
 
-/** One persistent world buffer plus one reusable guardian mesh. */
+/** Persistent GPU resources shared by every enemy and pickup. */
 final class World
 {
     public const KEY = [255, 0, 255];
@@ -25,18 +25,23 @@ final class World
             $this->ids = [
                 'program' => $gl->program(Meshes::VERTEX, Meshes::FRAGMENT),
                 'world' => $gl->buffer(Meshes::world($run->map), true),
-                'guardian' => $gl->buffer(Meshes::guardian(), true),
-                'worldTex' => $gl->texture('assets/textures/quadcompati/cop1_1.png', false, true),
+                'guardian' => $gl->buffer(Meshes::enemy('guardian'), true),
+                'runner' => $gl->buffer(Meshes::enemy('runner'), true),
+                'brute' => $gl->buffer(Meshes::enemy('brute'), true),
+                'xp' => $gl->buffer(Meshes::pickup(false), true),
+                'health' => $gl->buffer(Meshes::pickup(true), true),
+                'pulse' => $gl->buffer(Meshes::pulse(), true),
+                'worldTex' => $gl->texture('assets/textures/rift-stone.png', false, true),
             ];
         }
         $gl->setLayer('below', 'native', self::KEY);
-        $gl->setSupersample(2);
+        $gl->setSupersample(1);
     }
 
     /** @return float[] */
     public static function eye(Run $run): array
     {
-        return [$run->x, $run->y + 0.66, $run->z];
+        return [$run->x, $run->y + 0.42, $run->z];
     }
 
     /** @return float[] */
@@ -49,7 +54,7 @@ final class World
             $eye[2] + cos($run->yaw),
         ];
         return Mat4::multiply(
-            Mat4::perspective(67.0, $aspect, 0.08, 32.0),
+            Mat4::perspective(67.0, $aspect, 0.08, 48.0),
             Mat4::lookAt($eye, $target),
         );
     }
@@ -95,13 +100,29 @@ final class World
         };
 
         $draw($this->ids['world'], Mat4::identity(), 0.0, true);
-        if ($run->guardian['health'] > 0) {
-            $draw(
-                $this->ids['guardian'],
-                Mat4::translate($run->guardian['x'], $run->guardian['y'], $run->guardian['z']),
-                $run->guardian['flash'] > 0 ? 1.0 : 0.0,
-                false,
+        foreach ($run->enemies as $enemy) {
+            $model = Mat4::multiply(
+                Mat4::translate($enemy['x'], $enemy['y'], $enemy['z']),
+                Mat4::rotateY(atan2($run->x - $enemy['x'], $run->z - $enemy['z'])),
+                Mat4::rotateZ(sin($enemy['age'] * 9) * 0.045),
             );
+            $draw($this->ids[$enemy['type']], $model, $enemy['flash'] > 0 ? 1.0 : 0.0);
+        }
+        foreach ($run->pickups as $pickup) {
+            $draw($this->ids[$pickup['kind']], Mat4::multiply(
+                Mat4::translate($pickup['x'], $pickup['y'] + sin($run->time * 4) * 0.06, $pickup['z']),
+                Mat4::rotateY($run->time * 2),
+            ));
+        }
+        if ($run->pulse > 0) {
+            $size = (1 - $run->pulse / 0.25) * 4.2;
+            $draw($this->ids['pulse'], Mat4::multiply(Mat4::translate($run->x, $run->y - 0.5, $run->z), Mat4::scale($size)));
+        }
+        foreach ($run->traces as $trace) {
+            $point = Mat4::project($vp, [$trace['x'], $trace['y'], $trace['z']], $r->getWidth(), $r->getHeight());
+            if ($point !== null && $point[2] >= 0 && $point[2] <= 1) {
+                $r->drawLine(intdiv($r->getWidth(), 2), $r->getHeight() - 32, (int)$point[0], (int)$point[1], [255,210,100]);
+            }
         }
     }
 
@@ -109,7 +130,7 @@ final class World
     private function drawFallback(Renderer $r, Run $run): void
     {
         $r->clear([18, 14, 22]);
-        $scale = 9.0;
+        $scale = 5.6;
         $cx = $r->getWidth() / 2;
         $cy = $r->getHeight() / 2;
         foreach ($run->map->solids as $solid) {
@@ -123,11 +144,14 @@ final class World
         }
         $px = (int)round($cx + $run->x * $scale);
         $py = (int)round($cy + $run->z * $scale);
-        $gx = (int)round($cx + $run->guardian['x'] * $scale);
-        $gy = (int)round($cy + $run->guardian['z'] * $scale);
         $r->fillCircle($px, $py, 3, [235, 220, 160]);
-        if ($run->guardian['health'] > 0) {
-            $r->fillCircle($gx, $gy, 4, [190, 58, 52]);
+        foreach ($run->enemies as $enemy) {
+            $r->fillCircle((int)round($cx + $enemy['x'] * $scale), (int)round($cy + $enemy['z'] * $scale),
+                $enemy['type'] === 'brute' ? 4 : 2, $enemy['type'] === 'runner' ? [80,210,140] : [210,70,80]);
+        }
+        foreach ($run->pickups as $pickup) {
+            $r->fillCircle((int)round($cx + $pickup['x'] * $scale), (int)round($cy + $pickup['z'] * $scale), 1,
+                $pickup['kind'] === 'health' ? [250,70,80] : [80,235,235]);
         }
         $r->drawLine($px, $py, (int)round($px + sin($run->yaw) * 10), (int)round($py + cos($run->yaw) * 10), [255, 240, 180]);
     }

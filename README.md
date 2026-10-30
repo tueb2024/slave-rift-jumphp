@@ -1,92 +1,67 @@
-# Slave Rift — JumPHP experiment
+# Slave Rift — FPS horde survival in PHP / JumPHP
 
-A deliberately anachronistic FPS prototype: **Quake-style brush maps**, a **PowerSlave/SlaveDriver-inspired runtime shape**, and **Chasm-like low-poly combat**, implemented as an original JumPHP game.
+A playable first survival loop built on the textured FPS prototype at `e706459`. Move and jump in first person, face the horde for automatic fire, collect XP crystals and choose upgrades while the action is paused. The simulation, progression, input, HUD and rendering orchestration are PHP. JumPHP supplies SDL / OpenGL on desktop and PHP WebAssembly / WebGL in the browser.
 
-The project contains no Quake, PowerSlave or Chasm proprietary game data, textures, sounds or models. The current test level is mostly original geometry, with two small convex structures adapted from the GPL-2.0 `spirit1dm2.map` source by spirit to exercise the real brush importer.
+## Play
 
-## Milestone 0.2 — real brush geometry
+Import `https://github.com/tueb2024/slave-rift-jumphp` in the JumPHP playground and select the `mvp/fps-survivors` branch (or its eventual merged commit). The packaged entry point is **`games/slave-rift/`**. Root sources and that package are synchronized by `php tools/sync-package.php`; CI checks their contents match.
 
-- JumPHP game structure at repository root (`config/`, `src/`, `assets/`).
-- OpenGL desktop / WebGL browser renderer using `JumPHP\Gl\WebGl` and `Mat4`.
-- Quake `.map` reader that reconstructs **convex brushes from their planes**.
-- Brush-plane intersections are rebuilt as real XYZ vertices, sorted per face and triangulated for the GPU.
-- Rendering no longer reduces every brush to an axis-aligned box.
-- Collision deliberately remains conservative AABB collision for this milestone.
-- Test map: chamber → doorway → second chamber, now with non-orthogonal GPL-derived brush structures.
-- FPS camera, forward/back, strafe, turn and Quake-style jump/gravity.
-- One original low-poly guardian with chase/melee AI.
-- Hitscan-style firing and HUD weapon overlay.
-- `demo: true` autopilot for JumPHP smoke tests.
-- Software top-down fallback when GL is unavailable.
-- `site/index.html` plus repository preview artwork for JumPHP/web import metadata.
+- **W/S or Up/Down:** move. **A/D:** strafe. **Left/Right:** turn.
+- **Space:** jump. **P:** pause. **Enter:** restart after death.
+- **Automatic Riveter:** hits a visible threat in the forward cone; close attackers get priority. Aim by turning. Hold **F** to narrow the targeting cone.
+- **Automatic Pulse:** damages nearby enemies in all directions, respecting walls. Unlock it through an upgrade or automatically at wave 3.
+- **1 / 2 / 3** (or **R / T / Y**): pick a level-up upgrade. Gamepad A/B/X also choose upgrades.
 
-This is now a genuine polygonal 3D pipeline: the map supplies planes, the importer derives convex vertices and faces, and JumPHP/WebGL renders those triangles. It is still intentionally much smaller than Quake BSP or the Kex engine.
+There is no ammunition management in this MVP. Enemy deaths drop cyan XP crystals; every ninth kill drops healing. Crystals drift toward you within pickup range. XP offers three different upgrades: damage, fire rate, pickup range, health, or Pulse. Survive indefinitely and improve your time / wave / kill count.
 
-## Controls
+## The loop
 
-- `Up` / `W`: forward
-- `Down` / `S`: backward
-- `Left` / `Right`: turn
-- `A` / `D`: strafe
-- `Space`: jump
-- `F`: fire
-- `Enter`: restart after death / clear
-- `Esc`: pause if the host supplies the default pause action
+Waves spend a growing spawn budget in batches. Spawn positions vary by seed, stay away from the player and reject solid geometry. Runners are fast and fragile, guardians are balanced, and brutes appear from wave 3 with high health. Every fourth wave favors brutes. A wave lasts at most 26 active seconds, followed by a four-second breather and +10 health; surviving enemies carry over. A cleared wave ends early.
 
-JumPHP's action axis convention is `axis(negative, positive)`. The scene therefore maps back/forward, left/right strafe and left/right turn explicitly through that convention.
+At most 48 enemies and 80 pickups are active. Spawn attempts, simulation substeps and retained visual effects are bounded. The arena seed changes on a normal restart; demo/tests use a fixed seed. The small RNG stays within signed 32-bit integer arithmetic for PHP WebAssembly.
 
-## JumPHP import
+The original decorative wedges have been replaced with an original open arena, columns and four 0.18-unit steps leading onto the dais. A 0.23-unit player step-up plus resolved floor contact makes it walkable without jumping. Enemies use the same stair heights, so the dais is not a permanently safe perch.
 
-Import the public repository in the JumPHP playground/site importer:
+## Architecture audit and implementation
 
-`https://github.com/tueb2024/slave-rift-jumphp`
+| Area | Starting point | MVP |
+|---|---|---|
+| `Run` | One guardian, manual hitscan, death/clear | Wave director, multiple enemies, threat selection, two auto weapons, XP, upgrades, damage grace period |
+| `PlayScene` | Input + fixed step + guardian HP | Input + 60 Hz fixed step, queued jump, upgrade/death/pause screens, survival HUD |
+| `World` | World + one guardian buffer | Shared per-type enemy/pickup buffers, hit flashes, tracers and expanding Pulse; reuse resources on restart |
+| `BrushMap` | Convex brush triangulation, AABB collision | Importer retained; original axis-aligned arena makes collision match visible geometry |
+| `config/input.yaml` | Movement, jump, fire, restart | Upgrade choices and pause; corrected camera-relative strafe/turn directions |
+| `assets` | Mixed test geometry and replacement PNGs | Original arena, original pixel texture, original procedural meshes; provenance in `assets/ASSETS.md` |
+| Packaging | Two manually maintained copies | Sync tool and CI equality check |
 
-For a local JumPHP checkout, copy/clone it as `games/slave-rift` and run the normal JumPHP commands, e.g.:
+Line of sight uses exact segment/AABB slab intersections. This prevents automatic weapons shooting through thin walls. Enemy pursuit tries tangents around blockers and uses spacing to reduce stacking; this is lightweight local steering, not a navigation mesh.
 
-```bash
+## Checks
+
+Pure PHP checks need no engine or Composer:
+
+```sh
+php tools/simulation-test.php
+php tools/sync-package.php --check
+```
+
+They exercise map reconstruction, jump/landing, stair climbing, enemy stair pursuit, wall collision, normalized movement, target selection, thin-wall obstruction, Pulse, XP, upgrade freeze, deterministic runs, all enemy types and a 200-second survival simulation.
+
+`.github/workflows/checks.yml` runs those on PHP 8.2 and 8.5. A separate job pins JumPHP to `28ea932981fb0b6d8dc41f2c9739f941cb4befea`, builds its official SDL/OpenGL Docker runtime, runs integration tests and the 600-frame software smoke, then a 900-frame OpenGL demo with a screenshot artifact.
+
+In an existing JumPHP checkout, copy `games/slave-rift/` into its games directory, configure Composer's local engine repository as in the official sample games, then run:
+
+```sh
 bin/jumphp install slave-rift
 bin/jumphp test slave-rift
+JUMPHP_SCENE='App\Scene\PlayScene' JUMPHP_SCENE_PARAMS='{"demo":true}' bin/jumphp shot slave-rift 900
 bin/jumphp run slave-rift
 ```
 
-The smoke configuration starts `App\Scene\PlayScene` with `demo: true`, so it should continue moving, aiming and firing without keyboard input.
+The current Windows authoring environment has no PHP, Docker or WSL runtime. Native checks are therefore delegated to CI; see the workflow result for the published commit. The actual playground import, browser performance, gamepad mappings and human difficulty/fun assessment still require an interactive playtest. The software fallback is diagnostic top-down; the normal GL/WebGL game is FPS.
 
-## Geometry pipeline
+## License
 
-```text
-.map text
-  ↓
-BrushMap
-  ├─ parse face planes
-  ├─ orient planes toward brush interior
-  ├─ intersect plane triplets → convex XYZ vertices
-  ├─ collect/sort vertices per face
-  ├─ triangulate faces → WebGL mesh
-  ├─ AABB bounds → conservative collision
-  ├─ player start
-  └─ guardian spawn
+Code, original map, meshes and preview: **GPL-3.0-or-later**. Original `rift-stone.png`: **CC0-1.0**. JumPHP is a separate MIT-licensed engine. See `LICENSE` and `assets/ASSETS.md`.
 
-PlayScene
-  ↓
-Run (simulation, collision, jump/gravity, AI, hitscan)
-  ↓
-World (camera + renderer)
-```
-
-Coordinate conversion is explicit: Quake `X/Y/Z` becomes JumPHP world `X/Z/-Y`; 32 Quake units = 1 world unit.
-
-The next useful importer milestone is to replace conservative AABB collision with brush-plane collision or a generated collision mesh, then assign distinct textures by material rather than one global repeated texture.
-
-## Licensing / provenance
-
-Prototype code and original project geometry: GPL-3.0-or-later for this experiment. JumPHP itself is a separate MIT-licensed dependency/runtime.
-
-`assets/maps/rift01.map` also contains two small adapted convex brush structures derived from `spirit1dm2.map` by spirit, published under GPL-2.0 in `dfsp-spirit/spirit-quake-maps-gpl`. Those structures were rescaled/repositioned.
-
-Source: `https://github.com/dfsp-spirit/spirit-quake-maps-gpl`
-
-The upstream repository explicitly states that its `.map` sources are GPL but the original map assets are not included and generally need replacement. That is the approach used here.
-
-The prototype also includes a small subset of replacement textures from LibreQuake's `QuadCompati` project under `assets/textures/quadcompati/`: `cop1_1.png`, `ceil1_1.png`, `crate0_side.png` and `arch7.png`. QuadCompati publishes its texture-wad replacements under CC0 / MIT0 / BSD0-style terms; these files are used as freely redistributable retro-FPS replacements rather than original Quake artwork.
-
-Source: `https://github.com/LibreQuake/QuadCompati`
+No proprietary game data or ripped sprites are included. VG Resource / Spriters Resource downloads were not used because a download listing does not establish permission to reuse the original game's artwork.

@@ -1,0 +1,7 @@
+Slave Rift prototype code and original map are licensed under the GNU General Public License version 3 or, at your option, any later version.
+
+SPDX-License-Identifier: GPL-3.0-or-later
+
+This repository does not include or license JumPHP itself, nor any assets or code from Quake, PowerSlave/Exhumed, SlaveDriver or Chasm. JumPHP remains under its own license.
+
+The full GPL license text is available at https://www.gnu.org/licenses/gpl-3.0.txt
