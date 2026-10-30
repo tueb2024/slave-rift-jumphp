@@ -32,6 +32,8 @@ final class Run
     public float $time = 0.0;
     public string $state = 'play';
     public array $enemies = [];
+    /** @var array<int,array<string,mixed>> Short-lived visual death animations; excluded from live enemy pressure. */
+    public array $corpses = [];
     public array $pickups = [];
     public array $traces = [];
     public int $wave = 1;
@@ -85,6 +87,11 @@ final class Run
             if ($trace['life'] <= 0) unset($this->traces[$i]);
         }
         unset($trace);
+        foreach ($this->corpses as $i => &$corpse) {
+            $corpse['age'] += $dt;
+            if ($corpse['age'] >= 0.64) unset($this->corpses[$i]);
+        }
+        unset($corpse);
         $this->yaw -= max(-1.0, min(1.0, $turn)) * self::TURN_SPEED * $dt;
         $length = max(1.0, hypot($forward, $strafe));
         $dx = (sin($this->yaw) * $forward - cos($this->yaw) * $strafe) / $length * self::MOVE_SPEED * $dt;
@@ -448,6 +455,7 @@ final class Run
         if ($this->enemies[$id]['health'] > 0) return;
         $enemy = $this->enemies[$id];
         unset($this->enemies[$id]);
+        $this->corpses[] = array_merge($enemy, ['age' => 0.0, 'animState' => 'death']);
         $this->kills++;
         $kind = $this->kills % 9 === 0 ? 'health' : 'xp';
         $value = $kind === 'health' ? 18 : ($enemy['type'] === 'brute' ? 5 : 2);

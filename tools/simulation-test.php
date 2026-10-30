@@ -67,6 +67,7 @@ check($run->arsenalLabel() === 'COLT .45 ONLY', 'run starts with manual Colt ars
 // DM1's info_player_start is an intermission camera above empty space. The
 // demo must start at a deathmatch point and keep making combat progress there.
 $dm1 = new Run(BrushMap::load(__DIR__ . '/../assets/maps/quake-dm1.map'), 1337);
+$sawDeathAnimation = false;
 for ($i = 0; $i < 600 && $dm1->state !== 'dead'; $i++) {
     if ($dm1->state === 'upgrade') {
         $dm1->chooseUpgrade(0);
@@ -74,8 +75,10 @@ for ($i = 0; $i < 600 && $dm1->state !== 'dead'; $i++) {
     }
     [$forward, $strafe, $turn, $fire] = $dm1->autopilot();
     $dm1->step(1 / 60, $forward, $strafe, $turn, $fire);
+    if ($dm1->corpses !== []) $sawDeathAnimation = true;
 }
 check($dm1->grounded && $dm1->y > -10 && $dm1->y < 20, 'DM1 player spawn stays on the arena floor');
 check($dm1->shots > 0 && $dm1->hits > 0 && $dm1->kills > 0, 'DM1 demo makes combat progress');
+check($sawDeathAnimation, 'DM1 enemy kills leave a short visual death animation');
 
 echo json_encode(['checks'=>$count,'brushes'=>count($run->map->solids)], JSON_PRETTY_PRINT) . "\n";

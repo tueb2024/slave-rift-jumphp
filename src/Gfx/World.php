@@ -19,17 +19,20 @@ final class World
         'runner' => [
             'texture' => 'enemy_mutant_grunt', 'path' => 'assets/sprites/enemies/nmn-cc0/mutant-grunt.png',
             'width' => 814, 'height' => 1227, 'directions' => 8, 'rows' => 12, 'scale' => 0.98,
-            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [5, 6, 7], 'pain' => [9], 'death' => [11]],
+            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [5, 6, 7], 'pain' => [9]],
+            'deathRow' => 11, 'deathFrames' => 7,
         ],
         'guardian' => [
             'texture' => 'enemy_ratman', 'path' => 'assets/sprites/enemies/nmn-cc0/ratman.png',
             'width' => 592, 'height' => 658, 'directions' => 8, 'rows' => 9, 'scale' => 0.98,
-            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [4, 5, 6], 'pain' => [7], 'death' => [8]],
+            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [4, 5, 6], 'pain' => [7]],
+            'deathRow' => 8, 'deathFrames' => 6,
         ],
         'brute' => [
             'texture' => 'enemy_mutant_leader', 'path' => 'assets/sprites/enemies/nmn-cc0/mutant-leader.png',
             'width' => 889, 'height' => 1493, 'directions' => 8, 'rows' => 12, 'scale' => 1.42,
-            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [5, 6, 7], 'pain' => [9], 'death' => [11]],
+            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [5, 6, 7], 'pain' => [9]],
+            'deathRow' => 11, 'deathFrames' => 6,
         ],
     ];
 
@@ -96,6 +99,7 @@ final class World
             $r->clear(self::KEY);
             $this->draw3d($gl, $r, $run, $pitch);
             $this->drawEnemySprites($engine, $r, $run, $pitch);
+            $this->drawDeathSprites($engine, $r, $run, $pitch);
             $this->drawImpactSprites($engine, $r, $run, $pitch);
             return;
         }
@@ -206,6 +210,33 @@ final class World
             $size = (int)max(18, min(46, 150.0 / max(1.25, $distance)));
             $r->copy($texture['texture'], [$frame * 32, 0, 32, 32],
                 (int)round($point[0] - $size / 2), (int)round($point[1] - $size / 2), $size, $size);
+        }
+    }
+
+    private function drawDeathSprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
+    {
+        if ($run->corpses === []) return;
+        $sdl = $engine->sdl;
+        $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
+        foreach ($run->corpses as $corpse) {
+            $sprite = self::ENEMY_SPRITES[$corpse['type']] ?? self::ENEMY_SPRITES['guardian'];
+            $distance = hypot($corpse['x'] - $run->x, $corpse['z'] - $run->z);
+            if ($distance > 40.0 || !$run->lineClear(self::eye($run), [$corpse['x'], $corpse['y'] + 0.1, $corpse['z']])) continue;
+            $point = Mat4::project($vp, [$corpse['x'], $corpse['y'] + 0.1, $corpse['z']], $r->getWidth(), $r->getHeight());
+            if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
+            $cellW = $sprite['width'] / $sprite['directions'];
+            $cellH = $sprite['height'] / $sprite['rows'];
+            $frame = min($sprite['deathFrames'] - 1, (int)floor($corpse['age'] / 0.64 * $sprite['deathFrames']));
+            $sourceX = (int)floor($frame * $cellW);
+            $sourceY = (int)floor($sprite['deathRow'] * $cellH);
+            $sourceW = (int)floor(($frame + 1) * $cellW) - $sourceX;
+            $sourceH = (int)floor(($sprite['deathRow'] + 1) * $cellH) - $sourceY;
+            $spriteH = (int)max(18, min(126, (205.0 / max(1.25, $distance)) * $sprite['scale']));
+            $spriteW = (int)max(12, round($spriteH * $cellW / $cellH));
+            $x = (int)round($point[0] - $spriteW / 2);
+            $y = (int)round($point[1] - $spriteH * 0.55);
+            $texture = $sdl->getTexture($sprite['texture']);
+            $r->copy($texture['texture'], [$sourceX, $sourceY, $sourceW, $sourceH], $x, $y, $spriteW, $spriteH);
         }
     }
 
