@@ -20,6 +20,11 @@ final class PlayScene extends AbstractScene
     private RiftMusic $music;
     private int $musicWave = 1;
     private bool $demo = false;
+    private bool $debug = false;
+    private float $frameMs = 16.7;
+    private string $mouseBackend = 'ABSOLUTE';
+    private int $mouseRx = 0;
+    private int $mouseRy = 0;
     private bool $paused = false;
     private bool $jumpPending = false;
     private float $restartDelay = 0.0;
@@ -40,6 +45,7 @@ final class PlayScene extends AbstractScene
     public function enter(array $params = []): void
     {
         $this->demo = (bool)($params['demo'] ?? false);
+        $this->debug = (bool)($params['debug'] ?? false);
         $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
         $this->run = new Run($map, (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520))));
         $this->world ??= new World();
@@ -82,6 +88,7 @@ final class PlayScene extends AbstractScene
 
     public function update(float $dt): void
     {
+        $this->frameMs = $this->frameMs * 0.9 + $dt * 1000.0 * 0.1;
         if ($this->actions()->isPressed('pause_game')) {
             $this->paused = !$this->paused;
             $this->mouseX = $this->mouseY = null;
@@ -136,9 +143,11 @@ final class PlayScene extends AbstractScene
 
             $mx = 0.0; $my = 0.0;
             $relativeWorked = false;
+            $this->mouseRx = $this->mouseRy = 0;
             if (function_exists('SDL_GetRelativeMouseState')) {
                 $rx = 0; $ry = 0;
                 @\SDL_GetRelativeMouseState($rx, $ry);
+                $this->mouseRx = (int)$rx; $this->mouseRy = (int)$ry;
                 if ($rx !== 0 || $ry !== 0) {
                     $mx = max(-300, min(300, (int)$rx)) * self::MOUSE_SENS_REL;
                     $my = max(-300, min(300, (int)$ry)) * self::MOUSE_SENS_REL;
@@ -159,6 +168,7 @@ final class PlayScene extends AbstractScene
             }
             $this->mouseX = $mouse->x;
             $this->mouseY = $mouse->y;
+            $this->mouseBackend = $relativeWorked ? 'RELATIVE' : 'ABSOLUTE';
             $this->run->yaw -= $mx;
             $this->pitch = max(-1.20, min(1.20, $this->pitch - $my));
         }
@@ -268,6 +278,16 @@ final class PlayScene extends AbstractScene
         }
         if ($this->paused) { $r->fillRect(82, 72, $w - 164, 30, [8,5,12,235]); $font->draw($r, 'PAUSED - P', $cx, 83, 1, $cream, 'center'); }
         if ($this->demo) $font->draw($r, 'DEMO', $w - 4, 27, 1, $cream, 'right');
+        if ($this->debug) {
+            $font->draw($r, sprintf('FPS %.0f  %.1f MS  E %d/%d  LOS %d+%d  COL %d  NEI %d',
+                1000.0 / max(1.0, $this->frameMs), $this->frameMs, $this->world->visibleEnemies,
+                count($run->enemies), $run->losTests, $this->world->renderLosTests,
+                $run->collisionTests, $run->neighborChecks), 4, 28, 1, $cyan);
+            $font->draw($r, sprintf('TR %d  COR %d  PICK %d', count($run->traces), count($run->corpses), count($run->pickups)), 4, 38, 1, $cyan);
+            $mouse = $this->engine->input->getMouse();
+            $font->draw($r, sprintf('MOUSE %s RX %d RY %d X %.0f Y %.0f', $this->mouseBackend,
+                $this->mouseRx, $this->mouseRy, $mouse->x, $mouse->y), 4, 48, 1, $cyan);
+        }
     }
 
     private function clock(float $time): string

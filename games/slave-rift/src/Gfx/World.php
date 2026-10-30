@@ -44,6 +44,8 @@ final class World
 
     /** @var array<string,int> */
     private array $ids = [];
+    public int $visibleEnemies = 0;
+    public int $renderLosTests = 0;
 
     public function prepare(WebGl $gl, Run $run): void
     {
@@ -143,6 +145,7 @@ final class World
 
     private function drawEnemySprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
     {
+        $this->visibleEnemies = $this->renderLosTests = 0;
         $sdl = $engine->sdl;
         foreach (self::ENEMY_SPRITES as $sprite) {
             if (!$sdl->hasTexture($sprite['texture'])) $sdl->loadTexture($sprite['texture'], $sprite['path']);
@@ -162,6 +165,7 @@ final class World
             $point = Mat4::project($vp, [$enemy['x'], $enemy['y'] + 0.10, $enemy['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
             if ($point[0] < -160 || $point[0] > $r->getWidth() + 160 || $point[1] < -160 || $point[1] > $r->getHeight() + 160) continue;
+            $this->renderLosTests++;
             if (!$this->enemyLineClear($run, self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
             $sprite = self::ENEMY_SPRITES[$enemy['type']] ?? self::ENEMY_SPRITES['guardian'];
             $state = $enemy['animState'] ?? 'walk';
@@ -186,6 +190,7 @@ final class World
             $y = (int)round($point[1] - $spriteH * 0.55);
             $tex = $sdl->getTexture($sprite['texture']);
             $r->copy($tex['texture'], [$sourceX, $sourceY, $sourceW, $sourceH], $x, $y, $spriteW, $spriteH);
+            $this->visibleEnemies++;
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
         }
     }

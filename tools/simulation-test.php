@@ -102,4 +102,21 @@ for ($i = 0; $i < 120; $i++) $rangedWave->step(1 / 60, 0, 0, 0);
 check(count(array_filter($rangedWave->enemies, static fn (array $enemy): bool => $enemy['type'] === 'enforcer')) > 0,
     'DM1 wave two can spawn the ranged enforcer');
 
+// Dense-wave operation counts stay tied to local neighbors, not every pair.
+$stressMap = new BrushMap();
+$stressMap->solids = [['min' => [-50.0, -0.5, -50.0], 'max' => [50.0, 0.0, 50.0], 'triangles' => []]];
+$stressMap->playerStart = [0.0, 0.7, 0.0];
+foreach ([8, 16, 32, 48] as $population) {
+    $stress = new Run($stressMap, 42);
+    $stress->remaining = 0;
+    for ($id = 1; $id <= $population; $id++) {
+        $stress->enemies[$id] = ['id' => $id, 'type' => 'runner', 'x' => 5.0 + ($id % 8) * 1.6,
+            'y' => 0.55, 'z' => 5.0 + intdiv($id, 8) * 1.6, 'health' => 24, 'maxHealth' => 24,
+            'speed' => 2.05, 'damage' => 7, 'radius' => 0.23, 'flash' => 0.0,
+            'cooldown' => 0.6, 'age' => 0.0, 'yaw' => 0.0, 'attackTime' => 0.0, 'moving' => false, 'animState' => 'idle'];
+    }
+    $stress->step(1 / 60, 0, 0, 0);
+    check($stress->neighborChecks < $population * 20, "dense wave {$population} keeps neighbor checks bounded");
+}
+
 echo json_encode(['checks'=>$count,'brushes'=>count($run->map->solids)], JSON_PRETTY_PRINT) . "\n";

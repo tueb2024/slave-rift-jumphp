@@ -40,6 +40,9 @@ final class Run
     public array $corpses = [];
     public array $pickups = [];
     public array $traces = [];
+    public int $losTests = 0;
+    public int $collisionTests = 0;
+    public int $neighborChecks = 0;
     public int $wave = 1;
     public float $waveTime = 0.0;
     public float $intermission = 0.0;
@@ -83,6 +86,7 @@ final class Run
     {
         if ($this->state !== 'play') return;
         $dt = max(0.0, min($dt, 0.05));
+        $this->losTests = $this->collisionTests = $this->neighborChecks = 0;
         $this->time += $dt;
         $this->waveTime += $dt;
         foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible', 'specialCooldown'] as $field) {
@@ -371,6 +375,11 @@ final class Run
 
     private function stepEnemies(float $dt): void
     {
+        $grid = [];
+        foreach ($this->enemies as $id => $entry) {
+            $cell = (int)floor($entry['x'] / 1.5) . ':' . (int)floor($entry['z'] / 1.5);
+            $grid[$cell][$id] = true;
+        }
         foreach ($this->enemies as $id => &$enemy) {
             $enemy['flash'] = max(0.0, $enemy['flash'] - $dt);
             $enemy['cooldown'] -= $dt;
@@ -384,7 +393,7 @@ final class Run
             $enemy['yaw'] = $angle;
             $ranged = $enemy['type'] === 'enforcer';
             $attackRange = $ranged ? ($d > 2.5 && $d < 12.0) : ($d < $enemy['radius'] + 0.55 && abs($this->y - $enemy['y']) < 1.1);
-            $attackVisible = $this->lineClear(
+            $attackVisible = $attackRange && $enemy['cooldown'] <= 0 && $this->lineClear(
                 [$enemy['x'], $enemy['y'] + ($ranged ? 0.28 : 0.0), $enemy['z']],
                 [$this->x, $this->y + ($ranged ? 0.35 : 0.0), $this->z],
             );
@@ -409,12 +418,20 @@ final class Run
                     $ny = $ground + 0.55;
                     if ($this->collides($nx, $ny, $nz, $enemy['radius'], 0.55)) continue;
                     $blocked = false;
-                    foreach ($this->enemies as $otherId => $other) {
-                        if ($otherId === $id) continue;
-                        $spacing = ($enemy['radius'] + $other['radius']) * 0.8;
-                        if (hypot($nx - $other['x'], $nz - $other['z']) < $spacing) { $blocked = true; break; }
+                    $gx = (int)floor($nx / 1.5); $gz = (int)floor($nz / 1.5);
+                    for ($ix = $gx - 1; $ix <= $gx + 1 && !$blocked; $ix++) for ($iz = $gz - 1; $iz <= $gz + 1 && !$blocked; $iz++) {
+                        foreach ($grid[$ix . ':' . $iz] ?? [] as $otherId => $_) {
+                            if ($otherId === $id) continue;
+                            $this->neighborChecks++;
+                            $other = $this->enemies[$otherId];
+                            $spacing = ($enemy['radius'] + $other['radius']) * 0.8;
+                            if (abs($ny - $other['y']) < 1.1 && hypot($nx - $other['x'], $nz - $other['z']) < $spacing) { $blocked = true; break; }
+                        }
                     }
                     if (!$blocked) {
+                        $oldCell = (int)floor($enemy['x'] / 1.5) . ':' . (int)floor($enemy['z'] / 1.5);
+                        $newCell = $gx . ':' . $gz;
+                        if ($oldCell !== $newCell) { unset($grid[$oldCell][$id]); $grid[$newCell][$id] = true; }
                         $enemy['x'] = $nx; $enemy['y'] = $ny; $enemy['z'] = $nz;
                         $enemy['moving'] = true;
                         break;
@@ -661,6 +678,7 @@ final class Run
 
     public function lineClear(array $a, array $b): bool
     {
+        $this->losTests++;
         foreach ($this->map->solids as $solid) {
             $lo = 0.001; $hi = 0.999;
             for ($axis = 0; $axis < 3; $axis++) {
@@ -681,6 +699,7 @@ final class Run
 
     public function collides(float $x, float $y, float $z, float $radius, float $halfHeight): bool
     {
+        $this->collisionTests++;
         foreach ($this->map->solids as $solid) {
             [$minX, $minY, $minZ] = $solid['min']; [$maxX, $maxY, $maxZ] = $solid['max'];
             if ($y + $halfHeight <= $minY + 0.001 || $y - $halfHeight >= $maxY - 0.001) continue;
