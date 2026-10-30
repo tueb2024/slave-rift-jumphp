@@ -26,6 +26,7 @@ final class World
                 'program' => $gl->program(Meshes::VERTEX, Meshes::FRAGMENT),
                 'world' => $gl->buffer(Meshes::world($run->map), true),
                 'guardian' => $gl->buffer(Meshes::guardian(), true),
+                'worldTex' => $gl->texture('assets/textures/quadcompati/cop1_1.png', false, true),
             ];
         }
         $gl->setLayer('below', 'native', self::KEY);
@@ -74,26 +75,32 @@ final class World
             'u_eye' => self::eye($run),
             'u_fog' => $fog,
         ];
-        $draw = function (int $buffer, array $model, float $flash = 0.0) use ($gl, $common): void {
+        $draw = function (int $buffer, array $model, float $flash = 0.0, bool $textured = false) use ($gl, $common): void {
             $gl->draw($this->ids['program'], [
                 'attributes' => [
                     'a_pos' => [$buffer, 3, Meshes::STRIDE, 0],
                     'a_color' => [$buffer, 3, Meshes::STRIDE, 3],
                     'a_normal' => [$buffer, 3, Meshes::STRIDE, 6],
+                    'a_uv' => [$buffer, 2, Meshes::STRIDE, 9],
                 ],
                 'uniforms' => $common + [
                     'u_model' => $model,
                     'u_flash' => $flash,
+                    'u_useTex' => $textured ? 1.0 : 0.0,
+                ],
+                'textures' => [
+                    'u_tex' => $this->ids['worldTex'],
                 ],
             ]);
         };
 
-        $draw($this->ids['world'], Mat4::identity());
+        $draw($this->ids['world'], Mat4::identity(), 0.0, true);
         if ($run->guardian['health'] > 0) {
             $draw(
                 $this->ids['guardian'],
                 Mat4::translate($run->guardian['x'], $run->guardian['y'], $run->guardian['z']),
                 $run->guardian['flash'] > 0 ? 1.0 : 0.0,
+                false,
             );
         }
     }
