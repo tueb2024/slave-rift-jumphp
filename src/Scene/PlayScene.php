@@ -28,7 +28,6 @@ final class PlayScene extends AbstractScene
         $this->demo = (bool)($params['demo'] ?? false);
         $map = BrushMap::load($this->engine->config->path('assets/maps/rift01.map'));
         $this->run = new Run($map, (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520))));
-        // Reuse GPU buffers on restart: do not leak a world mesh every time the player dies.
         $this->world ??= new World();
         $this->step = new FixedStep(60, 8);
         $this->restartDelay = 0.0;
@@ -64,17 +63,21 @@ final class PlayScene extends AbstractScene
             }
             return;
         }
+
+        $special = false;
         if ($this->demo) {
             [$forward, $strafe, $turn, $fire] = $this->run->autopilot();
         } else {
             $forward = $this->actions()->axis('move_back', 'move_forward');
             $strafe = $this->actions()->axis('strafe_left', 'strafe_right');
             $turn = $this->actions()->axis('turn_left', 'turn_right');
-            $fire = $this->actions()->isHeld('fire');
+            $mouse = $this->engine->input->getMouse();
+            $fire = $this->actions()->isHeld('fire') || $mouse->isHeld(1);
+            $special = $mouse->isHeld(3) || $this->actions()->isHeld('special_fire');
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
         }
-        $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
-            $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending);
+        $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire, $special): void {
+            $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, $special);
             $this->jumpPending = false;
         });
 
@@ -99,7 +102,7 @@ final class PlayScene extends AbstractScene
         Hud::bar($r, 4, 13, 82, 4, max(0.0, $run->health / $run->maxHealth));
         $font->draw($r, 'LV' . $run->level . ' XP ' . $run->xp . '/' . $run->nextXp, 96, 13, 1, $cyan);
         Hud::bar($r, $w - 70, 14, 66, 3, min(1.0, $run->xp / $run->nextXp));
-        $cross = $run->muzzle > 0 ? [255,225,120] : [185,190,175];
+        $cross = $run->specialFlash > 0 ? [170,255,255] : ($run->muzzle > 0 ? [255,225,120] : [185,190,175]);
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross);
         $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross);
@@ -119,14 +122,21 @@ final class PlayScene extends AbstractScene
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
             $r->fillRect($w - 33, $h - 37, 8, 20, $run->pulse > 0 ? [180,255,255] : [70,180,195]);
         }
+
         $r->fillRect(0, $h - 10, $w, 10, [6,5,12,225]);
-        $font->draw($r, 'RIVETER' . ($run->pulseUnlocked ? ' + PULSE' : ' / PULSE AT W3'), 4, $h - 8, 1, $cyan);
+        $weapon = 'COLT .45';
+        if ($run->autoTier > 0) $weapon .= ' + ' . $run->autoWeapon;
+        if ($run->pulseUnlocked) $weapon .= ' + PULSE';
+        $font->draw($r, $weapon, 4, $h - 8, 1, $cyan);
+        $special = $run->specialCooldown <= 0.0 ? 'RMB RIFT LANCE READY' : 'RIFT ' . number_format($run->specialCooldown, 1) . 's';
+        $font->draw($r, $special, $w - 4, $h - 18, 1, $run->specialCooldown <= 0 ? [170,255,255] : $cream, 'right');
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
+
         if ($run->messageTime > 0 && $run->state === 'play') {
             $font->draw($r, $run->message, $cx, 29, 1, $cream, 'center', [8,5,12]);
         }
         if ($run->time < 8 && !$this->demo) {
-            $font->draw($r, 'WASD MOVE / ARROWS TURN / SPACE JUMP', $cx, $h - 21, 1, $cream, 'center', [8,5,12]);
+            $font->draw($r, 'LMB COLT / RMB SPECIAL / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         }
         if ($run->hurt > 0) {
             $r->fillRect(0, 23, 3, $h - 33, [240,55,55]);
