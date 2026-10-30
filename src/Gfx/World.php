@@ -14,34 +14,6 @@ final class World
 {
     public const KEY = [255, 0, 255];
 
-    /** Sprite sheets by gameplay role. Rows are animation frames; columns are camera-relative directions. */
-    private const ENEMY_SPRITES = [
-        'runner' => [
-            'texture' => 'enemy_mutant_grunt', 'path' => 'assets/sprites/enemies/nmn-cc0/mutant-grunt.png',
-            'width' => 814, 'height' => 1227, 'directions' => 8, 'rows' => 12, 'scale' => 0.98,
-            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [5, 6, 7], 'pain' => [9]],
-            'deathRow' => 11, 'deathFrames' => 7,
-        ],
-        'guardian' => [
-            'texture' => 'enemy_ratman', 'path' => 'assets/sprites/enemies/nmn-cc0/ratman.png',
-            'width' => 592, 'height' => 658, 'directions' => 8, 'rows' => 8, 'scale' => 0.98,
-            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [4, 5, 6], 'pain' => [6]],
-            'deathRow' => 7, 'deathFrames' => 6,
-        ],
-        'brute' => [
-            'texture' => 'enemy_mutant_leader', 'path' => 'assets/sprites/enemies/nmn-cc0/mutant-leader.png',
-            'width' => 889, 'height' => 1493, 'directions' => 8, 'rows' => 12, 'scale' => 1.42,
-            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [5, 6, 7], 'pain' => [9]],
-            'deathRow' => 11, 'deathFrames' => 6,
-        ],
-        'enforcer' => [
-            'texture' => 'enemy_enforcer', 'path' => 'assets/sprites/enemies/nmn-cc0/enforcer-guard.png',
-            'width' => 516, 'height' => 836, 'directions' => 8, 'rows' => 11, 'scale' => 1.08,
-            'clips' => ['idle' => [0], 'walk' => [8, 9, 10], 'attack' => [1, 2, 3, 4, 5, 6], 'pain' => [5]],
-            'deathRow' => 7, 'deathFrames' => 6,
-        ],
-    ];
-
     /** @var array<string,int> */
     private array $ids = [];
     public int $visibleEnemies = 0;
@@ -154,7 +126,7 @@ final class World
     {
         $this->visibleEnemies = $this->renderLosTests = 0;
         $sdl = $engine->sdl;
-        foreach (self::ENEMY_SPRITES as $sprite) {
+        foreach (EnemyAtlas::SHEETS as $sprite) {
             if (!$sdl->hasTexture($sprite['texture'])) $sdl->loadTexture($sprite['texture'], $sprite['path']);
         }
 
@@ -174,29 +146,23 @@ final class World
             if ($point[0] < -160 || $point[0] > $r->getWidth() + 160 || $point[1] < -160 || $point[1] > $r->getHeight() + 160) continue;
             $this->renderLosTests++;
             if (!$this->enemyLineClear($run, self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
-            $sprite = self::ENEMY_SPRITES[$enemy['type']] ?? self::ENEMY_SPRITES['guardian'];
+            $sprite = EnemyAtlas::SHEETS[$enemy['type']] ?? EnemyAtlas::SHEETS['guardian'];
             $state = $enemy['animState'] ?? 'walk';
-            $clip = $sprite['clips'][$state] ?? $sprite['clips']['walk'];
-            $row = $clip[(int)floor(($enemy['age'] ?? 0.0) * 7.0) % count($clip)];
             $facing = atan2($run->x - $enemy['x'], $run->z - $enemy['z']) - ($enemy['yaw'] ?? 0.0);
             $facing = fmod($facing, 2 * M_PI);
             if ($facing < 0) $facing += 2 * M_PI;
-            $column = (int)round($facing / (2 * M_PI) * $sprite['directions']) % $sprite['directions'];
-            $cellW = $sprite['width'] / $sprite['directions'];
-            $cellH = $sprite['height'] / $sprite['rows'];
-            $sourceX = (int)floor($column * $cellW);
-            $sourceY = (int)floor($row * $cellH);
-            $sourceW = (int)floor(($column + 1) * $cellW) - $sourceX;
-            $sourceH = (int)floor(($row + 1) * $cellH) - $sourceY;
+            $column = (int)round($facing / (2 * M_PI) * 8) % 8;
+            $source = EnemyAtlas::frame($enemy['type'], $state, (int)floor(($enemy['age'] ?? 0.0) * 7.0), $column);
+            if ($source === null || !EnemyAtlas::valid($sprite, $source)) continue;
             // Approximate a ~1.5 world-unit sprite in the 67-degree camera.
             // The old 205/d factor made a nearby human-sized enemy only a few
             // dozen pixels tall, and distant enemies nearly impossible to spot.
             $spriteH = (int)max(24, min(160, (480.0 / max(1.25, $distance)) * $sprite['scale']));
-            $spriteW = (int)max(12, round($spriteH * $cellW / $cellH));
+            $spriteW = (int)max(12, round($spriteH * $source[2] / $source[3]));
             $x = (int)round($point[0] - $spriteW / 2);
             $y = (int)round($point[1] - $spriteH * 0.55);
             $tex = $sdl->getTexture($sprite['texture']);
-            $r->copy($tex['texture'], [$sourceX, $sourceY, $sourceW, $sourceH], $x, $y, $spriteW, $spriteH);
+            $r->copy($tex['texture'], $source, $x, $y, $spriteW, $spriteH);
             $this->visibleEnemies++;
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
         }
@@ -302,24 +268,23 @@ final class World
         $sdl = $engine->sdl;
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
         foreach ($run->corpses as $corpse) {
-            $sprite = self::ENEMY_SPRITES[$corpse['type']] ?? self::ENEMY_SPRITES['guardian'];
+            $sprite = EnemyAtlas::SHEETS[$corpse['type']] ?? EnemyAtlas::SHEETS['guardian'];
             $distance = hypot($corpse['x'] - $run->x, $corpse['z'] - $run->z);
-            if ($distance > 40.0 || !$run->lineClear(self::eye($run), [$corpse['x'], $corpse['y'] + 0.1, $corpse['z']])) continue;
+            if ($distance > 40.0) continue;
             $point = Mat4::project($vp, [$corpse['x'], $corpse['y'] + 0.1, $corpse['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
-            $cellW = $sprite['width'] / $sprite['directions'];
-            $cellH = $sprite['height'] / $sprite['rows'];
-            $frame = min($sprite['deathFrames'] - 1, (int)floor($corpse['age'] / 0.64 * $sprite['deathFrames']));
-            $sourceX = (int)floor($frame * $cellW);
-            $sourceY = (int)floor($sprite['deathRow'] * $cellH);
-            $sourceW = (int)floor(($frame + 1) * $cellW) - $sourceX;
-            $sourceH = (int)floor(($sprite['deathRow'] + 1) * $cellH) - $sourceY;
+            if ($point[0] < -160 || $point[0] > $r->getWidth() + 160 || $point[1] < -160 || $point[1] > $r->getHeight() + 160) continue;
+            if (!$run->lineClear(self::eye($run), [$corpse['x'], $corpse['y'] + 0.1, $corpse['z']])) continue;
+            $deathFrames = count($sprite['frames'][$sprite['death']]);
+            $frame = min($deathFrames - 1, (int)floor($corpse['age'] / 0.64 * $deathFrames));
+            $source = EnemyAtlas::frame($corpse['type'], 'death', $frame, 0);
+            if ($source === null || !EnemyAtlas::valid($sprite, $source)) continue;
             $spriteH = (int)max(18, min(126, (205.0 / max(1.25, $distance)) * $sprite['scale']));
-            $spriteW = (int)max(12, round($spriteH * $cellW / $cellH));
+            $spriteW = (int)max(12, round($spriteH * $source[2] / $source[3]));
             $x = (int)round($point[0] - $spriteW / 2);
             $y = (int)round($point[1] - $spriteH * 0.55);
             $texture = $sdl->getTexture($sprite['texture']);
-            $r->copy($texture['texture'], [$sourceX, $sourceY, $sourceW, $sourceH], $x, $y, $spriteW, $spriteH);
+            $r->copy($texture['texture'], $source, $x, $y, $spriteW, $spriteH);
         }
     }
 
