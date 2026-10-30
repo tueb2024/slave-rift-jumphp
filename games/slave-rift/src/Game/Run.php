@@ -14,6 +14,7 @@ final class Run
     public const MAX_ENEMIES = 48;
     public const MAX_PICKUPS = 80;
     public const MAX_VISUAL_TRACES = 40;
+    public const MAX_VISUAL_CORPSES = 16;
 
     public float $x;
     public float $y;
@@ -66,6 +67,7 @@ final class Run
     private float $spawnClock = 0.4;
     private float $invincible = 0.0;
     private int $nextId = 1;
+    private array $recentSpawnPoints = [];
     private int $rng;
     private array $lastGroundedPosition;
     private int $damageRank = 0;
@@ -293,9 +295,11 @@ final class Run
 
     private function spawnEnemy(): bool
     {
+        $type = $this->chooseEnemyType();
+        $radius = $this->enemyRadius($type);
         if ($this->map->spawnPoints !== []) {
             $candidates = [];
-            foreach ($this->map->spawnPoints as $point) {
+            foreach ($this->map->spawnPoints as $index => $point) {
                 [$x, $mapY, $z] = $point;
                 $y = $mapY - 0.20;
                 $distance = hypot($x - $this->x, $z - $this->z);
@@ -304,60 +308,108 @@ final class Run
                 // reads as an enemy walking on the ceiling from below.
                 if (abs($y - $this->y) > 1.5) continue;
                 if ($this->collides($x, $y, $z, 0.42, 0.55)) continue;
-                $occupied = false;
-                foreach ($this->enemies as $enemy) {
-                    if (hypot($x - $enemy['x'], $z - $enemy['z']) < 1.1 && abs($y - $enemy['y']) < 1.4) {
-                        $occupied = true;
-                        break;
-                    }
-                }
+                [$occupied, $nearby] = $this->spawnCrowding($x, $y, $z, $radius, $type);
                 if ($occupied) continue;
                 $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
                 $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
                 $distanceScore = abs($distance - 12.0) * 0.28;
                 $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
                 $visibilityPenalty = $visible ? 2.4 : -1.3;
+                $recentPenalty = 0.0;
+                foreach ($this->recentSpawnPoints as $age => $used) {
+                    if ($used === $index) $recentPenalty += 3.0 - $age * 0.8;
+                }
                 $candidates[] = [
-                    'score' => $distanceScore + $frontPenalty + $visibilityPenalty + $this->random() * 0.55,
-                    'x' => $x, 'y' => $y, 'z' => $z,
+                    'score' => $distanceScore + $frontPenalty + $visibilityPenalty + $nearby * 1.5 + $recentPenalty + $this->random() * 0.55,
+                    'x' => $x, 'y' => $y, 'z' => $z, 'index' => $index,
                 ];
             }
             if ($candidates !== []) {
                 usort($candidates, static fn (array $a, array $b): int => $a['score'] <=> $b['score']);
                 $spawn = $candidates[0];
-                return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z']);
+                $this->rememberSpawnPoint($spawn['index']);
+                return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z'], $type);
             }
         }
         $fallbackCandidates = [];
         for ($attempt = 0; $attempt < 20; $attempt++) {
             $a = $this->random() * M_PI * 2;
-            $r = 6.0 + $this->random() * 4.0;
-            $x = $this->x + sin($a) * $r;
-            $z = $this->z + cos($a) * $r;
-            $ground = $this->supportHeight($x, $z, 0.42, $this->y + 2.0);
+            $anchorIndex = null;
+            if ($this->map->spawnPoints !== []) {
+                $anchorIndex = min(count($this->map->spawnPoints) - 1, (int)floor($this->random() * count($this->map->spawnPoints)));
+                [$baseX, $baseY, $baseZ] = $this->map->spawnPoints[$anchorIndex];
+                $r = 2.5 + $this->random() * 3.5;
+            } else {
+                [$baseX, $baseY, $baseZ] = [$this->x, $this->y, $this->z];
+                $r = 6.0 + $this->random() * 4.0;
+            }
+            $x = $baseX + sin($a) * $r;
+            $z = $baseZ + cos($a) * $r;
+            $distance = hypot($x - $this->x, $z - $this->z);
+            if ($distance < 5.0 || $distance > 34.0) continue;
+            $ground = $this->supportHeight($x, $z, 0.42, $baseY + 2.0);
             if ($ground === null) continue;
             $y = $ground + 0.55;
             if (abs($y - $this->y) > 1.5) continue;
-            if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, $y, $z, 0.42, 0.55)) continue;
+            if ($this->collides($x, $y, $z, 0.42, 0.55)) continue;
+            [$occupied, $nearby] = $this->spawnCrowding($x, $y, $z, $radius, $type);
+            if ($occupied) continue;
             $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
             $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.2, $z]);
+            $recentPenalty = 0.0;
+            foreach ($this->recentSpawnPoints as $age => $used) {
+                if ($used === $anchorIndex) $recentPenalty += 3.0 - $age * 0.8;
+            }
             $fallbackCandidates[] = ['x' => $x, 'y' => $y, 'z' => $z,
-                'score' => $angle + ($visible ? 0.0 : 2.0)];
+                'index' => $anchorIndex,
+                'score' => abs($distance - 12.0) * 0.28 + ($angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0)
+                    + ($visible ? 2.4 : -1.3) + $nearby * 1.5 + $recentPenalty + $this->random() * 0.55];
         }
         if ($fallbackCandidates !== []) {
-            usort($fallbackCandidates, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+            usort($fallbackCandidates, static fn (array $a, array $b): int => $a['score'] <=> $b['score']);
             $point = $fallbackCandidates[0];
-            return $this->spawnEnemyAt($point['x'], $point['y'], $point['z']);
+            if ($point['index'] !== null) $this->rememberSpawnPoint($point['index']);
+            return $this->spawnEnemyAt($point['x'], $point['y'], $point['z'], $type);
         }
         return false;
     }
 
-    private function spawnEnemyAt(float $x, float $y, float $z): bool
+    private function chooseEnemyType(): string
     {
         $roll = $this->random();
         $type = $this->wave >= 2 && $roll < 0.14 ? 'enforcer'
             : ($this->wave >= 3 && $roll < 0.30 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian'));
         if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
+        return $type;
+    }
+
+    private function enemyRadius(string $type): float
+    {
+        return match ($type) { 'runner' => 0.23, 'brute' => 0.40, 'enforcer' => 0.27, default => 0.30 };
+    }
+
+    private function spawnCrowding(float $x, float $y, float $z, float $radius, string $type): array
+    {
+        $nearby = 0;
+        foreach ($this->enemies as $enemy) {
+            if (abs($y - $enemy['y']) > 1.4) continue;
+            $distance = hypot($x - $enemy['x'], $z - $enemy['z']);
+            $spacing = ($type === 'brute' || $enemy['type'] === 'brute' ? 1.95 : 1.60)
+                + $radius + $enemy['radius'];
+            if ($distance < $spacing) return [true, $nearby];
+            if ($distance < 5.0) $nearby++;
+        }
+        return [false, $nearby];
+    }
+
+    private function rememberSpawnPoint(int $index): void
+    {
+        array_unshift($this->recentSpawnPoints, $index);
+        $this->recentSpawnPoints = array_slice($this->recentSpawnPoints, 0, 4);
+    }
+
+    private function spawnEnemyAt(float $x, float $y, float $z, string $type): bool
+    {
         [$hp, $speed, $damage, $radius] = match ($type) {
             'runner' => [24, 2.05, 7, 0.23],
             'brute' => [135, 0.85, 18, 0.40],
@@ -409,11 +461,28 @@ final class Run
                 $enemy['attackTime'] = 0.32;
             }
             if ($d >= 0.55) {
+                $separateX = $separateZ = 0.0;
+                $cx = (int)floor($enemy['x'] / 1.5); $cz = (int)floor($enemy['z'] / 1.5);
+                for ($ix = $cx - 1; $ix <= $cx + 1; $ix++) for ($iz = $cz - 1; $iz <= $cz + 1; $iz++) {
+                    foreach ($grid[$ix . ':' . $iz] ?? [] as $otherId => $_) {
+                        if ($otherId === $id) continue;
+                        $this->neighborChecks++;
+                        $other = $this->enemies[$otherId];
+                        if (abs($enemy['y'] - $other['y']) > 1.1) continue;
+                        $awayX = $enemy['x'] - $other['x']; $awayZ = $enemy['z'] - $other['z'];
+                        $gap = hypot($awayX, $awayZ);
+                        if ($gap < 0.001 || $gap >= 1.6) continue;
+                        $weight = (1.6 - $gap) / (1.6 * $gap);
+                        $separateX += $awayX * $weight;
+                        $separateZ += $awayZ * $weight;
+                    }
+                }
+                $seekAngle = atan2($dx / $d + $separateX * 0.28, $dz / $d + $separateZ * 0.28);
                 $side = $id % 2 === 0 ? 1 : -1;
                 foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3] as $offset) {
                     $speed = $enemy['speed'] * $dt;
-                    $nx = $enemy['x'] + sin($angle + $offset) * $speed;
-                    $nz = $enemy['z'] + cos($angle + $offset) * $speed;
+                    $nx = $enemy['x'] + sin($seekAngle + $offset) * $speed;
+                    $nz = $enemy['z'] + cos($seekAngle + $offset) * $speed;
                     $ground = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23);
                     if ($ground === null) continue;
                     $ny = $ground + 0.55;
@@ -425,8 +494,12 @@ final class Run
                             if ($otherId === $id) continue;
                             $this->neighborChecks++;
                             $other = $this->enemies[$otherId];
-                            $spacing = ($enemy['radius'] + $other['radius']) * 0.8;
-                            if (abs($ny - $other['y']) < 1.1 && hypot($nx - $other['x'], $nz - $other['z']) < $spacing) { $blocked = true; break; }
+                            $spacing = $enemy['radius'] + $other['radius'] + ($enemy['type'] === 'brute' || $other['type'] === 'brute' ? 0.55 : 0.42);
+                            if (abs($ny - $other['y']) < 1.1) {
+                                $nextDistance = hypot($nx - $other['x'], $nz - $other['z']);
+                                $oldDistance = hypot($enemy['x'] - $other['x'], $enemy['z'] - $other['z']);
+                                if ($nextDistance < $spacing && $nextDistance <= $oldDistance) { $blocked = true; break; }
+                            }
                         }
                     }
                     if (!$blocked) {
@@ -560,6 +633,7 @@ final class Run
         if ($this->enemies[$id]['health'] > 0) return;
         $enemy = $this->enemies[$id];
         unset($this->enemies[$id]);
+        if (count($this->corpses) >= self::MAX_VISUAL_CORPSES) array_shift($this->corpses);
         $this->corpses[] = array_merge($enemy, ['age' => 0.0, 'animState' => 'death']);
         $this->kills++;
         $this->combo++;

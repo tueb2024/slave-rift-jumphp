@@ -5,10 +5,14 @@ declare(strict_types=1);
 require __DIR__ . '/../src/Game/BrushMap.php';
 require __DIR__ . '/../src/Game/Run.php';
 require __DIR__ . '/../src/Gfx/Meshes.php';
+require __DIR__ . '/../src/Gfx/EnemyAtlas.php';
+require __DIR__ . '/../src/Gfx/World.php';
 
 use App\Game\BrushMap;
 use App\Game\Run;
 use App\Gfx\Meshes;
+use App\Gfx\EnemyAtlas;
+use App\Gfx\World;
 
 set_error_handler(static function (int $severity, string $message, string $file, int $line): never {
     throw new ErrorException($message, 0, $severity, $file, $line);
@@ -45,6 +49,35 @@ foreach (['runner','guardian','brute'] as $type) {
     check(count(Meshes::enemy($type)) > 0 && count(Meshes::enemy($type)) % Meshes::STRIDE === 0, $type . ' mesh is valid');
 }
 check(count(Meshes::pickup(false)) > 0 && count(Meshes::pickup(true)) > 0 && count(Meshes::pulse()) > 0, 'pickup and pulse meshes are present');
+
+foreach (EnemyAtlas::SHEETS as $type => $sheet) {
+    [$width, $height] = getimagesize(__DIR__ . '/../' . $sheet['path']);
+    check($width === $sheet['width'] && $height === $sheet['height'], "$type atlas dimensions match the image");
+    foreach ($sheet['frames'] as $row => $frames) {
+        $expected = $row === $sheet['death'] ? ($type === 'runner' ? 7 : 6) : 8;
+        check(count($frames) === $expected, "$type row $row has its declared frames");
+        foreach ($frames as $column => $rect) {
+            if (!EnemyAtlas::valid($sheet, $rect)) throw new RuntimeException("$type row $row has an out-of-bounds source rect");
+            if ($column > 0 && $frames[$column - 1][0] + $frames[$column - 1][2] > $rect[0]) {
+                throw new RuntimeException("$type row $row has overlapping frame rectangles");
+            }
+        }
+    }
+    foreach ($sheet['clips'] as $state => $clip) foreach ($clip as $tick => $row) {
+        if ($row === $sheet['death'] || !isset($sheet['frames'][$row])) throw new RuntimeException("$type clip references an invalid direction row");
+        for ($direction = 0; $direction < 8; $direction++) {
+            if (EnemyAtlas::frame($type, $state, $tick, $direction) !== $sheet['frames'][$row][$direction]) {
+                throw new RuntimeException("$type $state tick $tick direction $direction selects the wrong frame");
+            }
+        }
+    }
+    foreach ($sheet['frames'][$sheet['death']] as $frame => $rect) {
+        if (EnemyAtlas::frame($type, 'death', $frame, 0) !== $rect) {
+            throw new RuntimeException("$type death frame $frame selects the wrong rectangle");
+        }
+    }
+    check(true, "$type declared frames stay inside the texture");
+}
 
 // Basic physics must settle without NaNs or leaving the arena immediately.
 $run->remaining = 0;
@@ -116,9 +149,29 @@ check($sawTracer, 'DM1 demo produces a muzzle-to-impact tracer');
 $rangedWave = new Run($dm1->map, 1);
 $rangedWave->wave = 2;
 $rangedWave->remaining = 100;
-for ($i = 0; $i < 120; $i++) $rangedWave->step(1 / 60, 0, 0, 0);
+$rangedWave->health = 100000;
+for ($i = 0; $i < 900; $i++) $rangedWave->step(1 / 60, 0, 0, 0);
 check(count(array_filter($rangedWave->enemies, static fn (array $enemy): bool => $enemy['type'] === 'enforcer')) > 0,
     'DM1 wave two can spawn the ranged enforcer');
+
+$spreadMap = new BrushMap();
+$spreadMap->solids = [['min' => [-50.0, -0.5, -50.0], 'max' => [50.0, 0.0, 50.0], 'triangles' => []]];
+$spreadMap->playerStart = [0.0, 0.7, 0.0];
+foreach (range(-2, 2) as $gx) foreach ([-1, 1] as $gz) $spreadMap->spawnPoints[] = [$gx * 4.0, 0.75, $gz * 10.0];
+$spread = new Run($spreadMap, 7);
+$spread->wave = 9;
+$spread->remaining = 40;
+frames($spread, 25);
+$newEnemies = array_values($spread->enemies);
+check(count($newEnemies) >= 3, 'wide wave uses multiple valid spawn points');
+foreach ($newEnemies as $i => $one) foreach (array_slice($newEnemies, $i + 1) as $two) {
+    $minimum = ($one['type'] === 'brute' || $two['type'] === 'brute' ? 1.95 : 1.60)
+        + $one['radius'] + $two['radius'];
+    if (hypot($one['x'] - $two['x'], $one['z'] - $two['z']) < $minimum - 0.1) {
+        throw new RuntimeException('Freshly spawned enemies violate comfort spacing');
+    }
+}
+check(true, 'freshly spawned enemies keep comfort spacing');
 
 // Dense-wave operation counts stay tied to local neighbors, not every pair.
 $stressMap = new BrushMap();
@@ -135,6 +188,18 @@ foreach ([8, 16, 32, 48] as $population) {
     }
     $stress->step(1 / 60, 0, 0, 0);
     check($stress->neighborChecks < $population * 20, "dense wave {$population} keeps neighbor checks bounded");
+    if ($population >= 32) {
+        $world = new World();
+        $visibility = new ReflectionMethod($world, 'enemyVisible');
+        $renderLos = 0;
+        for ($frame = 0; $frame < 60; $frame++) {
+            $stress->time = $frame / 60;
+            $world->renderLosTests = 0;
+            foreach ($stress->enemies as $enemy) $visibility->invoke($world, $stress, $enemy, 10.0);
+            $renderLos += $world->renderLosTests;
+        }
+        check($renderLos < $population * 13, "dense wave {$population} amortizes render LOS ($renderLos per second)");
+    }
 }
 
 echo json_encode(['checks'=>$count,'brushes'=>count($run->map->solids)], JSON_PRETTY_PRINT) . "\n";
