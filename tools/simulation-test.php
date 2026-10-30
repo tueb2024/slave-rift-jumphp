@@ -81,6 +81,7 @@ check($spawnProbe->enemies !== [] && count(array_filter($spawnProbe->enemies,
     static fn (array $enemy): bool => abs($enemy['y'] - $spawnProbe->y) > 1.5)) === 0,
     'DM1 opening enemies stay on the player floor');
 $sawDeathAnimation = false;
+$sawTracer = false;
 for ($i = 0; $i < 600 && $dm1->state !== 'dead'; $i++) {
     if ($dm1->state === 'upgrade') {
         $dm1->chooseUpgrade(0);
@@ -89,11 +90,17 @@ for ($i = 0; $i < 600 && $dm1->state !== 'dead'; $i++) {
     [$forward, $strafe, $turn, $fire] = $dm1->autopilot();
     $dm1->step(1 / 60, $forward, $strafe, $turn, $fire);
     if ($dm1->corpses !== []) $sawDeathAnimation = true;
+    if ($dm1->traces !== []) {
+        $trace = reset($dm1->traces);
+        $sawTracer = isset($trace['startX'], $trace['startY'], $trace['startZ'], $trace['endX'], $trace['endY'], $trace['endZ']);
+        if (count($dm1->traces) > Run::MAX_VISUAL_TRACES) throw new RuntimeException('Visual tracer budget exceeded');
+    }
 }
 check($dm1->grounded && $dm1->y > -10 && $dm1->y < 20, 'DM1 player spawn stays on the arena floor');
 check($dm1->shots > 0 && $dm1->hits > 0 && $dm1->kills > 0, 'DM1 demo makes combat progress');
 check($dm1->score > 0 && $dm1->multiplier >= 1.0, 'DM1 demo rewards kills with score');
 check($sawDeathAnimation, 'DM1 enemy kills leave a short visual death animation');
+check($sawTracer, 'DM1 demo produces a muzzle-to-impact tracer');
 
 $rangedWave = new Run($dm1->map, 1);
 $rangedWave->wave = 2;

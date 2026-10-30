@@ -13,6 +13,7 @@ final class Run
     public const GRAVITY = 13.5;
     public const MAX_ENEMIES = 48;
     public const MAX_PICKUPS = 80;
+    public const MAX_VISUAL_TRACES = 40;
 
     public float $x;
     public float $y;
@@ -451,7 +452,7 @@ final class Run
         $this->manualClock = 0.34;
         if ($target === null) return;
         $enemy = $this->enemies[$target];
-        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.15, 'z' => $enemy['z'], 'life' => 0.09, 'totalLife' => 0.09];
+        $this->addVisualTrace($enemy, 0.15, 'pistol');
         $this->damage($target, (int)round(38 * (1 + $this->damageRank * 0.35)));
         $this->hits++;
     }
@@ -462,7 +463,8 @@ final class Run
         $target = $this->findTarget(16.0, $cone);
         if ($target === null) { $this->autoClock = 0.04; return; }
         $enemy = $this->enemies[$target];
-        $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.12, 'z' => $enemy['z'], 'life' => 0.09, 'totalLife' => 0.09];
+        $sample = $this->autoTier <= 1 ? 1 : ($this->autoTier <= 3 ? 2 : 3);
+        if ($this->shots % $sample === 0) $this->addVisualTrace($enemy, 0.12, 'auto');
         $baseDamage = match ($this->autoTier) { 1 => 9, 2 => 11, 3 => 13, default => 15 };
         $baseRate = match ($this->autoTier) { 1 => 0.27, 2 => 0.20, 3 => 0.145, default => 0.095 };
         $this->damage($target, (int)round($baseDamage * (1 + $this->damageRank * 0.28)));
@@ -498,11 +500,25 @@ final class Run
         foreach ($hit as $index => $id) {
             if (!isset($this->enemies[$id])) continue;
             $enemy = $this->enemies[$id];
-            $this->traces[] = ['x' => $enemy['x'], 'y' => $enemy['y'] + 0.2, 'z' => $enemy['z'], 'life' => 0.18, 'totalLife' => 0.18];
+            $this->addVisualTrace($enemy, 0.2, 'special');
             $this->damage($id, max(38, 110 - $index * 22));
         }
         $this->message = 'RIFT LANCE';
         $this->messageTime = 0.7;
+    }
+
+    private function addVisualTrace(array $enemy, float $height, string $type): void
+    {
+        if (count($this->traces) >= self::MAX_VISUAL_TRACES) array_shift($this->traces);
+        $life = $type === 'special' ? 0.08 : 0.06;
+        $this->traces[] = [
+            'startX' => $this->x + sin($this->yaw) * 0.5 - cos($this->yaw) * 0.14,
+            'startY' => $this->y + 0.18,
+            'startZ' => $this->z + cos($this->yaw) * 0.5 + sin($this->yaw) * 0.14,
+            'endX' => $enemy['x'], 'endY' => $enemy['y'] + $height, 'endZ' => $enemy['z'],
+            'x' => $enemy['x'], 'y' => $enemy['y'] + $height, 'z' => $enemy['z'],
+            'life' => $life, 'totalLife' => $life, 'type' => $type,
+        ];
     }
 
     private function findTarget(float $range, float $cone): ?int

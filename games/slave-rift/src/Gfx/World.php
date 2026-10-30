@@ -141,6 +141,13 @@ final class World
             $size = (1 - $run->pulse / 0.25) * 4.2;
             $draw($this->ids['pulse'], Mat4::multiply(Mat4::translate($run->x, $run->y - 0.5, $run->z), Mat4::scale($size)));
         }
+        foreach ($run->traces as $trace) {
+            $start = Mat4::project($vp, [$trace['startX'], $trace['startY'], $trace['startZ']], $r->getWidth(), $r->getHeight());
+            $end = Mat4::project($vp, [$trace['endX'], $trace['endY'], $trace['endZ']], $r->getWidth(), $r->getHeight());
+            if ($start === null || $end === null || $start[2] < 0 || $start[2] > 1 || $end[2] < 0 || $end[2] > 1) continue;
+            $color = $trace['type'] === 'special' ? [120, 240, 255] : [255, 205, 105];
+            $r->drawLine((int)$start[0], (int)$start[1], (int)$end[0], (int)$end[1], $color);
+        }
     }
 
     private function drawEnemySprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
