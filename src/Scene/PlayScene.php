@@ -3,6 +3,7 @@
 namespace App\Scene;
 
 use App\Audio\RiftMusic;
+use App\Audio\RiftSfx;
 use App\Game\BrushMap;
 use App\Game\Run;
 use App\Gfx\World;
@@ -23,7 +24,15 @@ final class PlayScene extends AbstractScene
     private bool $jumpPending = false;
     private float $restartDelay = 0.0;
     private float $pitch = 0.0;
-    private const MOUSE_SENS = 0.0027;
+    private ?float $mouseX = null;
+    private ?float $mouseY = null;
+    private float $prevMuzzle = 0.0;
+    private float $prevPulse = 0.0;
+    private float $prevSpecial = 0.0;
+    private string $prevState = 'play';
+    private int $prevXp = 0;
+    private const MOUSE_SENS_REL = 0.0027;
+    private const MOUSE_SENS_ABS = 0.0052;
 
     public function enter(array $params = []): void
     {
@@ -36,7 +45,12 @@ final class PlayScene extends AbstractScene
         $this->paused = false;
         $this->jumpPending = false;
         $this->pitch = 0.0;
+        $this->mouseX = $this->mouseY = null;
+        $this->prevMuzzle = $this->prevPulse = $this->prevSpecial = 0.0;
+        $this->prevState = 'play';
+        $this->prevXp = 0;
         $this->world->prepare($this->engine->gl(), $this->run);
+        $this->loadAssetLayer();
 
         if (!$this->demo && function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(true);
 
@@ -48,10 +62,19 @@ final class PlayScene extends AbstractScene
         $this->music->reset($this->musicWave);
     }
 
+    private function loadAssetLayer(): void
+    {
+        if (!$this->sdl()->hasTexture('weapons')) {
+            $this->sdl()->loadTexture('weapons', 'assets/sprites/weapons/weapons.png');
+        }
+        RiftSfx::register($this->sound());
+    }
+
     public function update(float $dt): void
     {
         if ($this->actions()->isPressed('pause_game')) {
             $this->paused = !$this->paused;
+            $this->mouseX = $this->mouseY = null;
             if (!$this->demo && function_exists('SDL_SetRelativeMouseMode')) @\SDL_SetRelativeMouseMode(!$this->paused);
         }
         if ($this->paused) return;
@@ -82,29 +105,69 @@ final class PlayScene extends AbstractScene
             $special = $mouse->isHeld(3) || $this->actions()->isHeld('special_fire');
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
 
+            $mx = 0.0; $my = 0.0; $relativeWorked = false;
             if (function_exists('SDL_GetRelativeMouseState')) {
-                $mx = 0; $my = 0;
-                @\SDL_GetRelativeMouseState($mx, $my);
-                $mx = max(-160, min(160, (int)$mx));
-                $my = max(-160, min(160, (int)$my));
-                $this->run->yaw += $mx * self::MOUSE_SENS;
-                $this->pitch = max(-1.20, min(1.20, $this->pitch - $my * self::MOUSE_SENS));
+                $rx = 0; $ry = 0;
+                @\SDL_GetRelativeMouseState($rx, $ry);
+                $rx = max(-160, min(160, (int)$rx));
+                $ry = max(-160, min(160, (int)$ry));
+                if ($rx !== 0 || $ry !== 0) {
+                    $mx = $rx * self::MOUSE_SENS_REL;
+                    $my = $ry * self::MOUSE_SENS_REL;
+                    $relativeWorked = true;
+                }
                 if (function_exists('SDL_GetRelativeMouseMode') && !@\SDL_GetRelativeMouseMode() && ($mouse->isHeld(1) || $mouse->isHeld(3))) {
                     @\SDL_SetRelativeMouseMode(true);
                 }
             }
+            // Browser fallback: JumPHP always updates Mouse::x/y from SDL_MOUSEMOTION even when relative state is empty.
+            if (!$relativeWorked) {
+                if ($this->mouseX !== null && $this->mouseY !== null) {
+                    $dx = max(-48.0, min(48.0, $mouse->x - $this->mouseX));
+                    $dy = max(-48.0, min(48.0, $mouse->y - $this->mouseY));
+                    $mx = $dx * self::MOUSE_SENS_ABS;
+                    $my = $dy * self::MOUSE_SENS_ABS;
+                }
+                $this->mouseX = $mouse->x;
+                $this->mouseY = $mouse->y;
+            } else {
+                $this->mouseX = $mouse->x;
+                $this->mouseY = $mouse->y;
+            }
+            $this->run->yaw += $mx;
+            $this->pitch = max(-1.20, min(1.20, $this->pitch - $my));
         }
 
+        $beforeState = $this->run->state;
+        $beforeXp = $this->run->xp;
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire, $special): void {
             $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, $special);
             $this->jumpPending = false;
         });
 
+        $this->playAudioEvents($beforeState, $beforeXp);
         if ($this->run->wave !== $this->musicWave) {
             $this->musicWave = $this->run->wave;
             $this->music->onWaveStart($this->musicWave);
         }
         $this->music->update($dt, min(1.0, 0.32 + count($this->run->enemies) / 24.0));
+    }
+
+    private function playAudioEvents(string $beforeState, int $beforeXp): void
+    {
+        if ($this->run->muzzle > $this->prevMuzzle + 0.01) {
+            $name = $this->run->autoTier >= 3 ? 'heavy_fire' : ($this->run->autoTier > 0 ? 'sten_fire' : 'colt_fire');
+            $this->sound()->playSfx($name, 0, false);
+        }
+        if ($this->run->pulse > $this->prevPulse + 0.01) $this->sound()->playSfx('pulse_sfx', 0, false);
+        if ($this->run->specialFlash > $this->prevSpecial + 0.01) $this->sound()->playSfx('special_sfx', 0, false);
+        if ($beforeState === 'play' && $this->run->state === 'upgrade') $this->sound()->playSfx('level_up', 0, false);
+        if ($this->run->xp > $beforeXp) $this->sound()->playSfx('pickup_xp', 0, false);
+        $this->prevMuzzle = $this->run->muzzle;
+        $this->prevPulse = $this->run->pulse;
+        $this->prevSpecial = $this->run->specialFlash;
+        $this->prevState = $this->run->state;
+        $this->prevXp = $this->run->xp;
     }
 
     public function render(Renderer $r): void
@@ -125,14 +188,16 @@ final class PlayScene extends AbstractScene
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross); $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
-        $kick = $run->muzzle > 0 ? 4 : 0; $bob = (int)round(sin($run->time * 6) * 1.5);
-        $r->fillRect($cx - 21, $h - 29 + $kick + $bob, 42, 28, [48,41,54]);
-        $r->fillRect($cx - 12, $h - 40 + $kick + $bob, 24, 22, [95,95,101]);
-        $r->fillRect($cx - 7, $h - 46 + $kick + $bob, 14, 24, [138,100,65]);
-        $r->fillRect($cx - 3, $h - 47 + $kick + $bob, 6, 7, [30,30,35]);
+        $kick = $run->muzzle > 0 ? 5 : 0;
+        $bob = (int)round(sin($run->time * 6) * 1.5);
+        $weapon = $this->sdl()->getTexture('weapons');
+        $weaponIndex = $run->autoTier >= 3 ? 2 : ($run->autoTier > 0 ? 1 : 0);
+        $drawW = $run->autoTier >= 3 ? 188 : 174;
+        $drawH = $drawW * 160 / 256;
+        $r->copy($weapon['texture'], [$weaponIndex * 256, 0, 256, 160], $cx - $drawW / 2, $h - $drawH + 8 + $kick + $bob, $drawW, $drawH);
         if ($run->muzzle > 0) {
-            $r->fillRect($cx - 6, $h - 53 + $kick + $bob, 12, 8, [255,190,55]);
-            $r->fillRect($cx - 2, $h - 57 + $kick + $bob, 4, 14, [255,245,175]);
+            $r->fillRect($cx - 7, $h - $drawH + 4 + $kick + $bob, 14, 7, [255,190,55]);
+            $r->fillRect($cx - 2, $h - $drawH - 1 + $kick + $bob, 4, 14, [255,245,175]);
         }
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
@@ -140,8 +205,8 @@ final class PlayScene extends AbstractScene
         }
 
         $r->fillRect(0, $h - 10, $w, 10, [6,5,12,225]);
-        $weapon = 'COLT .45' . ($run->autoTier > 0 ? ' + ' . $run->autoWeapon : '') . ($run->pulseUnlocked ? ' + PULSE' : '');
-        $font->draw($r, $weapon, 4, $h - 8, 1, $cyan);
+        $weaponLabel = 'COLT .45' . ($run->autoTier > 0 ? ' + ' . $run->autoWeapon : '') . ($run->pulseUnlocked ? ' + PULSE' : '');
+        $font->draw($r, $weaponLabel, 4, $h - 8, 1, $cyan);
         $special = $run->specialCooldown <= 0.0 ? 'RMB RIFT LANCE READY' : 'RIFT ' . number_format($run->specialCooldown, 1) . 's';
         $font->draw($r, $special, $w - 4, $h - 18, 1, $run->specialCooldown <= 0 ? [170,255,255] : $cream, 'right');
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
