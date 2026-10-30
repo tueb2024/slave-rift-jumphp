@@ -62,9 +62,10 @@ final class RiftMusic
         if (!$this->registered || $dt <= 0.0) return;
         $intensity = max(0.0, min(1.0, $intensity));
         $stepSeconds = 60.0 / $this->bpm() / 4.0;
-        $this->clock += $dt;
+        // A slow frame must not queue a burst of old notes on the next frame.
+        $this->clock = min($stepSeconds * 2.0, $this->clock + min($dt, 0.08));
         $guard = 0;
-        while ($this->clock >= $stepSeconds && $guard++ < 8) {
+        while ($this->clock >= $stepSeconds && $guard++ < 2) {
             $this->clock -= $stepSeconds;
             $this->triggerStep($this->step % 16, $intensity);
             $this->step = ($this->step + 1) % 16;

@@ -34,13 +34,14 @@ final class PlayScene extends AbstractScene
     private float $prevMuzzle = 0.0;
     private float $prevPulse = 0.0;
     private float $prevSpecial = 0.0;
+    private float $weaponSfxCooldown = 0.0;
     private string $prevState = 'play';
     private int $prevXp = 0;
     private int $upgradeCursor = 0;
     // SDL/browser deltas are already relative to the previous poll; keep this
     // frame-rate independent and conservative for both pointer-lock and fallback.
-    private const MOUSE_SENS_REL = 0.0010;
-    private const MOUSE_SENS_ABS = 0.0015;
+    private const MOUSE_SENS_REL = 0.0025;
+    private const MOUSE_SENS_ABS = 0.0035;
 
     public function enter(array $params = []): void
     {
@@ -56,6 +57,7 @@ final class PlayScene extends AbstractScene
         $this->pitch = 0.0;
         $this->mouseX = $this->mouseY = null;
         $this->prevMuzzle = $this->prevPulse = $this->prevSpecial = 0.0;
+        $this->weaponSfxCooldown = 0.0;
         $this->prevState = 'play';
         $this->prevXp = 0;
         $this->upgradeCursor = 0;
@@ -159,10 +161,10 @@ final class PlayScene extends AbstractScene
                 if ($this->mouseX !== null && $this->mouseY !== null) {
                     $dx = $mouse->x - $this->mouseX;
                     $dy = $mouse->y - $this->mouseY;
-                    // Ignore a pointer-lock recenter, never a normal movement.
-                    if (abs($dx) <= 96 && abs($dy) <= 96) {
-                        $mx = $dx * self::MOUSE_SENS_ABS;
-                        $my = $dy * self::MOUSE_SENS_ABS;
+                    // Ignore only a large pointer-lock recenter, not a fast turn.
+                    if (abs($dx) <= 320 && abs($dy) <= 320) {
+                        $mx = max(-240.0, min(240.0, $dx)) * self::MOUSE_SENS_ABS;
+                        $my = max(-240.0, min(240.0, $dy)) * self::MOUSE_SENS_ABS;
                     }
                 }
             }
@@ -180,7 +182,7 @@ final class PlayScene extends AbstractScene
             $this->jumpPending = false;
         });
 
-        $this->playAudioEvents($beforeState, $beforeXp);
+        $this->playAudioEvents($beforeState, $beforeXp, $dt);
         if (!$this->demo && $beforeState === 'play' && $this->run->state === 'upgrade' && function_exists('SDL_SetRelativeMouseMode')) {
             @\SDL_SetRelativeMouseMode(false);
         }
@@ -191,11 +193,13 @@ final class PlayScene extends AbstractScene
         $this->music->update($dt, min(1.0, 0.32 + count($this->run->enemies) / 24.0));
     }
 
-    private function playAudioEvents(string $beforeState, int $beforeXp): void
+    private function playAudioEvents(string $beforeState, int $beforeXp, float $dt): void
     {
-        if ($this->run->muzzle > $this->prevMuzzle + 0.01) {
+        $this->weaponSfxCooldown = max(0.0, $this->weaponSfxCooldown - $dt);
+        if ($this->run->muzzle > $this->prevMuzzle + 0.01 && $this->weaponSfxCooldown <= 0.0) {
             $name = $this->run->autoTier >= 3 ? 'heavy_fire' : ($this->run->autoTier > 0 ? 'sten_fire' : 'colt_fire');
-            $this->sound()->playSfx($name, 0, false);
+            $this->sound()->playSfx($name, 0, true);
+            $this->weaponSfxCooldown = $this->run->autoTier > 0 ? 0.12 : 0.20;
         }
         if ($this->run->pulse > $this->prevPulse + 0.01) $this->sound()->playSfx('pulse_sfx', 0, false);
         if ($this->run->specialFlash > $this->prevSpecial + 0.01) $this->sound()->playSfx('special_sfx', 0, false);
