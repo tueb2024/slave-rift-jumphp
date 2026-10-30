@@ -30,12 +30,15 @@ function enemy(int $id, float $x, float $z, string $type = 'runner', int $hp = 2
     return ['id'=>$id, 'type'=>$type, 'x'=>$x, 'y'=>0.55, 'z'=>$z, 'health'=>$hp, 'maxHealth'=>$hp,
         'speed'=>0.0, 'damage'=>7, 'radius'=>0.23, 'flash'=>0.0, 'cooldown'=>0.0, 'age'=>0.0];
 }
+function frontEnemy(Run $run, int $id, float $distance, string $type = 'runner', int $hp = 24): array {
+    return enemy($id, $run->x + sin($run->yaw) * $distance, $run->z + cos($run->yaw) * $distance, $type, $hp);
+}
 function frames(Run $run, int $n, float $forward = 0.0, float $strafe = 0.0): void {
     for ($i=0; $i<$n; $i++) $run->step(1/60, $forward, $strafe, 0.0);
 }
 
 $run = fresh();
-check(count($run->map->solids) >= 10, 'multi-zone arena imports a useful brush set');
+check(count($run->map->solids) >= 14, 'enclosed arena imports floor, walls and cover');
 foreach ($run->map->solids as $solid) {
     foreach ($solid['triangles'] as $vertex) {
         foreach ($vertex['p'] as $axis=>$v) {
@@ -64,8 +67,8 @@ frames($a,30,1.0);frames($b,30,1.0,1.0);
 $da=hypot($a->x-$ax,$a->z-$az);$db=hypot($b->x-$bx,$b->z-$bz);
 check(abs($da-$db)<0.02,'diagonal speed is normalized');
 
-$run=fresh();$run->x=0;$run->y=0.70;$run->z=-8;$run->yaw=0;
-$run->enemies=[100=>enemy(100,0,-5, 'guardian', 100)];
+$run=fresh();
+$run->enemies=[100=>frontEnemy($run,100,2.0,'guardian',100)];
 $run->step(1/60,0,0,0,true);
 check($run->shots===1 && $run->enemies[100]['health']<100,'Colt .45 remains manual and aimed');
 check($run->autoTier===0 && $run->arsenalLabel()==='COLT .45 ONLY','autofire starts locked');
@@ -75,20 +78,18 @@ $run->pickups=[['x'=>$run->x,'y'=>$run->y,'z'=>$run->z,'kind'=>'xp','value'=>6,'
 frames($run,1);
 check($run->state==='upgrade' && $run->level===2 && $run->autoTier===1,'first level unlocks Sten autofire');
 check($run->chooseUpgrade(0) && $run->state==='play','valid upgrade resumes play');
-
-$run->x=0;$run->y=0.70;$run->z=-8;$run->yaw=0;
-$run->enemies=[100=>enemy(100,0,-5,'runner',50)];
+$run->enemies=[100=>frontEnemy($run,100,2.0,'runner',50)];
 $before=$run->enemies[100]['health'];
 frames($run,20);
 check(!isset($run->enemies[100]) || $run->enemies[100]['health'] < $before,'Sten autofire damages a frontal target');
 
-$run=fresh();$run->x=0;$run->y=0.70;$run->z=-8;$run->yaw=0;$run->pulseUnlocked=true;
-$run->enemies=[100=>enemy(100,0,-9,'runner',24)];
+$run=fresh();$run->pulseUnlocked=true;
+$run->enemies=[100=>enemy(100,$run->x+1.0,$run->z,'runner',24)];
 frames($run,65);
 check($run->kills===1 && count($run->pickups)===1 && $run->shots===0,'radial pulse remains independent of guns');
 
-$run=fresh();$run->x=0;$run->y=0.70;$run->z=-8;$run->yaw=0;
-$run->enemies=[100=>enemy(100,0,-4,'brute',135)];
+$run=fresh();
+$run->enemies=[100=>frontEnemy($run,100,3.0,'brute',135)];
 $run->step(1/60,0,0,0,false,false,true);
 check($run->specialCooldown>0 && $run->enemies[100]['health']<135,'active special weapon fires independently');
 
