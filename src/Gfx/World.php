@@ -76,6 +76,7 @@ final class World
         if ($gl->isAvailable() && $this->ids !== []) {
             $r->clear(self::KEY);
             $this->draw3d($gl, $r, $run, $pitch);
+            $this->drawEnemySprites($engine, $r, $run, $pitch);
             return;
         }
         $this->drawFallback($r, $run);
@@ -104,13 +105,7 @@ final class World
         $draw($this->ids['worldMetal'], Mat4::identity(), 0.0, true, 'metalTex');
         $draw($this->ids['worldCeil'], Mat4::identity(), 0.0, true, 'ceilTex');
         $draw($this->ids['worldCrate'], Mat4::identity(), 0.0, true, 'crateTex');
-        foreach ($run->enemies as $enemy) {
-            $draw($this->ids[$enemy['type']], Mat4::multiply(
-                Mat4::translate($enemy['x'], $enemy['y'], $enemy['z']),
-                Mat4::rotateY(atan2($run->x - $enemy['x'], $run->z - $enemy['z'])),
-                Mat4::rotateZ(sin($enemy['age'] * 9) * 0.045),
-            ), $enemy['flash'] > 0 ? 1.0 : 0.0);
-        }
+        // Enemies are drawn as alpha billboards in the native overlay.
         foreach ($run->pickups as $pickup) {
             $draw($this->ids[$pickup['kind']], Mat4::multiply(
                 Mat4::translate($pickup['x'], $pickup['y'] + sin($run->time * 4) * 0.06, $pickup['z']),
@@ -126,6 +121,47 @@ final class World
             if ($point !== null && $point[2] >= 0 && $point[2] <= 1) {
                 $r->drawLine(intdiv($r->getWidth(), 2), intdiv($r->getHeight(), 2), (int)$point[0], (int)$point[1], [255,210,100]);
             }
+        }
+    }
+
+    private function drawEnemySprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
+    {
+        $sdl = $engine->sdl;
+        foreach ([
+            'enemy_runner' => 'assets/sprites/enemies/eviloogie.png',
+            'enemy_guardian' => 'assets/sprites/enemies/smorficus.png',
+            'enemy_brute' => 'assets/sprites/enemies/demonario.png',
+        ] as $name => $path) {
+            if (!$sdl->hasTexture($name)) $sdl->loadTexture($name, $path);
+        }
+
+        $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
+        $enemies = array_values($run->enemies);
+        usort($enemies, static function (array $a, array $b) use ($run): int {
+            $da = hypot($a['x'] - $run->x, $a['z'] - $run->z);
+            $db = hypot($b['x'] - $run->x, $b['z'] - $run->z);
+            return $db <=> $da;
+        });
+
+        foreach ($enemies as $enemy) {
+            $distance = hypot($enemy['x'] - $run->x, $enemy['z'] - $run->z);
+            if ($distance > 40.0) continue;
+            if (!$run->lineClear(self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
+            $point = Mat4::project($vp, [$enemy['x'], $enemy['y'] + 0.10, $enemy['z']], $r->getWidth(), $r->getHeight());
+            if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
+            $frame = ((int)floor($enemy['age'] * 6.0)) % 4;
+            [$textureName, $cellW, $cellH, $scale] = match ($enemy['type']) {
+                'runner' => ['enemy_runner', 68, 95, 0.88],
+                'brute' => ['enemy_brute', 96, 110, 1.40],
+                default => ['enemy_guardian', 86, 135, 1.10],
+            };
+            $spriteH = (int)max(18, min(118, (205.0 / max(1.25, $distance)) * $scale));
+            $spriteW = (int)max(12, round($spriteH * $cellW / $cellH));
+            $x = (int)round($point[0] - $spriteW / 2);
+            $y = (int)round($point[1] - $spriteH * 0.55);
+            $tex = $sdl->getTexture($textureName);
+            $r->copy($tex['texture'], [$frame * $cellW, 0, $cellW, $cellH], $x, $y, $spriteW, $spriteH);
+            if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
         }
     }
 

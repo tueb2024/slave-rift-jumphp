@@ -213,28 +213,67 @@ final class Run
 
     private function spawnEnemy(): bool
     {
+        if ($this->map->spawnPoints !== []) {
+            $candidates = [];
+            foreach ($this->map->spawnPoints as $point) {
+                [$x, $mapY, $z] = $point;
+                $y = $mapY - 0.20;
+                $distance = hypot($x - $this->x, $z - $this->z);
+                if ($distance < 4.5 || $distance > 34.0) continue;
+                if ($this->collides($x, $y, $z, 0.42, 0.55)) continue;
+                $occupied = false;
+                foreach ($this->enemies as $enemy) {
+                    if (hypot($x - $enemy['x'], $z - $enemy['z']) < 1.1 && abs($y - $enemy['y']) < 1.4) {
+                        $occupied = true;
+                        break;
+                    }
+                }
+                if ($occupied) continue;
+                $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
+                $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
+                $distanceScore = abs($distance - 12.0) * 0.28;
+                $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
+                $visibilityPenalty = $visible ? 2.4 : -1.3;
+                $candidates[] = [
+                    'score' => $distanceScore + $frontPenalty + $visibilityPenalty + $this->random() * 0.55,
+                    'x' => $x, 'y' => $y, 'z' => $z,
+                ];
+            }
+            if ($candidates !== []) {
+                usort($candidates, static fn (array $a, array $b): int => $a['score'] <=> $b['score']);
+                $spawn = $candidates[0];
+                return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z']);
+            }
+        }
         for ($attempt = 0; $attempt < 20; $attempt++) {
             $a = $this->random() * M_PI * 2;
             $r = 6.0 + $this->random() * 4.0;
-            $x = max(-10.8, min(10.8, $this->x + sin($a) * $r));
-            $z = max(-10.8, min(10.8, $this->z + cos($a) * $r));
-            if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, 0.56, $z, 0.42, 0.55)) continue;
-            $roll = $this->random();
-            $type = $this->wave >= 3 && $roll < 0.22 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian');
-            if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
-            [$hp, $speed, $damage, $radius] = match ($type) {
-                'runner' => [24, 2.05, 7, 0.23],
-                'brute' => [135, 0.85, 18, 0.40],
-                default => [48, 1.25, 10, 0.30],
-            };
-            $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
-            $id = $this->nextId++;
-            $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => 0.55, 'z' => $z,
-                'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
-                'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0];
-            return true;
+            $x = $this->x + sin($a) * $r;
+            $z = $this->z + cos($a) * $r;
+            $ground = $this->supportHeight($x, $z, 0.42, $this->y + 2.0);
+            $y = $ground + 0.55;
+            if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, $y, $z, 0.42, 0.55)) continue;
+            return $this->spawnEnemyAt($x, $y, $z);
         }
         return false;
+    }
+
+    private function spawnEnemyAt(float $x, float $y, float $z): bool
+    {
+        $roll = $this->random();
+        $type = $this->wave >= 3 && $roll < 0.22 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian');
+        if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
+        [$hp, $speed, $damage, $radius] = match ($type) {
+            'runner' => [24, 2.05, 7, 0.23],
+            'brute' => [135, 0.85, 18, 0.40],
+            default => [48, 1.25, 10, 0.30],
+        };
+        $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
+        $id = $this->nextId++;
+        $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
+            'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
+            'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0];
+        return true;
     }
 
     private function stepEnemies(float $dt): void

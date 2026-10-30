@@ -38,7 +38,7 @@ final class PlayScene extends AbstractScene
     public function enter(array $params = []): void
     {
         $this->demo = (bool)($params['demo'] ?? false);
-        $map = BrushMap::load($this->engine->config->path('assets/maps/rift01.map'));
+        $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
         $this->run = new Run($map, (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520))));
         $this->world ??= new World();
         $this->step = new FixedStep(60, 8);
@@ -67,7 +67,7 @@ final class PlayScene extends AbstractScene
     private function loadAssetLayer(): void
     {
         if (!$this->sdl()->hasTexture('weapons')) {
-            $this->sdl()->loadTexture('weapons', 'assets/sprites/weapons/weapons.png');
+            $this->sdl()->loadTexture('weapons', 'assets/sprites/weapons/fps-weapons-cc0.png');
         }
         RiftSfx::register($this->sound());
     }
@@ -211,14 +211,13 @@ final class PlayScene extends AbstractScene
         $kick = $run->muzzle > 0 ? 5 : 0;
         $bob = (int)round(sin($run->time * 6) * 1.5);
         $weapon = $this->sdl()->getTexture('weapons');
-        $weaponIndex = $run->autoTier >= 3 ? 2 : ($run->autoTier > 0 ? 1 : 0);
-        $drawW = $run->autoTier >= 3 ? 188 : 174;
-        $drawH = $drawW * 160 / 256;
-        $r->copy($weapon['texture'], [$weaponIndex * 256, 0, 256, 160], $cx - $drawW / 2, $h - $drawH + 8 + $kick + $bob, $drawW, $drawH);
-        if ($run->muzzle > 0) {
-            $r->fillRect($cx - 7, $h - $drawH + 4 + $kick + $bob, 14, 7, [255,190,55]);
-            $r->fillRect($cx - 2, $h - $drawH - 1 + $kick + $bob, 4, 14, [255,245,175]);
-        }
+        // CC0 sheet: rows are knife, pistol, machine gun, chain gun; five 64px animation frames each.
+        $weaponRow = $run->autoTier >= 3 ? 3 : ($run->autoTier > 0 ? 2 : 1);
+        $weaponFrame = $run->muzzle > 0 ? 2 : 0;
+        $drawW = $run->autoTier >= 3 ? 238 : 218;
+        $drawH = $drawW;
+        $r->copy($weapon['texture'], [$weaponFrame * 64, $weaponRow * 64, 64, 64],
+            (int)($cx - $drawW / 2), (int)($h - $drawH + 48 + $kick + $bob), $drawW, $drawH);
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
             $r->fillRect($w - 33, $h - 37, 8, 20, $run->pulse > 0 ? [180,255,255] : [70,180,195]);
