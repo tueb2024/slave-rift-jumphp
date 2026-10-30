@@ -16,8 +16,12 @@ final class World
 
     /** @var array<string,int> */
     private array $ids = [];
+    /** @var array<int,array<string,float|bool>> */
+    private array $enemyVisibility = [];
     public int $visibleEnemies = 0;
     public int $renderLosTests = 0;
+    public int $mapChunksDrawn = 0;
+    public const MAX_IMPACTS = 24;
 
     public function prepare(WebGl $gl, Run $run): void
     {
@@ -74,6 +78,7 @@ final class World
     {
         $gl = $engine->gl();
         if ($gl->isAvailable() && $this->ids !== []) {
+            $this->mapChunksDrawn = 1;
             $r->clear(self::KEY);
             $this->draw3d($gl, $r, $run, $pitch);
             $this->drawPickupSprites($engine, $r, $run, $pitch);
@@ -82,6 +87,7 @@ final class World
             $this->drawImpactSprites($engine, $r, $run, $pitch);
             return;
         }
+        $this->mapChunksDrawn = 0;
         $this->drawFallback($r, $run);
     }
 
@@ -125,6 +131,7 @@ final class World
     private function drawEnemySprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
     {
         $this->visibleEnemies = $this->renderLosTests = 0;
+        $this->enemyVisibility = array_intersect_key($this->enemyVisibility, $run->enemies);
         $sdl = $engine->sdl;
         foreach (EnemyAtlas::SHEETS as $sprite) {
             if (!$sdl->hasTexture($sprite['texture'])) $sdl->loadTexture($sprite['texture'], $sprite['path']);
@@ -144,8 +151,7 @@ final class World
             $point = Mat4::project($vp, [$enemy['x'], $enemy['y'] + 0.10, $enemy['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
             if ($point[0] < -160 || $point[0] > $r->getWidth() + 160 || $point[1] < -160 || $point[1] > $r->getHeight() + 160) continue;
-            $this->renderLosTests++;
-            if (!$this->enemyLineClear($run, self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
+            if (!$this->enemyVisible($run, $enemy, $distance)) continue;
             $sprite = EnemyAtlas::SHEETS[$enemy['type']] ?? EnemyAtlas::SHEETS['guardian'];
             $state = $enemy['animState'] ?? 'walk';
             $facing = atan2($run->x - $enemy['x'], $run->z - $enemy['z']) - ($enemy['yaw'] ?? 0.0);
@@ -166,6 +172,30 @@ final class World
             $this->visibleEnemies++;
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
         }
+    }
+
+    /** Amortize brush/triangle LOS only for sprites that survived projection and screen culling. */
+    private function enemyVisible(Run $run, array $enemy, float $distance): bool
+    {
+        $id = $enemy['id'];
+        $cached = $this->enemyVisibility[$id] ?? null;
+        $far = $distance > 18.0;
+        $interval = $far ? 0.20 + ($id % 5) * 0.015 : 0.08 + ($id % 5) * 0.01;
+        $movement = $far ? 0.38 + ($id % 3) * 0.025 : 0.28 + ($id % 5) * 0.025;
+        if ($cached === null || $run->time - $cached['time'] >= $interval
+            || hypot($run->x - $cached['playerX'], $run->z - $cached['playerZ']) > $movement
+            || abs($run->y - $cached['playerY']) > 0.3
+            || hypot($enemy['x'] - $cached['enemyX'], $enemy['z'] - $cached['enemyZ']) > $movement
+            || abs($enemy['y'] - $cached['enemyY']) > 0.3) {
+            $this->renderLosTests++;
+            $visible = $this->enemyLineClear($run, self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']]);
+            $this->enemyVisibility[$id] = [
+                'visible' => $visible, 'time' => $run->time,
+                'playerX' => $run->x, 'playerY' => $run->y, 'playerZ' => $run->z,
+                'enemyX' => $enemy['x'], 'enemyY' => $enemy['y'], 'enemyZ' => $enemy['z'],
+            ];
+        }
+        return $this->enemyVisibility[$id]['visible'];
     }
 
     /** Test sprite visibility against actual brush faces, not their coarse AABBs. */
@@ -249,7 +279,7 @@ final class World
         if (!$sdl->hasTexture('hit_spark')) $sdl->loadTexture('hit_spark', 'assets/sprites/effects/spark-impact.png');
         $texture = $sdl->getTexture('hit_spark');
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
-        foreach ($run->traces as $trace) {
+        foreach (array_slice($run->traces, -self::MAX_IMPACTS) as $trace) {
             $point = Mat4::project($vp, [$trace['x'], $trace['y'], $trace['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
             $distance = hypot($trace['x'] - $run->x, $trace['z'] - $run->z);

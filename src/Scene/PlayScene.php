@@ -285,11 +285,12 @@ final class PlayScene extends AbstractScene
         if ($this->paused) { $r->fillRect(82, 72, $w - 164, 30, [8,5,12,235]); $font->draw($r, 'PAUSED - P', $cx, 83, 1, $cream, 'center'); }
         if ($this->demo) $font->draw($r, 'DEMO', $w - 4, 27, 1, $cream, 'right');
         if ($this->debug) {
-            $font->draw($r, sprintf('FPS %.0f  %.1f MS  E %d/%d  LOS %d+%d  COL %d  NEI %d',
+            $font->draw($r, sprintf('FPS %.0f  %.1f MS  E %d/%d  RLOS %d  SLOS %d  MAP %d  NEI %d',
                 1000.0 / max(1.0, $this->frameMs), $this->frameMs, $this->world->visibleEnemies,
-                count($run->enemies), $run->losTests, $this->world->renderLosTests,
-                $run->collisionTests, $run->neighborChecks), 4, 28, 1, $cyan);
-            $font->draw($r, sprintf('TR %d  COR %d  PICK %d', count($run->traces), count($run->corpses), count($run->pickups)), 4, 38, 1, $cyan);
+                count($run->enemies), $this->world->renderLosTests, $run->losTests,
+                $this->world->mapChunksDrawn, $run->neighborChecks), 4, 28, 1, $cyan);
+            $font->draw($r, sprintf('TR %d  COR %d  IMP %d  COL %d  PICK %d', count($run->traces), count($run->corpses),
+                min(count($run->traces), World::MAX_IMPACTS), $run->collisionTests, count($run->pickups)), 4, 38, 1, $cyan);
             $mouse = $this->engine->input->getMouse();
             $font->draw($r, sprintf('MOUSE %s RX %d RY %d X %.0f Y %.0f', $this->mouseBackend,
                 $this->mouseRx, $this->mouseRy, $mouse->x, $mouse->y), 4, 48, 1, $cyan);
