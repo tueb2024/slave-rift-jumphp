@@ -63,6 +63,7 @@ final class Run
     private float $invincible = 0.0;
     private int $nextId = 1;
     private int $rng;
+    private array $lastGroundedPosition;
     private int $damageRank = 0;
     private int $hasteRank = 0;
     private int $magnetRank = 0;
@@ -74,6 +75,7 @@ final class Run
         // camera. DM1's is above empty space, so use a real deathmatch spawn.
         [$this->x, $this->y, $this->z] = $map->spawnPoints[0] ?? $map->playerStart;
         $this->yaw = $map->playerYaw;
+        $this->lastGroundedPosition = [$this->x, $this->y, $this->z];
         $this->rng = max(1, $seed % 65521);
     }
 
@@ -111,6 +113,12 @@ final class Run
         $this->movePlayer($dx, $dz);
         $this->vy -= self::GRAVITY * $dt;
         $this->vertical($this->vy * $dt);
+        if ($this->grounded) $this->lastGroundedPosition = [$this->x, $this->y, $this->z];
+        if ($this->y < $this->lastGroundedPosition[1] - 3.0) {
+            [$this->x, $this->y, $this->z] = $this->lastGroundedPosition;
+            $this->vy = 0.0;
+            $this->grounded = true;
+        }
 
         $this->stepWaves($dt);
         $this->stepEnemies($dt);
@@ -315,6 +323,7 @@ final class Run
                 return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z']);
             }
         }
+        $fallbackCandidates = [];
         for ($attempt = 0; $attempt < 20; $attempt++) {
             $a = $this->random() * M_PI * 2;
             $r = 6.0 + $this->random() * 4.0;
@@ -323,8 +332,17 @@ final class Run
             $ground = $this->supportHeight($x, $z, 0.42, $this->y + 2.0);
             if ($ground === null) continue;
             $y = $ground + 0.55;
+            if (abs($y - $this->y) > 1.5) continue;
             if (hypot($x - $this->x, $z - $this->z) < 5.0 || $this->collides($x, $y, $z, 0.42, 0.55)) continue;
-            return $this->spawnEnemyAt($x, $y, $z);
+            $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
+            $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.2, $z]);
+            $fallbackCandidates[] = ['x' => $x, 'y' => $y, 'z' => $z,
+                'score' => $angle + ($visible ? 0.0 : 2.0)];
+        }
+        if ($fallbackCandidates !== []) {
+            usort($fallbackCandidates, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+            $point = $fallbackCandidates[0];
+            return $this->spawnEnemyAt($point['x'], $point['y'], $point['z']);
         }
         return false;
     }
@@ -611,6 +629,10 @@ final class Run
         foreach ([[$dx, 0.0], [0.0, $dz]] as [$sx, $sz]) {
             $nx = $this->x + $sx;
             $nz = $this->z + $sz;
+            if ($this->grounded) {
+                $floor = $this->supportHeight($nx, $nz, self::PLAYER_RADIUS, $this->y - self::PLAYER_HALF_HEIGHT + 0.3);
+                if ($floor === null || $floor < $this->y - self::PLAYER_HALF_HEIGHT - 0.8) continue;
+            }
             if (!$this->collides($nx, $this->y, $nz, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) {
                 $this->x = $nx; $this->z = $nz;
             } elseif ($this->grounded && !$this->collides($nx, $this->y + 0.23, $nz, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) {

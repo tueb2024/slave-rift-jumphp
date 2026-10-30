@@ -51,6 +51,14 @@ $run->remaining = 0;
 frames($run, 90);
 check($run->grounded && is_finite($run->x) && is_finite($run->y) && is_finite($run->z), 'player physics settles deterministically');
 
+$ledge = new BrushMap();
+$ledge->solids = [['min' => [-1.0, -0.3, -1.0], 'max' => [1.0, 0.0, 1.0], 'triangles' => []]];
+$ledge->playerStart = [0.0, 0.7, 0.0];
+$ledgeRun = new Run($ledge);
+$ledgeRun->remaining = 0;
+frames($ledgeRun, 300, 1.0);
+check($ledgeRun->y > 0.6 && $ledgeRun->z < 1.3, 'player stays on the floor at an open ledge');
+
 $a = fresh(42); $b = fresh(42);
 for ($i=0; $i<180; $i++) {
     $forward = $i < 60 ? 0.3 : ($i < 120 ? -0.2 : 0.1);

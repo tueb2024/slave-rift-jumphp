@@ -131,25 +131,20 @@ final class PlayScene extends AbstractScene
             $special = $mouse->isHeld(3) || $this->actions()->isHeld('special_fire');
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
 
-            $mx = 0.0; $my = 0.0; $relativeWorked = false;
-            if (function_exists('SDL_GetRelativeMouseState')) {
+            $mx = 0.0; $my = 0.0;
+            $relativeActive = function_exists('SDL_GetRelativeMouseState')
+                && (!function_exists('SDL_GetRelativeMouseMode') || (bool)@\SDL_GetRelativeMouseMode());
+            if ($relativeActive) {
                 $rx = 0; $ry = 0;
                 @\SDL_GetRelativeMouseState($rx, $ry);
-                $rx = max(-80, min(80, (int)$rx));
-                $ry = max(-80, min(80, (int)$ry));
-                if ($rx !== 0 || $ry !== 0) {
-                    $mx = $rx * self::MOUSE_SENS_REL;
-                    $my = $ry * self::MOUSE_SENS_REL;
-                    $relativeWorked = true;
-                }
-                if (function_exists('SDL_GetRelativeMouseMode') && !@\SDL_GetRelativeMouseMode() && ($mouse->isHeld(1) || $mouse->isHeld(3))) {
-                    @\SDL_SetRelativeMouseMode(true);
-                }
+                $mx = max(-300, min(300, (int)$rx)) * self::MOUSE_SENS_REL;
+                $my = max(-300, min(300, (int)$ry)) * self::MOUSE_SENS_REL;
             }
-            if (!$relativeWorked) {
+            if (!$relativeActive) {
+                if (function_exists('SDL_SetRelativeMouseMode') && ($mouse->isPressed(1) || $mouse->isPressed(3))) @\SDL_SetRelativeMouseMode(true);
                 if ($this->mouseX !== null && $this->mouseY !== null) {
-                    $dx = max(-32.0, min(32.0, $mouse->x - $this->mouseX));
-                    $dy = max(-32.0, min(32.0, $mouse->y - $this->mouseY));
+                    $dx = max(-160.0, min(160.0, $mouse->x - $this->mouseX));
+                    $dy = max(-160.0, min(160.0, $mouse->y - $this->mouseY));
                     $mx = $dx * self::MOUSE_SENS_ABS;
                     $my = $dy * self::MOUSE_SENS_ABS;
                 }

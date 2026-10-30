@@ -139,12 +139,6 @@ final class World
             $size = (1 - $run->pulse / 0.25) * 4.2;
             $draw($this->ids['pulse'], Mat4::multiply(Mat4::translate($run->x, $run->y - 0.5, $run->z), Mat4::scale($size)));
         }
-        foreach ($run->traces as $trace) {
-            $point = Mat4::project($vp, [$trace['x'], $trace['y'], $trace['z']], $r->getWidth(), $r->getHeight());
-            if ($point !== null && $point[2] >= 0 && $point[2] <= 1) {
-                $r->drawLine(intdiv($r->getWidth(), 2), intdiv($r->getHeight(), 2), (int)$point[0], (int)$point[1], [255,210,100]);
-            }
-        }
     }
 
     private function drawEnemySprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
@@ -165,9 +159,10 @@ final class World
         foreach ($enemies as $enemy) {
             $distance = hypot($enemy['x'] - $run->x, $enemy['z'] - $run->z);
             if ($distance > 40.0) continue;
-            if (!$this->enemyLineClear($run, self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
             $point = Mat4::project($vp, [$enemy['x'], $enemy['y'] + 0.10, $enemy['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
+            if ($point[0] < -160 || $point[0] > $r->getWidth() + 160 || $point[1] < -160 || $point[1] > $r->getHeight() + 160) continue;
+            if (!$this->enemyLineClear($run, self::eye($run), [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) continue;
             $sprite = self::ENEMY_SPRITES[$enemy['type']] ?? self::ENEMY_SPRITES['guardian'];
             $state = $enemy['animState'] ?? 'walk';
             $clip = $sprite['clips'][$state] ?? $sprite['clips']['walk'];
