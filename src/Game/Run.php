@@ -193,8 +193,38 @@ final class Run
         }
         if ($target === null) return [0.25, 0.4, 0.3, false];
         if ($visibleTarget === null) {
-            // The demo has no pathfinder: keep moving while sweeping the view until DM1 geometry reveals a target.
-            return [0.18, sin($this->time * 0.8) * 0.55, 0.68, false];
+            // Use the map's deathmatch points as safe exploration waypoints while
+            // every live enemy is hidden behind geometry.
+            $goalX = $target['x'];
+            $goalZ = $target['z'];
+            $waypointDistance = INF;
+            foreach ($this->map->spawnPoints as $point) {
+                $distance = hypot($point[0] - $this->x, $point[2] - $this->z);
+                if ($distance < 6.0 || $distance >= $waypointDistance) continue;
+                $goalX = $point[0];
+                $goalZ = $point[2];
+                $waypointDistance = $distance;
+            }
+
+            $goalAngle = atan2($goalX - $this->x, $goalZ - $this->z);
+            $bestHeading = null;
+            $bestPathScore = INF;
+            for ($i = 0; $i < 24; $i++) {
+                $heading = $goalAngle + $i * (M_PI / 12.0);
+                $probeX = $this->x + sin($heading);
+                $probeZ = $this->z + cos($heading);
+                if ($this->collides($probeX, $this->y, $probeZ, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) continue;
+                if (!$this->collides($probeX, $this->y - 0.12, $probeZ, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) continue;
+                $remaining = hypot($goalX - $probeX, $goalZ - $probeZ);
+                $score = $remaining + abs(self::angleDelta($heading, $goalAngle)) * 0.16;
+                if ($score < $bestPathScore) {
+                    $bestPathScore = $score;
+                    $bestHeading = $heading;
+                }
+            }
+            if ($bestHeading === null) return [0.18, sin($this->time * 0.8) * 0.55, 0.68, false];
+            $error = self::angleDelta($bestHeading, $this->yaw);
+            return [0.72, 0.0, max(-1.0, min(1.0, -$error * 1.5)), false];
         }
         // Prefer an enemy the weapons can actually hit. The nearest enemy may be
         // on the other side of a DM1 wall, where it would otherwise hold aim forever.
