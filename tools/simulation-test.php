@@ -59,6 +59,17 @@ $ledgeRun->remaining = 0;
 frames($ledgeRun, 300, 1.0);
 check($ledgeRun->y > 0.6 && $ledgeRun->z < 1.3, 'player stays on the floor at an open ledge');
 
+$stairs = new BrushMap();
+$stairs->solids = [
+    ['min' => [-2.0, -0.3, -2.0], 'max' => [2.0, 0.0, 0.0], 'triangles' => []],
+    ['min' => [-2.0, 0.0, 0.0], 'max' => [2.0, 0.5, 2.0], 'triangles' => []],
+];
+$stairs->playerStart = [0.0, 0.7, -1.0];
+$stairRun = new Run($stairs);
+$stairRun->remaining = 0;
+frames($stairRun, 90, 1.0);
+check($stairRun->z > 0.5 && $stairRun->y > 1.1, 'player climbs a half-unit step without jumping');
+
 $a = fresh(42); $b = fresh(42);
 for ($i=0; $i<180; $i++) {
     $forward = $i < 60 ? 0.3 : ($i < 120 ? -0.2 : 0.1);

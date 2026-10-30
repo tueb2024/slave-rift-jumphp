@@ -662,14 +662,19 @@ final class Run
         foreach ([[$dx, 0.0], [0.0, $dz]] as [$sx, $sz]) {
             $nx = $this->x + $sx;
             $nz = $this->z + $sz;
+            $floor = null;
             if ($this->grounded) {
-                $floor = $this->supportHeight($nx, $nz, self::PLAYER_RADIUS, $this->y - self::PLAYER_HALF_HEIGHT + 0.3);
+                $floor = $this->supportHeight($nx, $nz, self::PLAYER_RADIUS, $this->y - self::PLAYER_HALF_HEIGHT + 0.58);
                 if ($floor === null || $floor < $this->y - self::PLAYER_HALF_HEIGHT - 0.8) continue;
             }
             if (!$this->collides($nx, $this->y, $nz, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) {
                 $this->x = $nx; $this->z = $nz;
-            } elseif ($this->grounded && !$this->collides($nx, $this->y + 0.23, $nz, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) {
-                $this->x = $nx; $this->z = $nz; $this->y += 0.23;
+            } elseif ($this->grounded && $floor !== null) {
+                $rise = $floor - ($this->y - self::PLAYER_HALF_HEIGHT);
+                if ($rise > 0.0 && $rise <= 0.58 &&
+                    !$this->collides($nx, $this->y + $rise + 0.002, $nz, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) {
+                    $this->x = $nx; $this->z = $nz; $this->y += $rise + 0.002;
+                }
             }
         }
     }
