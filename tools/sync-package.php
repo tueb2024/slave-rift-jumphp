@@ -5,8 +5,10 @@ $root = dirname(__DIR__);
 $package = $root . '/games/slave-rift';
 $check = in_array('--check', $argv, true);
 $files = ['app.php', 'composer.json', 'LICENSE'];
-foreach (['src', 'config', 'assets', 'tests'] as $folder) {
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/' . $folder, FilesystemIterator::SKIP_DOTS));
+foreach (['src', 'config', 'assets', 'tests', 'patches'] as $folder) {
+    $dir = $root . '/' . $folder;
+    if (!is_dir($dir)) continue;
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
     foreach ($iterator as $file) if ($file->isFile()) $files[] = substr($file->getPathname(), strlen($root) + 1);
 }
 $errors = [];
