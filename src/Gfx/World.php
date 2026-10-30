@@ -24,9 +24,9 @@ final class World
         ],
         'guardian' => [
             'texture' => 'enemy_ratman', 'path' => 'assets/sprites/enemies/nmn-cc0/ratman.png',
-            'width' => 592, 'height' => 658, 'directions' => 8, 'rows' => 9, 'scale' => 0.98,
-            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [4, 5, 6], 'pain' => [7]],
-            'deathRow' => 8, 'deathFrames' => 6,
+            'width' => 592, 'height' => 658, 'directions' => 8, 'rows' => 8, 'scale' => 0.98,
+            'clips' => ['idle' => [0], 'walk' => [0, 1, 2, 3], 'attack' => [4, 5, 6], 'pain' => [6]],
+            'deathRow' => 7, 'deathFrames' => 6,
         ],
         'brute' => [
             'texture' => 'enemy_mutant_leader', 'path' => 'assets/sprites/enemies/nmn-cc0/mutant-leader.png',
@@ -36,9 +36,9 @@ final class World
         ],
         'enforcer' => [
             'texture' => 'enemy_enforcer', 'path' => 'assets/sprites/enemies/nmn-cc0/enforcer-guard.png',
-            'width' => 516, 'height' => 836, 'directions' => 8, 'rows' => 13, 'scale' => 1.08,
-            'clips' => ['idle' => [0], 'walk' => [7, 8, 9, 10, 11, 12], 'attack' => [1, 2, 3, 4, 5], 'pain' => [5]],
-            'deathRow' => 6, 'deathFrames' => 6,
+            'width' => 516, 'height' => 836, 'directions' => 8, 'rows' => 11, 'scale' => 1.08,
+            'clips' => ['idle' => [0], 'walk' => [8, 9, 10], 'attack' => [1, 2, 3, 4, 5, 6], 'pain' => [5]],
+            'deathRow' => 7, 'deathFrames' => 6,
         ],
     ];
 
