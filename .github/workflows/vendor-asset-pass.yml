@@ -28,6 +28,12 @@ jobs:
           php tools/sync-package.php
           sha256sum assets/maps/quake-dm1.map assets/sprites/weapons/fps-weapons-cc0.png assets/sprites/enemies/*.png > assets/VENDORED.sha256
           cp assets/VENDORED.sha256 games/slave-rift/assets/VENDORED.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asset-pass-preview
+          path: |
+            assets/sprites/
+            assets/maps/quake-dm1.map
       - name: Commit vendored files
         run: |
           git config user.name 'slave-rift-asset-bot'
