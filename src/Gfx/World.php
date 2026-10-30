@@ -114,7 +114,6 @@ final class World
         $draw($this->ids['worldMetal'], Mat4::identity(), 0.0, true, 'metalTex');
         $draw($this->ids['worldCeil'], Mat4::identity(), 0.0, true, 'ceilTex');
         $draw($this->ids['worldCrate'], Mat4::identity(), 0.0, true, 'crateTex');
-        // Enemies are drawn as alpha billboards in the native overlay.
         if ($run->pulse > 0) {
             $size = (1 - $run->pulse / 0.25) * 4.2;
             $draw($this->ids['pulse'], Mat4::multiply(Mat4::translate($run->x, $run->y - 0.5, $run->z), Mat4::scale($size)));
@@ -123,7 +122,12 @@ final class World
             $start = Mat4::project($vp, [$trace['startX'], $trace['startY'], $trace['startZ']], $r->getWidth(), $r->getHeight());
             $end = Mat4::project($vp, [$trace['endX'], $trace['endY'], $trace['endZ']], $r->getWidth(), $r->getHeight());
             if ($start === null || $end === null || $start[2] < 0 || $start[2] > 1 || $end[2] < 0 || $end[2] > 1) continue;
-            $color = $trace['type'] === 'special' ? [120, 240, 255] : [255, 205, 105];
+            $color = match ($trace['type']) {
+                'flame' => [255, 122, 45],
+                'shuriken' => [125, 225, 255],
+                'special' => [120, 240, 255],
+                default => [255, 205, 105],
+            };
             $r->drawLine((int)$start[0], (int)$start[1], (int)$end[0], (int)$end[1], $color);
         }
     }
@@ -160,18 +164,40 @@ final class World
             $column = (int)round($facing / (2 * M_PI) * 8) % 8;
             $source = EnemyAtlas::frame($enemy['type'], $state, (int)floor(($enemy['age'] ?? 0.0) * 7.0), $column);
             if ($source === null || !EnemyAtlas::valid($sprite, $source)) continue;
-            // Approximate a ~1.5 world-unit sprite in the 67-degree camera.
-            // The old 205/d factor made a nearby human-sized enemy only a few
-            // dozen pixels tall, and distant enemies nearly impossible to spot.
-            $spriteH = (int)max(24, min(160, (480.0 / max(1.25, $distance)) * $sprite['scale']));
-            $spriteW = (int)max(12, round($spriteH * $source[2] / $source[3]));
-            $x = (int)round($point[0] - $spriteW / 2);
-            $y = (int)round($point[1] - $spriteH * 0.55);
+            [$x, $y, $spriteW, $spriteH] = $this->spriteRect($enemy['type'], $sprite, $source, $point, $distance);
             $tex = $sdl->getTexture($sprite['texture']);
             $r->copy($tex['texture'], $source, $x, $y, $spriteW, $spriteH);
             $this->visibleEnemies++;
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
         }
+    }
+
+    /**
+     * Scale every crop with one pixel-to-world ratio for its enemy type.
+     * Tight source rectangles are allowed to become shorter/wider with the pose,
+     * but no longer get stretched back to a full standing height. The bottom edge
+     * remains anchored where the old renderer put the enemy's feet.
+     */
+    private function spriteRect(string $type, array $sprite, array $source, array $point, float $distance): array
+    {
+        $referenceHeight = match ($type) {
+            'runner' => 77.0,
+            'guardian' => 63.0,
+            'brute' => 87.0,
+            'enforcer' => 63.0,
+            default => 63.0,
+        };
+        $standingHeight = max(24.0, min(160.0, (480.0 / max(1.25, $distance)) * $sprite['scale']));
+        $pixelScale = $standingHeight / $referenceHeight;
+        $spriteW = max(8, (int)round($source[2] * $pixelScale));
+        $spriteH = max(4, (int)round($source[3] * $pixelScale));
+        $feetY = $point[1] + $standingHeight * 0.45;
+        return [
+            (int)round($point[0] - $spriteW / 2),
+            (int)round($feetY - $spriteH),
+            $spriteW,
+            $spriteH,
+        ];
     }
 
     /** Amortize brush/triangle LOS only for sprites that survived projection and screen culling. */
@@ -309,10 +335,7 @@ final class World
             $frame = min($deathFrames - 1, (int)floor($corpse['age'] / 0.64 * $deathFrames));
             $source = EnemyAtlas::frame($corpse['type'], 'death', $frame, 0);
             if ($source === null || !EnemyAtlas::valid($sprite, $source)) continue;
-            $spriteH = (int)max(18, min(126, (205.0 / max(1.25, $distance)) * $sprite['scale']));
-            $spriteW = (int)max(12, round($spriteH * $source[2] / $source[3]));
-            $x = (int)round($point[0] - $spriteW / 2);
-            $y = (int)round($point[1] - $spriteH * 0.55);
+            [$x, $y, $spriteW, $spriteH] = $this->spriteRect($corpse['type'], $sprite, $source, $point, $distance);
             $texture = $sdl->getTexture($sprite['texture']);
             $r->copy($texture['texture'], $source, $x, $y, $spriteW, $spriteH);
         }
