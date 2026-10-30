@@ -59,8 +59,6 @@ final class World
                 'guardian' => $gl->buffer(Meshes::enemy('guardian'), true),
                 'runner' => $gl->buffer(Meshes::enemy('runner'), true),
                 'brute' => $gl->buffer(Meshes::enemy('brute'), true),
-                'xp' => $gl->buffer(Meshes::pickup(false), true),
-                'health' => $gl->buffer(Meshes::pickup(true), true),
                 'pulse' => $gl->buffer(Meshes::pulse(), true),
                 'stoneTex' => $gl->texture('assets/textures/rift-stone.png', false, true),
                 'metalTex' => $gl->texture('assets/textures/quadcompati/metal_panel.png', false, true),
@@ -98,6 +96,7 @@ final class World
         if ($gl->isAvailable() && $this->ids !== []) {
             $r->clear(self::KEY);
             $this->draw3d($gl, $r, $run, $pitch);
+            $this->drawPickupSprites($engine, $r, $run, $pitch);
             $this->drawEnemySprites($engine, $r, $run, $pitch);
             $this->drawDeathSprites($engine, $r, $run, $pitch);
             $this->drawImpactSprites($engine, $r, $run, $pitch);
@@ -130,12 +129,6 @@ final class World
         $draw($this->ids['worldCeil'], Mat4::identity(), 0.0, true, 'ceilTex');
         $draw($this->ids['worldCrate'], Mat4::identity(), 0.0, true, 'crateTex');
         // Enemies are drawn as alpha billboards in the native overlay.
-        foreach ($run->pickups as $pickup) {
-            $draw($this->ids[$pickup['kind']], Mat4::multiply(
-                Mat4::translate($pickup['x'], $pickup['y'] + sin($run->time * 4) * 0.06, $pickup['z']),
-                Mat4::rotateY($run->time * 2),
-            ));
-        }
         if ($run->pulse > 0) {
             $size = (1 - $run->pulse / 0.25) * 4.2;
             $draw($this->ids['pulse'], Mat4::multiply(Mat4::translate($run->x, $run->y - 0.5, $run->z), Mat4::scale($size)));
@@ -190,6 +183,34 @@ final class World
             $tex = $sdl->getTexture($sprite['texture']);
             $r->copy($tex['texture'], [$sourceX, $sourceY, $sourceW, $sourceH], $x, $y, $spriteW, $spriteH);
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
+        }
+    }
+
+    private function drawPickupSprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
+    {
+        if ($run->pickups === []) return;
+        $sdl = $engine->sdl;
+        foreach ([
+            'health' => ['name' => 'pickup_health', 'path' => 'assets/sprites/pickups/health-pack.png', 'width' => 32, 'height' => 38],
+            'xp' => ['name' => 'pickup_xp', 'path' => 'assets/sprites/pickups/xp-orb.png', 'width' => 29, 'height' => 36],
+        ] as $kind => $sprite) {
+            if (!$sdl->hasTexture($sprite['name'])) $sdl->loadTexture($sprite['name'], $sprite['path']);
+        }
+        $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
+        foreach ($run->pickups as $pickup) {
+            $point3d = [$pickup['x'], $pickup['y'] + sin($run->time * 4) * 0.06 + 0.18, $pickup['z']];
+            if (!$run->lineClear(self::eye($run), $point3d)) continue;
+            $point = Mat4::project($vp, $point3d, $r->getWidth(), $r->getHeight());
+            if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
+            $sprite = $pickup['kind'] === 'health'
+                ? ['name' => 'pickup_health', 'width' => 32, 'height' => 38]
+                : ['name' => 'pickup_xp', 'width' => 29, 'height' => 36];
+            $distance = hypot($pickup['x'] - $run->x, $pickup['z'] - $run->z);
+            $height = (int)max(14, min(34, 170.0 / max(1.25, $distance)));
+            $width = (int)max(12, round($height * $sprite['width'] / $sprite['height']));
+            $texture = $sdl->getTexture($sprite['name']);
+            $r->copy($texture['texture'], [0, 0, $sprite['width'], $sprite['height']],
+                (int)round($point[0] - $width / 2), (int)round($point[1] - $height / 2), $width, $height);
         }
     }
 

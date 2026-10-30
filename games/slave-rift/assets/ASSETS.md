@@ -29,13 +29,18 @@ Slave Rift uses only assets that are either original project work or from source
 - `sprites/effects/spark-impact.png`: **Spark effect** by kurohina, CC0. The image is 288×32 (nine 32×32 frames) and plays at confirmed enemy-hit positions. The source PNG was copied without pixel edits.
   - Source: https://opengameart.org/content/spark-effect
 
+## Pickups
+
+- `sprites/pickups/health-pack.png` and `sprites/pickups/xp-orb.png`: cropped from **Items – armor, health, ammo** by Nmn, CC0. The original sheet is 411×318. The health pack crop is 32×38 and the blue orb crop is 29×36; the cyan chroma key was converted to transparent alpha. They replace the generated 3D pickup cubes with readable, floating 2.5D sprites.
+  - Source: https://opengameart.org/content/items-armor-health-ammo
+
 ## Enemy sprites
 
-The active runner / guardian / brute billboards come from **FPS Monster Enemies** by Ragnar Random, released CC0 on OpenGameArt. The sheets are animated in the renderer and deliberately replace the earlier block geometry for the visible enemies.
+The active runner / guardian / brute billboards now use the directional Nmn sheets below: mutant grunt, rat-man, and mutant leader respectively. The earlier Ragnar Random **FPS Monster Enemies** sheets remain in the repository as CC0 historical assets and are not loaded by the current renderer.
 
-- `sprites/enemies/eviloogie.png` → runner
-- `sprites/enemies/smorficus.png` → guardian
-- `sprites/enemies/demonario.png` → brute
+- `sprites/enemies/eviloogie.png`
+- `sprites/enemies/smorficus.png`
+- `sprites/enemies/demonario.png`
 - Source: https://opengameart.org/content/fps-monster-enemies
 
 The uploaded Duke Nukem 3D Overlord sprite set is used only as a private visual/animation reference and is **not committed to this repository**.
