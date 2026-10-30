@@ -49,8 +49,8 @@ final class Meshes
             vec3 n = normalize(v_normal);
             vec3 lightDir = normalize(vec3(-0.45, 0.80, -0.30));
             float diffuse = max(dot(n, lightDir), 0.0);
-            // Lift only the darkest light band so Quake surfaces remain readable without flattening their texture contrast.
-            float band = floor((0.40 + diffuse * 0.72) * 5.0) / 5.0;
+            // Raise the shadow floor by one quantized band while retaining diffuse variation and Quake texture contrast.
+            float band = floor((0.60 + diffuse * 0.42) * 5.0) / 5.0;
             float dist = length(u_eye - v_world);
             float fog = clamp((dist - 7.0) / 15.0, 0.0, 1.0);
             vec3 texel = texture2D(u_tex, v_uv).rgb;
