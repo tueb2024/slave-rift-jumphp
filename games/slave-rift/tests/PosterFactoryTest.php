@@ -21,4 +21,18 @@ final class PosterFactoryTest extends TestCase
         self::assertGreaterThanOrEqual(0.0, min($firstU, $secondU));
         self::assertLessThanOrEqual(1.0, max($firstU, $secondU));
     }
+
+    public function testLegacyTrollPlacementsAreAbsorbedIntoProceduralPosterAtlas(): void
+    {
+        $legacy = [[
+            'material' => 'poster3615',
+            'position' => [2.0, 1.5, 3.0],
+            'normal' => [0.0, 0.0, -1.0],
+            'width' => 1.5,
+            'height' => 2.0,
+        ]];
+
+        self::assertSame([], Meshes::decals($legacy, 'poster3615'));
+        self::assertCount(6 * Meshes::STRIDE, Meshes::decals($legacy, 'posterAd'));
+    }
 }
