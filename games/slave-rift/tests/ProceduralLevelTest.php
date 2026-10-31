@@ -18,6 +18,21 @@ final class ProceduralLevelTest extends TestCase
         self::assertGreaterThan(2, count(array_unique($signatures)), 'The seed must affect the level, not only be stored.');
     }
 
+    public function testGeneratedRouteIsLongAndCanChangeFloor(): void
+    {
+        $graph = new LevelGraph(1337, 8);
+        self::assertGreaterThanOrEqual(16, count($graph->mainPath()), 'A run should span several waves before the boss.');
+        $verticalSeen = false;
+        for ($seed = 1; $seed <= 32; $seed++) {
+            $signature = (new LevelGraph($seed, 8))->signature();
+            if (str_contains($signature, LevelGraph::STAIR_UP) || str_contains($signature, LevelGraph::STAIR_DOWN)) {
+                $verticalSeen = true;
+                break;
+            }
+        }
+        self::assertTrue($verticalSeen, 'Seeded generation must include real vertical-transition modules.');
+    }
+
     public function testAssemblerProducesBrushMapRuntimeContract(): void
     {
         $graph = new LevelGraph(1337, 8);
@@ -28,8 +43,10 @@ final class ProceduralLevelTest extends TestCase
         self::assertNotNull($level->bossAnchor);
         self::assertNotNull($level->treasureAnchor);
         self::assertGreaterThanOrEqual(0.70, $level->map->spawnPoints[0][1]);
-        self::assertNotEmpty($level->map->decals);
-        self::assertContains('poster3615', array_column($level->map->decals, 'material'));
+        self::assertGreaterThan(10, count($level->map->decals), 'Long procedural routes should be densely dressed.');
+        $materials = array_column($level->map->decals, 'material');
+        self::assertContains('poster3615', $materials);
+        self::assertContains('posterAd', $materials);
         $floorMaterials = [];
         $wallMaterials = [];
         foreach ($level->map->solids as $solid) {
@@ -47,12 +64,14 @@ final class ProceduralLevelTest extends TestCase
         self::assertFalse($run->collides($run->x, $run->y, $run->z, Run::PLAYER_RADIUS, Run::PLAYER_HALF_HEIGHT));
     }
 
-    public function testTurnAndJunctionExposeSemanticConnectors(): void
+    public function testTurnJunctionAndStairsExposeSemanticConnectors(): void
     {
         $turn = ModuleLibrary::get(LevelGraph::TURN);
         self::assertSame([0.0, 0.0, -1.0], $turn->connector('entry')['normal']);
         self::assertSame([1.0, 0.0, 0.0], $turn->connector('main_exit')['normal']);
         $junction = ModuleLibrary::get(LevelGraph::JUNCTION);
         self::assertNotNull($junction->connector('branch_exit'));
+        $stairs = ModuleLibrary::get(LevelGraph::STAIR_UP);
+        self::assertGreaterThan(2.0, $stairs->connector('main_exit')['position'][1]);
     }
 }

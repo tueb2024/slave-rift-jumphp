@@ -9,7 +9,7 @@ use JumPHP\Gl\WebGl;
 use JumPHP\Kernel\Engine;
 use JumPHP\Renderer\Renderer;
 
-/** Persistent GPU resources shared by every enemy and pickup. */
+/** Persistent GPU resources shared by every enemy, pickup, wall and procedural decal. */
 final class World
 {
     public const KEY = [255, 0, 255];
@@ -19,7 +19,7 @@ final class World
     private ?int $preparedMapId = null;
     /** @var array<int,array<string,float|bool>> */
     private array $enemyVisibility = [];
-    /** @var array<int,int> Last rendered health, used to derive visual damage deltas without coupling Run to rendering. */
+    /** @var array<int,int> */
     private array $lastEnemyHealth = [];
     /** @var list<array{x:float,y:float,z:float,amount:int,born:float}> */
     private array $damagePopups = [];
@@ -61,6 +61,13 @@ final class World
                 $ids['poster3615'] = $gl->buffer($poster, true);
                 $ids['poster3615Tex'] = $gl->texture('assets/textures/posters/3615-troll.png', false, false);
             }
+            $advert = Meshes::decals($run->map->decals, 'posterAd');
+            if ($advert !== []) {
+                $ids['posterAd'] = $gl->buffer($advert, true);
+                $image = PosterFactory::advert();
+                $ids['posterAdTex'] = $gl->textureFromRgba(imagesx($image), imagesy($image), WebGl::rgbaFromGd($image), false);
+                imagedestroy($image);
+            }
             $this->ids = $ids;
             $this->preparedMapId = $mapId;
         }
@@ -77,15 +84,8 @@ final class World
     {
         $eye = self::eye($run);
         $cp = cos($pitch);
-        $target = [
-            $eye[0] + sin($run->yaw) * $cp,
-            $eye[1] + sin($pitch),
-            $eye[2] + cos($run->yaw) * $cp,
-        ];
-        return Mat4::multiply(
-            Mat4::perspective(67.0, $aspect, 0.08, 48.0),
-            Mat4::lookAt($eye, $target),
-        );
+        $target = [$eye[0] + sin($run->yaw) * $cp, $eye[1] + sin($pitch), $eye[2] + cos($run->yaw) * $cp];
+        return Mat4::multiply(Mat4::perspective(67.0, $aspect, 0.08, 48.0), Mat4::lookAt($eye, $target));
     }
 
     public function render(Engine $engine, Renderer $r, Run $run, float $pitch = 0.0): void
@@ -133,6 +133,9 @@ final class World
         if (isset($this->ids['poster3615'], $this->ids['poster3615Tex'])) {
             $draw($this->ids['poster3615'], Mat4::identity(), 0.0, true, 'poster3615Tex');
         }
+        if (isset($this->ids['posterAd'], $this->ids['posterAdTex'])) {
+            $draw($this->ids['posterAd'], Mat4::identity(), 0.0, true, 'posterAdTex');
+        }
         if ($run->pulse > 0) {
             $size = (1 - $run->pulse / 0.25) * 4.2;
             $draw($this->ids['pulse'], Mat4::multiply(Mat4::translate($run->x, $run->y - 0.5, $run->z), Mat4::scale($size)));
@@ -159,7 +162,6 @@ final class World
         foreach (EnemyAtlas::SHEETS as $sprite) {
             if (!$sdl->hasTexture($sprite['texture'])) $sdl->loadTexture($sprite['texture'], $sprite['path']);
         }
-
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
         $enemies = array_values($run->enemies);
         usort($enemies, static function (array $a, array $b) use ($run): int {
@@ -186,17 +188,27 @@ final class World
             [$x, $y, $spriteW, $spriteH] = $this->spriteRect($enemy['type'], $sprite, $source, $point, $distance);
             $tex = $sdl->getTexture($sprite['texture']);
             $r->copy($tex['texture'], $source, $x, $y, $spriteW, $spriteH);
+            $this->drawEnemyHealthBar($r, $enemy, $x, $y, $spriteW);
             $this->visibleEnemies++;
             if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
         }
     }
 
-    /**
-     * Scale every crop with one pixel-to-world ratio for its enemy type.
-     * Tight source rectangles are allowed to become shorter/wider with the pose,
-     * but no longer get stretched back to a full standing height. The bottom edge
-     * remains anchored where the old renderer put the enemy's feet.
-     */
+    private function drawEnemyHealthBar(Renderer $r, array $enemy, int $x, int $y, int $spriteW): void
+    {
+        $max = max(1, (int)($enemy['maxHealth'] ?? 1));
+        $ratio = max(0.0, min(1.0, (int)$enemy['health'] / $max));
+        $barW = max(12, min(38, $spriteW));
+        $barH = 3;
+        $barX = (int)round($x + $spriteW / 2 - $barW / 2);
+        $barY = $y - 6;
+        $fill = (int)round($barW * $ratio);
+        $color = $ratio > 0.55 ? [76, 226, 104, 245] : ($ratio > 0.25 ? [242, 180, 65, 245] : [245, 68, 78, 245]);
+        $r->fillRect($barX - 1, $barY - 1, $barW + 2, $barH + 2, [7, 5, 12, 230]);
+        $r->fillRect($barX, $barY, $barW, $barH, [48, 42, 52, 230]);
+        if ($fill > 0) $r->fillRect($barX, $barY, $fill, $barH, $color);
+    }
+
     private function spriteRect(string $type, array $sprite, array $source, array $point, float $distance): array
     {
         $referenceHeight = match ($type) {
@@ -211,15 +223,9 @@ final class World
         $spriteW = max(8, (int)round($source[2] * $pixelScale));
         $spriteH = max(4, (int)round($source[3] * $pixelScale));
         $feetY = $point[1] + $standingHeight * 0.45;
-        return [
-            (int)round($point[0] - $spriteW / 2),
-            (int)round($feetY - $spriteH),
-            $spriteW,
-            $spriteH,
-        ];
+        return [(int)round($point[0] - $spriteW / 2), (int)round($feetY - $spriteH), $spriteW, $spriteH];
     }
 
-    /** Amortize brush/triangle LOS only for sprites that survived projection and screen culling. */
     private function enemyVisible(Run $run, array $enemy, float $distance): bool
     {
         $id = $enemy['id'];
@@ -243,7 +249,6 @@ final class World
         return $this->enemyVisibility[$id]['visible'];
     }
 
-    /** Test sprite visibility against actual brush faces, not their coarse AABBs. */
     private function enemyLineClear(Run $run, array $a, array $b): bool
     {
         foreach ($run->map->solids as $solid) {
@@ -260,7 +265,6 @@ final class World
                 if ($lo > $hi) break;
             }
             if ($lo > $hi) continue;
-
             $triangles = $solid['triangles'] ?? [];
             if ($triangles === []) return false;
             for ($i = 0, $n = count($triangles); $i + 2 < $n; $i += 3) {
@@ -296,7 +300,7 @@ final class World
         foreach ([
             'health' => ['name' => 'pickup_health', 'path' => 'assets/sprites/pickups/health-pack.png', 'width' => 32, 'height' => 38],
             'xp' => ['name' => 'pickup_xp', 'path' => 'assets/sprites/pickups/xp-orb.png', 'width' => 29, 'height' => 36],
-        ] as $kind => $sprite) {
+        ] as $sprite) {
             if (!$sdl->hasTexture($sprite['name'])) $sdl->loadTexture($sprite['name'], $sprite['path']);
         }
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
@@ -312,8 +316,7 @@ final class World
             $height = (int)max(14, min(34, 170.0 / max(1.25, $distance)));
             $width = (int)max(12, round($height * $sprite['width'] / $sprite['height']));
             $texture = $sdl->getTexture($sprite['name']);
-            $r->copy($texture['texture'], [0, 0, $sprite['width'], $sprite['height']],
-                (int)round($point[0] - $width / 2), (int)round($point[1] - $height / 2), $width, $height);
+            $r->copy($texture['texture'], [0, 0, $sprite['width'], $sprite['height']], (int)round($point[0] - $width / 2), (int)round($point[1] - $height / 2), $width, $height);
         }
     }
 
@@ -322,18 +325,34 @@ final class World
         if ($run->traces === []) return;
         $sdl = $engine->sdl;
         if (!$sdl->hasTexture('hit_spark')) $sdl->loadTexture('hit_spark', 'assets/sprites/effects/spark-impact.png');
-        $texture = $sdl->getTexture('hit_spark');
+        if (!$sdl->hasTexture('flame_fx')) $sdl->loadTexture('flame_fx', 'assets/sprites/effects/muzzle-large-fire.png');
+        $spark = $sdl->getTexture('hit_spark');
+        $flame = $sdl->getTexture('flame_fx');
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
         foreach (array_slice($run->traces, -self::MAX_IMPACTS) as $trace) {
             $point = Mat4::project($vp, [$trace['x'], $trace['y'], $trace['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
             $distance = hypot($trace['x'] - $run->x, $trace['z'] - $run->z);
+            $size = (int)max(14, min(46, 150.0 / max(1.25, $distance)));
+            if (($trace['type'] ?? '') === 'flame') {
+                $r->copy($flame['texture'], null, (int)round($point[0] - $size / 2), (int)round($point[1] - $size / 2), $size, $size);
+                continue;
+            }
+            if (($trace['type'] ?? '') === 'shuriken') {
+                $spin = $run->time * 12.0;
+                $radius = max(3, (int)round($size * 0.28));
+                $cx = (int)round($point[0]); $cy = (int)round($point[1]);
+                for ($arm = 0; $arm < 4; $arm++) {
+                    $a = $spin + $arm * M_PI / 2;
+                    $r->drawLine($cx, $cy, (int)round($cx + cos($a) * $radius), (int)round($cy + sin($a) * $radius), [195, 235, 255]);
+                }
+                $r->fillCircle($cx, $cy, 2, [80, 125, 150]);
+                continue;
+            }
             $duration = max(1 / 60, (float)($trace['totalLife'] ?? 0.09));
             $elapsed = max(0.0, $duration - (float)$trace['life']);
             $frame = min(8, (int)floor($elapsed / $duration * 9));
-            $size = (int)max(18, min(46, 150.0 / max(1.25, $distance)));
-            $r->copy($texture['texture'], [$frame * 32, 0, 32, 32],
-                (int)round($point[0] - $size / 2), (int)round($point[1] - $size / 2), $size, $size);
+            $r->copy($spark['texture'], [$frame * 32, 0, 32, 32], (int)round($point[0] - $size / 2), (int)round($point[1] - $size / 2), $size, $size);
         }
     }
 
@@ -360,35 +379,24 @@ final class World
         }
     }
 
-    /** Detect health deltas at render time so every damage source gets feedback without duplicating simulation events. */
     private function captureDamagePopups(Run $run): void
     {
         $current = [];
         foreach ($run->enemies as $enemy) $current[(int)$enemy['id']] = $enemy;
         foreach ($run->corpses as $corpse) $current[(int)$corpse['id']] = $corpse;
-
         foreach ($current as $id => $enemy) {
             $health = (int)$enemy['health'];
             if (isset($this->lastEnemyHealth[$id]) && $health < $this->lastEnemyHealth[$id]) {
                 $amount = $this->lastEnemyHealth[$id] - $health;
                 if ($amount > 0) {
                     if (count($this->damagePopups) >= self::MAX_DAMAGE_POPUPS) array_shift($this->damagePopups);
-                    $this->damagePopups[] = [
-                        'x' => (float)$enemy['x'], 'y' => (float)$enemy['y'] + 0.72, 'z' => (float)$enemy['z'],
-                        'amount' => $amount, 'born' => $run->time,
-                    ];
+                    $this->damagePopups[] = ['x' => (float)$enemy['x'], 'y' => (float)$enemy['y'] + 0.72, 'z' => (float)$enemy['z'], 'amount' => $amount, 'born' => $run->time];
                 }
             }
             $this->lastEnemyHealth[$id] = $health;
         }
-
-        foreach (array_keys($this->lastEnemyHealth) as $id) {
-            if (!isset($current[$id])) unset($this->lastEnemyHealth[$id]);
-        }
-        $this->damagePopups = array_values(array_filter(
-            $this->damagePopups,
-            static fn (array $popup): bool => $run->time - $popup['born'] < 0.72,
-        ));
+        foreach (array_keys($this->lastEnemyHealth) as $id) if (!isset($current[$id])) unset($this->lastEnemyHealth[$id]);
+        $this->damagePopups = array_values(array_filter($this->damagePopups, static fn (array $popup): bool => $run->time - $popup['born'] < 0.72));
     }
 
     private function drawDamagePopups(Renderer $r, Run $run, float $pitch): void
@@ -399,12 +407,7 @@ final class World
         foreach ($this->damagePopups as $popup) {
             $age = max(0.0, $run->time - $popup['born']);
             $progress = min(1.0, $age / 0.72);
-            $point = Mat4::project(
-                $vp,
-                [$popup['x'], $popup['y'] + $progress * 0.38, $popup['z']],
-                $r->getWidth(),
-                $r->getHeight(),
-            );
+            $point = Mat4::project($vp, [$popup['x'], $popup['y'] + $progress * 0.38, $popup['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
             if ($point[0] < -40 || $point[0] > $r->getWidth() + 40 || $point[1] < -20 || $point[1] > $r->getHeight() + 20) continue;
             $alpha = (int)round(255 * (1.0 - $progress));
@@ -419,29 +422,21 @@ final class World
         return max(0, strlen($text) * 4 * $scale - $scale);
     }
 
-    /** Tiny 3×5 numeric font: legible at 320×180 and scales to higher logical resolutions. */
     private function drawMiniText(Renderer $r, string $text, int $x, int $y, int $scale, array $color): void
     {
         $glyphs = [
-            '-' => ['000','000','111','000','000'],
-            '0' => ['111','101','101','101','111'],
-            '1' => ['010','110','010','010','111'],
-            '2' => ['111','001','111','100','111'],
-            '3' => ['111','001','111','001','111'],
-            '4' => ['101','101','111','001','001'],
-            '5' => ['111','100','111','001','111'],
-            '6' => ['111','100','111','101','111'],
-            '7' => ['111','001','010','010','010'],
-            '8' => ['111','101','111','101','111'],
+            '-' => ['000','000','111','000','000'], '0' => ['111','101','101','101','111'],
+            '1' => ['010','110','010','010','111'], '2' => ['111','001','111','100','111'],
+            '3' => ['111','001','111','001','111'], '4' => ['101','101','111','001','001'],
+            '5' => ['111','100','111','001','111'], '6' => ['111','100','111','101','111'],
+            '7' => ['111','001','010','010','010'], '8' => ['111','101','111','101','111'],
             '9' => ['111','101','111','001','111'],
         ];
         $cursor = $x;
         foreach (str_split($text) as $char) {
             $rows = $glyphs[$char] ?? $glyphs['0'];
             foreach ($rows as $row => $bits) {
-                for ($col = 0; $col < 3; $col++) {
-                    if ($bits[$col] === '1') $r->fillRect($cursor + $col * $scale, $y + $row * $scale, $scale, $scale, $color);
-                }
+                for ($col = 0; $col < 3; $col++) if ($bits[$col] === '1') $r->fillRect($cursor + $col * $scale, $y + $row * $scale, $scale, $scale, $color);
             }
             $cursor += 4 * $scale;
         }
@@ -453,18 +448,15 @@ final class World
         $scale = 5.6; $cx = $r->getWidth() / 2; $cy = $r->getHeight() / 2;
         foreach ($run->map->solids as $solid) {
             [$x0, , $z0] = $solid['min']; [$x1, , $z1] = $solid['max'];
-            $r->fillRect((int)round($cx + $x0 * $scale), (int)round($cy + $z0 * $scale),
-                max(1, (int)round(($x1 - $x0) * $scale)), max(1, (int)round(($z1 - $z0) * $scale)), $solid['color']);
+            $r->fillRect((int)round($cx + $x0 * $scale), (int)round($cy + $z0 * $scale), max(1, (int)round(($x1 - $x0) * $scale)), max(1, (int)round(($z1 - $z0) * $scale)), $solid['color']);
         }
         $px = (int)round($cx + $run->x * $scale); $py = (int)round($cy + $run->z * $scale);
         $r->fillCircle($px, $py, 3, [235,220,160]);
         foreach ($run->enemies as $enemy) {
-            $r->fillCircle((int)round($cx + $enemy['x'] * $scale), (int)round($cy + $enemy['z'] * $scale),
-                $enemy['type'] === 'brute' ? 4 : 2, $enemy['type'] === 'runner' ? [80,210,140] : [210,70,80]);
+            $r->fillCircle((int)round($cx + $enemy['x'] * $scale), (int)round($cy + $enemy['z'] * $scale), $enemy['type'] === 'brute' ? 4 : 2, $enemy['type'] === 'runner' ? [80,210,140] : [210,70,80]);
         }
         foreach ($run->pickups as $pickup) {
-            $r->fillCircle((int)round($cx + $pickup['x'] * $scale), (int)round($cy + $pickup['z'] * $scale), 1,
-                $pickup['kind'] === 'health' ? [250,70,80] : [80,235,235]);
+            $r->fillCircle((int)round($cx + $pickup['x'] * $scale), (int)round($cy + $pickup['z'] * $scale), 1, $pickup['kind'] === 'health' ? [250,70,80] : [80,235,235]);
         }
         $r->drawLine($px, $py, (int)round($px + sin($run->yaw) * 10), (int)round($py + cos($run->yaw) * 10), [255,240,180]);
     }

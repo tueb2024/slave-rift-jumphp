@@ -7,17 +7,17 @@ use PHPUnit\Framework\TestCase;
 
 final class WeaponRendererTest extends TestCase
 {
-    public function testCurrentLogicalResolutionKeepsWeaponCompact(): void
+    public function testCurrentLogicalResolutionUsesLargeCenteredFpsOverlay(): void
     {
         $renderer = new WeaponRenderer();
         $colt = $renderer->layout(320, 180, 0, 0.0);
-        self::assertSame(49, $colt['drawH']);
-        self::assertSame(74, $colt['drawW']);
+        self::assertSame(104, $colt['drawH']);
+        self::assertSame(104, $colt['drawW']);
         self::assertSame(1, $colt['copies']);
 
         $dual = $renderer->layout(320, 180, 3, 0.0);
-        self::assertSame(52, $dual['drawH']);
-        self::assertSame(78, $dual['drawW']);
+        self::assertSame(115, $dual['drawH']);
+        self::assertSame(115, $dual['drawW']);
         self::assertSame(2, $dual['copies']);
     }
 
@@ -40,14 +40,17 @@ final class WeaponRendererTest extends TestCase
         self::assertSame(WeaponRenderer::READY, $renderer->update(1.14, 0.0));
     }
 
-    public function testAtlasFramesRemainFourHorizontal144By96Crops(): void
+    public function testCc0FpsSheetUsesFive64PixelFramesAndWeaponRows(): void
     {
         $renderer = new WeaponRenderer();
         self::assertSame(0, $renderer->frameForState(WeaponRenderer::READY));
-        self::assertSame(1, $renderer->frameForState(WeaponRenderer::FIRE));
-        self::assertSame(2, $renderer->frameForState(WeaponRenderer::RECOIL));
-        self::assertSame(3, $renderer->frameForState(WeaponRenderer::COOLDOWN));
-        self::assertSame(144, WeaponRenderer::FRAME_W);
-        self::assertSame(96, WeaponRenderer::FRAME_H);
+        self::assertSame(2, $renderer->frameForState(WeaponRenderer::FIRE));
+        self::assertSame(3, $renderer->frameForState(WeaponRenderer::RECOIL));
+        self::assertSame(1, $renderer->frameForState(WeaponRenderer::COOLDOWN));
+        self::assertSame(64, WeaponRenderer::FRAME_W);
+        self::assertSame(64, WeaponRenderer::FRAME_H);
+        self::assertSame(1, $renderer->rowForStage(0));
+        self::assertSame(2, $renderer->rowForStage(4));
+        self::assertSame(3, $renderer->rowForStage(6));
     }
 }
