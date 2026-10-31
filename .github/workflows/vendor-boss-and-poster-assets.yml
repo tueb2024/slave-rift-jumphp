@@ -1,0 +1,123 @@
+name: Vendor boss and poster assets
+
+on:
+  push:
+    branches: [agent/procedural-game-foundation]
+    paths:
+      - '.github/workflows/vendor-boss-and-poster-assets.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/procedural-game-foundation
+
+      - name: Fetch CC0 boss sheets
+        run: |
+          set -euxo pipefail
+          mkdir -p assets/sprites/bosses/nmn assets/sprites/bosses/toad assets/textures/posters
+
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/harubus_sheet_palleted.png' \
+            -o assets/sprites/bosses/nmn/harkubus.png
+
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/wargrinsheet_a_palleted_0.png' \
+            -o assets/sprites/bosses/nmn/wargrin.png \
+            || curl -fL --retry 3 'https://opengameart.org/sites/default/files/wargrinsheet_a_palleted.png' \
+            -o assets/sprites/bosses/nmn/wargrin.png
+
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/stability_officer_sheet_palette_0.png' \
+            -o assets/sprites/bosses/nmn/stability-officer.png \
+            || curl -fL --retry 3 'https://opengameart.org/sites/default/files/stability_officer_sheet_palette.png' \
+            -o assets/sprites/bosses/nmn/stability-officer.png
+
+          curl -fL --retry 3 'https://opengameart.org/sites/default/files/toad_monster.zip' -o /tmp/toad.zip
+          unzip -o /tmp/toad.zip -d /tmp/toad
+          find /tmp/toad -type f -iname '*.png' -print -exec cp '{}' assets/sprites/bosses/toad/ \;
+
+      - name: Normalize sprite transparency and generate 3615 TROLL
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageDraw, ImageFont
+
+          # Nmn sheets use a bright cyan chroma background. Make it transparent
+          # once at vendor time so SDL and WebGL consume ordinary RGBA PNGs.
+          for path in list(Path('assets/sprites/bosses').rglob('*.png')):
+              img = Image.open(path).convert('RGBA')
+              px = img.load()
+              for y in range(img.height):
+                  for x in range(img.width):
+                      r, g, b, a = px[x, y]
+                      if g >= 215 and b >= 200 and r <= 45:
+                          px[x, y] = (r, g, b, 0)
+              img.save(path, optimize=True)
+
+          # Intentionally crude Minitel/pixel poster: it must read immediately
+          # at 320x180, not become an unreadable high-resolution illustration.
+          w, h = 256, 160
+          img = Image.new('RGBA', (w, h), (14, 5, 20, 255))
+          d = ImageDraw.Draw(img)
+          pink = (255, 52, 152, 255)
+          hot = (255, 155, 218, 255)
+          green = (88, 255, 188, 255)
+          dark = (22, 7, 28, 255)
+          try:
+              f1 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf', 46)
+              f2 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf', 38)
+              f3 = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf', 13)
+          except OSError:
+              f1 = f2 = f3 = ImageFont.load_default()
+          for y in range(0, h, 4):
+              d.line((0, y, w, y), fill=(0, 0, 0, 45), width=1)
+          d.rectangle((4, 4, w-5, h-5), outline=pink, width=3)
+          d.text((12, 7), '3615', font=f1, fill=hot)
+          d.text((12, 54), 'TROLL', font=f2, fill=pink)
+          # troll terminal face
+          d.rectangle((172, 18, 238, 92), outline=green, width=3)
+          d.rectangle((183, 39, 193, 49), fill=green)
+          d.rectangle((217, 39, 227, 49), fill=green)
+          d.line((188, 70, 222, 70), fill=green, width=4)
+          d.line((193, 74, 217, 82), fill=green, width=3)
+          d.text((13, 111), 'CONNECTE-TOI.  IL ATTEND.', font=f3, fill=hot)
+          d.text((13, 132), '0,34 F / MIN  //  NUIT 24/24', font=f3, fill=pink)
+          img.save('assets/textures/posters/3615-troll.png', optimize=True)
+          PY
+
+      - name: Record provenance
+        run: |
+          cat > assets/sprites/bosses/README.md <<'EOF'
+          # Boss sprite sources
+
+          Vendored from OpenGameArt and normalized to transparent RGBA PNG for Slave Rift.
+
+          - Nmn / Paul Zarczynski, "Monster for 3d fps based on sprites - Harkubus" — CC0:
+            - `nmn/harkubus.png` (`harubus_sheet_palleted.png` upstream)
+            - `nmn/wargrin.png` (`wargrinsheet_a_palleted.png` upstream)
+            - `nmn/stability-officer.png` (`stability_officer_sheet_palette.png` upstream)
+            - https://opengameart.org/content/monster-for-3d-fps-based-on-sprites-harkubus
+          - HorrorMovieRei, "Toad Monster" — CC0:
+            - files under `toad/` from `toad_monster.zip`
+            - https://opengameart.org/content/toad-monster
+
+          `assets/textures/posters/3615-troll.png` is an original procedural Slave Rift asset generated by this repository.
+          EOF
+          sha256sum assets/sprites/bosses/nmn/*.png assets/sprites/bosses/toad/*.png assets/textures/posters/3615-troll.png > assets/sprites/bosses/VENDORED.sha256
+
+      - name: Sync game package
+        run: |
+          php tools/sync-package.php
+
+      - name: Commit assets
+        run: |
+          git config user.name 'slave-rift-asset-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add assets/sprites/bosses assets/textures/posters games/slave-rift/assets/sprites/bosses games/slave-rift/assets/textures/posters
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'assets: vendor CC0 boss sheets and 3615 TROLL poster'
+          git push origin HEAD:agent/procedural-game-foundation
