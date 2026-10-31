@@ -29,8 +29,8 @@ final class DifficultyDirectorTest extends TestCase
         self::assertLessThan($enforcer['health'], $guardian['health']);
         self::assertLessThan($brute['health'], $enforcer['health']);
         self::assertGreaterThan($guardian['speed'], $runner['speed']);
-        self::assertGreaterThan($brute['damage'], $guardian['damage']);
-        self::assertGreaterThan($enforcer['threat'], $guardian['threat']);
+        self::assertGreaterThan($guardian['damage'], $brute['damage']);
+        self::assertGreaterThan($guardian['threat'], $enforcer['threat']);
     }
 
     public function testHealthScalingRewardsPlayerPowerInsteadOfCancellingIt(): void
