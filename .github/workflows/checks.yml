@@ -59,6 +59,12 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/workspace" -w /workspace/engine jumphp/desktop:dev composer install --no-interaction --no-progress
           bin/jumphp install slave-rift
+      - name: PHPUnit RhythmClock contract
+        working-directory: runtime
+        run: docker run --rm -v "$PWD:/workspace" -w /workspace/games/slave-rift -e SDL_VIDEODRIVER=dummy -e SDL_AUDIODRIVER=dummy jumphp/desktop:dev /workspace/engine/vendor/bin/phpunit --bootstrap vendor/autoload.php --testdox tests/RhythmClockTest.php
+      - name: PHPUnit GameSmoke integration
+        working-directory: runtime
+        run: docker run --rm -v "$PWD:/workspace" -w /workspace/games/slave-rift -e SDL_VIDEODRIVER=dummy -e SDL_AUDIODRIVER=dummy jumphp/desktop:dev /workspace/engine/vendor/bin/phpunit --bootstrap vendor/autoload.php --testdox tests/GameSmokeTest.php
       - name: JumPHP integration tests and 600-frame software smoke
         working-directory: runtime
         env:
