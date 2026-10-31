@@ -13,6 +13,8 @@ final class RoomModule
     public array $spawnAnchors = [];
     /** @var list<array{x:float,y:float,z:float,tags:list<string>}> */
     public array $pickupAnchors = [];
+    /** @var list<array{material:string,position:float[],normal:float[],width:float,height:float}> */
+    public array $decals = [];
 
     public function __construct(public readonly string $type) {}
 
@@ -68,6 +70,14 @@ final class RoomModule
         $this->pickupAnchors[] = compact('x', 'y', 'z', 'tags');
     }
 
+    public function addDecal(string $material, float $x, float $y, float $z, float $nx, float $ny, float $nz, float $width, float $height): void
+    {
+        $this->decals[] = [
+            'material' => $material, 'position' => [$x, $y, $z], 'normal' => [$nx, $ny, $nz],
+            'width' => $width, 'height' => $height,
+        ];
+    }
+
     public function connector(string $role): ?array
     {
         foreach ($this->connectors as $connector) if ($connector['role'] === $role) return $connector;
@@ -115,6 +125,17 @@ final class RoomModule
         foreach ($this->pickupAnchors as $a) {
             [$x, $y, $z] = self::transformPoint($a['x'], $a['y'], $a['z'], $cos, $sin, $tx, $ty, $tz);
             $copy->pickupAnchors[] = ['x' => $x, 'y' => $y, 'z' => $z, 'tags' => $a['tags']];
+        }
+        foreach ($this->decals as $decal) {
+            [$x, $y, $z] = $decal['position'];
+            [$nx, $ny, $nz] = $decal['normal'];
+            [$rx, $ry, $rz] = self::transformPoint($x, $y, $z, $cos, $sin, $tx, $ty, $tz);
+            $copy->decals[] = [
+                'material' => $decal['material'],
+                'position' => [$rx, $ry, $rz],
+                'normal' => [$nx * $cos - $nz * $sin, $ny, $nx * $sin + $nz * $cos],
+                'width' => $decal['width'], 'height' => $decal['height'],
+            ];
         }
         return $copy;
     }

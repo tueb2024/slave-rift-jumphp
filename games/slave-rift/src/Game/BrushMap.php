@@ -18,6 +18,8 @@ final class BrushMap
     public array $solids = [];
     /** @var array<int,float[]> */
     public array $spawnPoints = [];
+    /** @var list<array{material:string,position:float[],normal:float[],width:float,height:float}> */
+    public array $decals = [];
     public array $playerStart = [0.0, 0.75, -4.5];
     public float $playerYaw = 0.0;
     public array $guardianStart = [0.0, 0.75, 4.5];

@@ -28,13 +28,21 @@ final class ProceduralLevelTest extends TestCase
         self::assertNotNull($level->bossAnchor);
         self::assertNotNull($level->treasureAnchor);
         self::assertGreaterThanOrEqual(0.70, $level->map->spawnPoints[0][1]);
+        self::assertNotEmpty($level->map->decals);
+        self::assertContains('poster3615', array_column($level->map->decals, 'material'));
+        $floorMaterials = [];
+        $wallMaterials = [];
         foreach ($level->map->solids as $solid) {
+            if ($solid['max'][1] <= 0.01) $floorMaterials[] = $solid['material'];
+            elseif ($solid['min'][1] <= 0.01 && $solid['max'][1] >= 2.0) $wallMaterials[] = $solid['material'];
             self::assertArrayHasKey('min', $solid);
             self::assertArrayHasKey('max', $solid);
             self::assertArrayHasKey('color', $solid);
             self::assertArrayHasKey('triangles', $solid);
             self::assertSame([], $solid['triangles'], 'Generated AABBs should let Meshes::world build the vertex buffer.');
         }
+        self::assertSame(['metal'], array_values(array_unique($floorMaterials)), 'Generated floors stay visually uniform.');
+        self::assertGreaterThan(1, count(array_unique($wallMaterials)), 'Generated rooms must visibly mix wall materials.');
         $run = new Run($level->map, 1337);
         self::assertFalse($run->collides($run->x, $run->y, $run->z, Run::PLAYER_RADIUS, Run::PLAYER_HALF_HEIGHT));
     }

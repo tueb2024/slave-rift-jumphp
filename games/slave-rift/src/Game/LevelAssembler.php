@@ -13,6 +13,7 @@ final class LevelAssembler
         $spawnPoints = [];
         $spawnMeta = [];
         $pickupMeta = [];
+        $decals = [];
         $rooms = [];
         $placedById = [];
         $treasureAnchor = null;
@@ -30,7 +31,7 @@ final class LevelAssembler
                 $placed = $this->placeAgainst($module, 'entry', $previousExit);
             }
             $placedById[$node['id']] = $placed;
-            $this->appendPlaced($node, $placed, $solids, $spawnPoints, $spawnMeta, $pickupMeta, $rooms, $treasureAnchor, $bossAnchor);
+            $this->appendPlaced($node, $placed, $solids, $spawnPoints, $spawnMeta, $pickupMeta, $decals, $rooms, $treasureAnchor, $bossAnchor);
             if ($index === 0 && $placed->spawnAnchors !== []) {
                 $first = $placed->spawnAnchors[0];
                 $playerStart = [$first['x'], $first['y'], $first['z']];
@@ -46,14 +47,14 @@ final class LevelAssembler
             if ($branchExit === null) continue;
             $placed = $this->placeAgainst(ModuleLibrary::get(LevelGraph::BONUS), 'entry', $branchExit);
             $placedById[$node['id']] = $placed;
-            $this->appendPlaced($node, $placed, $solids, $spawnPoints, $spawnMeta, $pickupMeta, $rooms, $treasureAnchor, $bossAnchor);
+            $this->appendPlaced($node, $placed, $solids, $spawnPoints, $spawnMeta, $pickupMeta, $decals, $rooms, $treasureAnchor, $bossAnchor);
         }
 
         if ($treasureAnchor === null || $bossAnchor === null) {
             throw new \RuntimeException('Generated level is missing its terminal boss/treasure anchors.');
         }
 
-        $map = BrushMapFactory::fromGenerated($solids, $spawnPoints, $playerStart, $playerYaw);
+        $map = BrushMapFactory::fromGenerated($solids, $spawnPoints, $playerStart, $playerYaw, $decals);
         return new AssembledLevel($map, $spawnMeta, $pickupMeta, $rooms, $treasureAnchor, $bossAnchor, $graph->seed);
     }
 
@@ -79,11 +80,13 @@ final class LevelAssembler
         array &$spawnPoints,
         array &$spawnMeta,
         array &$pickupMeta,
+        array &$decals,
         array &$rooms,
         ?array &$treasureAnchor,
         ?array &$bossAnchor
     ): void {
         foreach ($placed->solids as $solid) $solids[] = $solid;
+        foreach ($placed->decals as $decal) $decals[] = $decal;
         foreach ($placed->spawnAnchors as $anchor) {
             $spawnPoints[] = [$anchor['x'], $anchor['y'], $anchor['z']];
             $meta = [
