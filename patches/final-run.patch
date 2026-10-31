@@ -1,0 +1,54 @@
+--- slave-rift-base/src/Game/Run.php	2026-10-31 17:18:00.000000000 +0000
++++ slave-rift-workspace/src/Game/Run.php	2026-10-31 17:22:50.512711050 +0000
+@@ -460,11 +460,32 @@
+ 
+     private function chooseEnemyType(): string
+     {
++        $weights = self::enemyWeightsForWave($this->wave);
+         $roll = $this->random();
+-        $type = $this->wave >= 2 && $roll < 0.14 ? 'enforcer'
+-            : ($this->wave >= 3 && $roll < 0.30 ? 'brute' : ($roll < 0.58 ? 'runner' : 'guardian'));
+-        if ($this->wave % 4 === 0 && $this->remaining % 4 === 0) $type = 'brute';
+-        return $type;
++        $cursor = 0.0;
++        foreach ($weights as $type => $weight) {
++            $cursor += $weight;
++            if ($roll <= $cursor) return $type;
++        }
++        return 'brute';
++    }
++
++    /**
++     * Four durability classes, progressively weighted toward tougher enemies.
++     * Weapon DPS still grows faster than enemy health through DifficultyDirector;
++     * this changes composition, not the underlying elasticity rule.
++     *
++     * @return array{runner:float,guardian:float,enforcer:float,brute:float}
++     */
++    public static function enemyWeightsForWave(int $wave): array
++    {
++        return match (true) {
++            $wave <= 1 => ['runner' => 0.68, 'guardian' => 0.32, 'enforcer' => 0.00, 'brute' => 0.00],
++            $wave <= 3 => ['runner' => 0.54, 'guardian' => 0.34, 'enforcer' => 0.12, 'brute' => 0.00],
++            $wave <= 6 => ['runner' => 0.42, 'guardian' => 0.34, 'enforcer' => 0.18, 'brute' => 0.06],
++            $wave <= 10 => ['runner' => 0.32, 'guardian' => 0.33, 'enforcer' => 0.23, 'brute' => 0.12],
++            default => ['runner' => 0.22, 'guardian' => 0.30, 'enforcer' => 0.28, 'brute' => 0.20],
++        };
+     }
+ 
+     private function enemyRadius(string $type): float
+@@ -495,10 +516,10 @@
+     private function spawnEnemyAt(float $x, float $y, float $z, string $type): bool
+     {
+         [$hp, $speed, $damage, $radius] = match ($type) {
+-            'runner' => [24, 2.05, 7, 0.23],
+-            'brute' => [135, 0.85, 18, 0.40],
+-            'enforcer' => [48, 1.0, 6, 0.27],
+-            default => [48, 1.25, 10, 0.30],
++            'runner' => [24, 2.08, 7, 0.23],
++            'brute' => [180, 0.84, 20, 0.40],
++            'enforcer' => [74, 1.02, 8, 0.27],
++            default => [52, 1.25, 10, 0.30],
+         };
+         $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
+         $id = $this->nextId++;
