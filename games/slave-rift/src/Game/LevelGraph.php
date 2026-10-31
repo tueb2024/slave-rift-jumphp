@@ -22,6 +22,8 @@ final class LevelGraph
 
     public function __construct(public readonly int $seed, int $targetMainDepth = 7)
     {
+        // Public depth remains a compact difficulty knob; physical route length is
+        // deliberately larger so several waves happen before the terminal room.
         $physicalDepth = max(12, min(32, $targetMainDepth * 2));
         $this->build($physicalDepth);
     }
@@ -37,19 +39,34 @@ final class LevelGraph
         $turnBudget = max(2, min(4, intdiv($middleCount, 5)));
         $turns = 0;
         $floor = 0;
+
+        // Every run gets a real upper-floor excursion. This is not left to chance:
+        // the seed changes the surrounding rooms, branches and extra transitions.
+        $upSlot = max(2, intdiv($middleCount, 3));
+        $downSlot = min($middleCount - 3, max($upSlot + 3, intdiv($middleCount * 2, 3)));
+
         $junctionSlots = [];
         $junctionTarget = max(2, min(4, intdiv($middleCount, 5)));
         while (count($junctionSlots) < $junctionTarget) {
             $slot = 2 + $rng->nextInt(max(1, $middleCount - 4));
+            if ($slot === $upSlot || $slot === $downSlot) continue;
             $junctionSlots[$slot] = true;
         }
 
         for ($i = 0; $i < $middleCount; $i++) {
-            if (isset($junctionSlots[$i])) {
+            if ($i === $upSlot) {
+                $type = self::STAIR_UP;
+                $floor++;
+            } elseif ($i === $downSlot) {
+                $type = self::STAIR_DOWN;
+                $floor--;
+            } elseif (isset($junctionSlots[$i])) {
                 $type = self::JUNCTION;
             } else {
-                $canVertical = $i >= 2 && $i <= $middleCount - 3 && $previousType !== self::STAIR_UP && $previousType !== self::STAIR_DOWN;
-                if ($canVertical && $rng->chance(0.18)) {
+                $canVertical = $i >= 2 && $i <= $middleCount - 3
+                    && $previousType !== self::STAIR_UP && $previousType !== self::STAIR_DOWN
+                    && $i !== $upSlot - 1 && $i !== $downSlot - 1;
+                if ($canVertical && $rng->chance(0.10)) {
                     if ($floor <= 0) {
                         $type = self::STAIR_UP;
                         $floor++;
@@ -76,6 +93,7 @@ final class LevelGraph
             $parent = $nextId++;
             $previousType = $type;
         }
+
         $this->addNode($nextId++, self::BOSS_ROOM, $parent, true);
         foreach ($this->nodes as $node) {
             if ($node['type'] !== self::JUNCTION || !$rng->chance(0.92)) continue;
@@ -90,8 +108,25 @@ final class LevelGraph
         $this->nodes[$id] = compact('id', 'type', 'parent', 'depth', 'mainPath') + ['children' => []];
     }
 
-    public function findFirst(string $type): ?array { foreach ($this->nodes as $node) if ($node['type'] === $type) return $node; return null; }
-    public function mainPath(): array { return array_values(array_filter($this->nodes, static fn (array $node): bool => $node['mainPath'])); }
-    public function terminal(): array { $main = $this->mainPath(); return $main[count($main) - 1]; }
-    public function signature(): string { return implode('>', array_map(static fn (array $node): string => $node['type'], $this->mainPath())); }
+    public function findFirst(string $type): ?array
+    {
+        foreach ($this->nodes as $node) if ($node['type'] === $type) return $node;
+        return null;
+    }
+
+    public function mainPath(): array
+    {
+        return array_values(array_filter($this->nodes, static fn (array $node): bool => $node['mainPath']));
+    }
+
+    public function terminal(): array
+    {
+        $main = $this->mainPath();
+        return $main[count($main) - 1];
+    }
+
+    public function signature(): string
+    {
+        return implode('>', array_map(static fn (array $node): string => $node['type'], $this->mainPath()));
+    }
 }
