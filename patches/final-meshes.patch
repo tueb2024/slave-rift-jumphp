@@ -1,0 +1,57 @@
+--- slave-rift-base/src/Gfx/Meshes.php	2026-10-31 17:18:00.000000000 +0000
++++ slave-rift-workspace/src/Gfx/Meshes.php	2026-10-31 17:22:31.434288364 +0000
+@@ -83,6 +83,42 @@
+     }
+ 
+     /** @return float[] */
++    public static function decals(array $decals, string $material): array
++    {
++        $out = [];
++        foreach ($decals as $decal) {
++            if (($decal['material'] ?? '') !== $material) continue;
++            [$x, $y, $z] = $decal['position'];
++            [$nx, $ny, $nz] = $decal['normal'];
++            $halfW = $decal['width'] * 0.5;
++            $halfH = $decal['height'] * 0.5;
++            // Horizontal tangent in the wall plane. The normal is always one of
++            // the four cardinal wall normals in generated modules.
++            $rx = -$nz;
++            $rz = $nx;
++            $offset = 0.012;
++            $cx = $x + $nx * $offset;
++            $cy = $y + $ny * $offset;
++            $cz = $z + $nz * $offset;
++            $leftX = $cx - $rx * $halfW;
++            $leftZ = $cz - $rz * $halfW;
++            $rightX = $cx + $rx * $halfW;
++            $rightZ = $cz + $rz * $halfW;
++            $bottom = $cy - $halfH;
++            $top = $cy + $halfH;
++            $normal = [$nx, $ny, $nz];
++            $color = [1.0, 1.0, 1.0];
++            self::vertex($out, [$leftX, $bottom, $leftZ], $color, $normal, [0.0, 1.0]);
++            self::vertex($out, [$leftX, $top, $leftZ], $color, $normal, [0.0, 0.0]);
++            self::vertex($out, [$rightX, $top, $rightZ], $color, $normal, [1.0, 0.0]);
++            self::vertex($out, [$leftX, $bottom, $leftZ], $color, $normal, [0.0, 1.0]);
++            self::vertex($out, [$rightX, $top, $rightZ], $color, $normal, [1.0, 0.0]);
++            self::vertex($out, [$rightX, $bottom, $rightZ], $color, $normal, [1.0, 1.0]);
++        }
++        return $out;
++    }
++
++    /** @return float[] */
+     public static function enemy(string $type): array
+     {
+         $out = [];
+@@ -159,9 +195,9 @@
+     }
+ 
+     /** @param float[] $p @param float[] $c @param float[] $n */
+-    private static function vertex(array &$out, array $p, array $c, array $n): void
++    private static function vertex(array &$out, array $p, array $c, array $n, ?array $uv = null): void
+     {
+-        [$u, $v] = self::uv($p, $n);
++        [$u, $v] = $uv ?? self::uv($p, $n);
+         array_push($out, $p[0], $p[1], $p[2], $c[0], $c[1], $c[2], $n[0], $n[1], $n[2], $u, $v);
+     }
+ 
