@@ -1,0 +1,89 @@
+name: WASM playtest
+
+on:
+  push:
+    branches: [agent/procedural-game-foundation]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wasm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Slave Rift
+        uses: actions/checkout@v4
+        with:
+          path: game
+
+      - name: Checkout pinned JumPHP runtime
+        uses: actions/checkout@v4
+        with:
+          repository: davidnurdin/jumPhp
+          ref: 28ea932981fb0b6d8dc41f2c9739f941cb4befea
+          path: runtime
+
+      - name: Stage game in pinned JumPHP
+        run: |
+          set -euxo pipefail
+          cp -a game/games/slave-rift runtime/games/slave-rift
+          python3 - <<'PY'
+          import json
+          p = 'runtime/games/slave-rift/composer.json'
+          with open(p, encoding='utf-8') as f:
+              c = json.load(f)
+          c['repositories'] = [
+              {'type': 'path', 'url': '../../engine'},
+              {'type': 'vcs', 'url': 'https://github.com/davidnurdin/php-wasm-network'}
+          ]
+          with open(p, 'w', encoding='utf-8') as f:
+              json.dump(c, f, indent=2)
+          PY
+
+      - name: Build JumPHP desktop toolchain
+        working-directory: runtime
+        run: docker build -t jumphp/desktop:dev --build-context ext=docker/ext docker/desktop
+
+      - name: Download pinned WASM engine
+        working-directory: runtime
+        run: bin/jumphp engine:download
+
+      - name: Build Slave Rift for WebAssembly
+        working-directory: runtime
+        run: bin/jumphp build slave-rift
+
+      - name: Verify web payload
+        run: |
+          set -euxo pipefail
+          test -s runtime/games/slave-rift/dist/web/index.html
+          test -s runtime/games/slave-rift/dist/web/php-web.wasm
+          test -s runtime/games/slave-rift/dist/web/php-web.data
+          test -s runtime/games/slave-rift/dist/web/php-web.mjs
+          du -h runtime/games/slave-rift/dist/web/* | sort -h
+
+      - name: Upload WASM playtest
+        uses: actions/upload-artifact@v4
+        with:
+          name: slave-rift-wasm-${{ github.sha }}
+          path: runtime/games/slave-rift/dist/web/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish WASM playtest branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          publish="$RUNNER_TEMP/slave-rift-pages"
+          mkdir -p "$publish"
+          cp -a runtime/games/slave-rift/dist/web/. "$publish/"
+          cd "$publish"
+          git init -b gh-pages
+          git config user.name "slave-rift-wasm-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "wasm playtest ${GITHUB_SHA}"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin HEAD:gh-pages
