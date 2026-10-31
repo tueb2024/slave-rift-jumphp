@@ -2,7 +2,7 @@ name: WASM playtest
 
 on:
   push:
-    branches: [agent/procedural-game-foundation]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
