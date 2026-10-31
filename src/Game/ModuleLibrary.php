@@ -64,7 +64,7 @@ final class ModuleLibrary
         self::solidWest($m, $half, $half, $h, 'stone');
         $m->addConnector('entry', 0.0, 0.0, -$half, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addConnector('main_exit', $half, 0.0, 0.0, 1.0, 0.0, 0.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
-        $m->adSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['turn']);
+        $m->addSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['turn']);
         return $m;
     }
 
@@ -77,7 +77,7 @@ final class ModuleLibrary
         self::solidWestEast($m, $half, $half, $height, $wall);
         $m->addConnector('entry', 0.0, 0.0, -$half, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addConnector('main_exit', 0.0, 0.0, $half, 0.0, 0.0, 1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
-        $m->adSpawnAnchor(-$half * 0.45, self::SPAWN_Y, -$half * 0.35, ['room', 'corner']);
+        $m->addSpawnAnchor(-$half * 0.45, self::SPAWN_Y, -$half * 0.35, ['room', 'corner']);
         $m->addSpawnAnchor($half * 0.45, self::SPAWN_Y, $half * 0.35, ['room', 'corner']);
         $m->addPickupAnchor($half * 0.35, 0.25, -$half * 0.35, ['bonus']);
         if ($type === LevelGraph::LARGE_ROOM) {
@@ -123,7 +123,7 @@ final class ModuleLibrary
         self::solidSouth($m, $half, $half, $h, 'stone');
         self::solidWestEast($m, $half, $half, $h, 'stone');
         $m->addConnector('entry', 0.0, 0.0, -$half, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
-        $m->adSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['boss']);
+        $m->addSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['boss']);
         $m->addPickupAnchor(0.0, 0.25, 6.0, ['treasure']);
         return $m;
     }
