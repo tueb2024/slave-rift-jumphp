@@ -11,6 +11,7 @@ use App\Game\LevelAssembler;
 use App\Game\LevelGraph;
 use App\Game\RhythmClock;
 use App\Game\Run;
+use App\Game\TreasureDirector;
 use App\Gfx\World;
 use JumPHP\Loop\FixedStep;
 use JumPHP\Renderer\Renderer;
@@ -31,6 +32,7 @@ final class PlayScene extends AbstractScene
     private int $levelSeed = 1337;
     private int $proceduralDepth = 7;
     private ?AssembledLevel $assembledLevel = null;
+    private ?TreasureDirector $objective = null;
     private float $frameMs = 16.7;
     private bool $paused = false;
     private bool $jumpPending = false;
@@ -60,6 +62,9 @@ final class PlayScene extends AbstractScene
             $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
         }
         $this->run = new Run($map, $this->levelSeed);
+        $this->objective = $this->assembledLevel !== null
+            ? TreasureDirector::fromLevel($this->assembledLevel, max(12, min(24, 8 + $this->proceduralDepth)))
+            : null;
         $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();
         $this->step = new FixedStep(60, 8);
@@ -153,6 +158,7 @@ final class PlayScene extends AbstractScene
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
         }
 
+        $this->advanceObjectiveBeforeStep();
         $beforeState = $this->run->state;
         $beforeXp = $this->run->xp;
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
@@ -165,6 +171,39 @@ final class PlayScene extends AbstractScene
 
         $this->playAudioEvents($beforeState, $beforeXp, $dt);
         $this->music->playSteps($this->rhythm->drain(), $this->run->level);
+    }
+
+    private function advanceObjectiveBeforeStep(): void
+    {
+        if ($this->objective === null || $this->run->state !== 'play') return;
+
+        if ($this->objective->updatePlayer($this->run->x, $this->run->y, $this->run->z)) {
+            // Keep anything still alive or still scheduled from the current wave:
+            // reaching B does not erase unfinished cleanup. The dedicated final
+            // room wave is added on top and must be completely cleared.
+            $this->run->remaining += $this->objective->finalWaveSize;
+            $this->run->intermission = 0.0;
+            $this->run->waveTime = 0.0;
+            $this->run->message = 'SALLE FINALE - NETTOIE TOUT';
+            $this->run->messageTime = 3.2;
+        }
+
+        if ($this->objective->state === TreasureDirector::FINAL_WAVE) {
+            // The legacy survival loop ends ordinary waves after 26 seconds.
+            // A final-room cleanup is objective-based, never time-based.
+            $this->run->waveTime = min($this->run->waveTime, 24.5);
+            if ($this->run->remaining === 0 && $this->run->enemies === []) {
+                if ($this->objective->notifyFinalWaveCleared()) {
+                    // Hold the legacy wave scheduler while boss combat takes over.
+                    $this->run->intermission = 3600.0;
+                    $this->run->message = 'SALLE NETTOYEE - BOSS';
+                    $this->run->messageTime = 3.0;
+                }
+            }
+        } elseif (in_array($this->objective->state, [TreasureDirector::BOSS_READY, TreasureDirector::BOSS, TreasureDirector::TREASURE_READY, TreasureDirector::COMPLETE], true)) {
+            $this->run->intermission = max($this->run->intermission, 3600.0);
+            $this->run->remaining = 0;
+        }
     }
 
     private function playAudioEvents(string $beforeState, int $beforeXp, float $dt): void
@@ -241,17 +280,25 @@ final class PlayScene extends AbstractScene
 
         $messageY = 29;
         if ($this->procedural && $this->assembledLevel !== null && $this->assembledLevel->treasureAnchor !== null && $run->state === 'play') {
-            $treasure = $this->assembledLevel->treasureAnchor;
-            $dx = $treasure['x'] - $run->x;
-            $dz = $treasure['z'] - $run->z;
-            $distance = hypot($dx, $dz);
-            $delta = fmod(atan2($dx, $dz) - $run->yaw + M_PI, 2 * M_PI);
-            if ($delta < 0) $delta += 2 * M_PI;
-            $delta -= M_PI;
-            $marker = abs($delta) < 0.22 ? '^' : ($delta > 0 ? '>' : '<');
-            $metres = (int)round($distance);
-            $label = $marker === '<' ? '<  TRESOR ' . $metres . 'm' : ($marker === '>' ? 'TRESOR ' . $metres . 'm  >' : '^ TRESOR ' . $metres . 'm');
-            $font->draw($r, $label, $cx, 27, 1, [255,205,90], 'center', [8,5,12]);
+            if ($this->objective !== null && $this->objective->state !== TreasureDirector::EXPLORING) {
+                $objectiveText = $this->objective->objectiveLabel();
+                if ($this->objective->state === TreasureDirector::FINAL_WAVE) {
+                    $objectiveText .= '  ' . ($run->remaining + count($run->enemies));
+                }
+                $font->draw($r, $objectiveText, $cx, 27, 1, [255,205,90], 'center', [8,5,12]);
+            } else {
+                $treasure = $this->assembledLevel->treasureAnchor;
+                $dx = $treasure['x'] - $run->x;
+                $dz = $treasure['z'] - $run->z;
+                $distance = hypot($dx, $dz);
+                $delta = fmod(atan2($dx, $dz) - $run->yaw + M_PI, 2 * M_PI);
+                if ($delta < 0) $delta += 2 * M_PI;
+                $delta -= M_PI;
+                $marker = abs($delta) < 0.22 ? '^' : ($delta > 0 ? '>' : '<');
+                $metres = (int)round($distance);
+                $label = $marker === '<' ? '<  TRESOR ' . $metres . 'm' : ($marker === '>' ? 'TRESOR ' . $metres . 'm  >' : '^ TRESOR ' . $metres . 'm');
+                $font->draw($r, $label, $cx, 27, 1, [255,205,90], 'center', [8,5,12]);
+            }
             $messageY = 38;
         }
         if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, $messageY, 1, $cream, 'center', [8,5,12]);
@@ -291,7 +338,8 @@ final class PlayScene extends AbstractScene
             $font->draw($r, sprintf('BAL PWR x%.2f  DPS %.0f  ENEMY HP x%.2f  DMG x%.2f',
                 $balance['powerIndex'], $balance['primaryDps'], $balance['healthScale'], $balance['damageScale']), 4, 58, 1, $cyan);
             if ($this->procedural && $this->assembledLevel !== null) {
-                $font->draw($r, sprintf('PROC SEED %d  ROOMS %d  DEPTH %d', $this->levelSeed, count($this->assembledLevel->rooms), $this->proceduralDepth), 4, 68, 1, $cyan);
+                $objectiveState = $this->objective?->state ?? 'none';
+                $font->draw($r, sprintf('PROC SEED %d  ROOMS %d  DEPTH %d  OBJ %s', $this->levelSeed, count($this->assembledLevel->rooms), $this->proceduralDepth, $objectiveState), 4, 68, 1, $cyan);
             }
         }
     }
