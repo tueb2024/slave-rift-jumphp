@@ -83,10 +83,20 @@ final class Meshes
     /** @return float[] */
     public static function decals(array $decals, string $material): array
     {
+        // Legacy poster3615 placements are intentionally absorbed into the
+        // procedural DeepSeek atlas. The old troll texture is never rendered.
+        if ($material === 'poster3615') return [];
+
         $out = [];
         $ordinal = 0;
         foreach ($decals as $decal) {
-            if (($decal['material'] ?? '') !== $material) continue;
+            $decalMaterial = (string)($decal['material'] ?? '');
+            if ($material === 'posterAd') {
+                if ($decalMaterial !== 'posterAd' && $decalMaterial !== 'poster3615') continue;
+            } elseif ($decalMaterial !== $material) {
+                continue;
+            }
+
             [$x, $y, $z] = $decal['position'];
             [$nx, $ny, $nz] = $decal['normal'];
             $halfW = $decal['width'] * 0.5;
