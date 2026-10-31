@@ -64,15 +64,15 @@ jobs:
         env:
           JUMPHP_GL: '0'
         run: bin/jumphp test slave-rift
-      - name: 900-frame OpenGL smokes and screenshots
+      - name: OpenGL smokes and screenshots
         working-directory: runtime
         env:
           JUMPHP_GL: '1'
           JUMPHP_SCENE: App\Scene\PlayScene
-          JUMPHP_SCENE_PARAMS: '{"demo":true,"seed":1337}'
         run: |
-          bin/jumphp shot slave-rift 900 var/screenshots/survival-gl.png
+          JUMPHP_SCENE_PARAMS='{"demo":true,"procedural":false,"seed":1337}' bin/jumphp shot slave-rift 900 var/screenshots/survival-gl.png
           JUMPHP_SCENE_PARAMS='{"demo":true,"procedural":true,"seed":1337,"depth":8}' bin/jumphp shot slave-rift 900 var/screenshots/procedural-gl.png
+          JUMPHP_SCENE_PARAMS='{"demo":false,"procedural":true,"seed":1337,"depth":8}' bin/jumphp shot slave-rift 2 var/screenshots/procedural-start.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
