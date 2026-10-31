@@ -1,0 +1,11 @@
+--- slave-rift-base/src/Scene/PlayScene.php	2026-10-31 17:18:00.000000000 +0000
++++ slave-rift-workspace/src/Scene/PlayScene.php	2026-10-31 17:23:01.663372827 +0000
+@@ -52,7 +52,7 @@
+     {
+         $this->demo = (bool)($params['demo'] ?? false);
+         $this->debug = (bool)($params['debug'] ?? false);
+-        $this->procedural = (bool)($params['procedural'] ?? false);
++        $this->procedural = (bool)($params['procedural'] ?? true);
+         $this->levelSeed = (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520)));
+         $this->proceduralDepth = max(5, min(24, (int)($params['depth'] ?? 7)));
+         if ($this->procedural) {
