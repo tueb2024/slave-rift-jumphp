@@ -12,6 +12,7 @@ use App\Game\LevelGraph;
 use App\Game\RhythmClock;
 use App\Game\Run;
 use App\Game\TreasureDirector;
+use App\Gfx\WeaponRenderer;
 use App\Gfx\World;
 use JumPHP\Loop\FixedStep;
 use JumPHP\Renderer\Renderer;
@@ -22,6 +23,7 @@ final class PlayScene extends AbstractScene
 {
     private Run $run;
     private World $world;
+    private WeaponRenderer $weaponRenderer;
     private FixedStep $step;
     private RiftMusic $music;
     private RhythmClock $rhythm;
@@ -67,6 +69,8 @@ final class PlayScene extends AbstractScene
             : null;
         $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();
+        $this->weaponRenderer ??= new WeaponRenderer();
+        $this->weaponRenderer->reset($this->run->time);
         $this->step = new FixedStep(60, 8);
         $this->rhythm = new RhythmClock();
         $this->restartDelay = 0.0;
@@ -247,25 +251,9 @@ final class PlayScene extends AbstractScene
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross); $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
-        $weaponKey = match (true) {
-            $run->primaryStage <= 1 => 'weapon_colt',
-            $run->primaryStage <= 3 => 'weapon_mp44',
-            $run->primaryStage === 4 => 'weapon_bar',
-            default => 'weapon_gatling',
-        };
-        $weaponFrame = $run->muzzle <= 0.0 ? 0 : ($run->muzzle > 0.08 ? 1 : ($run->muzzle > 0.04 ? 2 : 3));
+        $weaponKey = $this->weaponRenderer->textureKey($run->primaryStage);
         $weapon = $this->sdl()->getTexture($weaponKey);
-        $drawH = (int)round($h * ($run->primaryStage <= 1 ? 0.27 : 0.29));
-        $drawW = (int)round($drawH * 1.5);
-        $bob = (int)round(sin($run->time * 6) * $h * 0.004);
-        $weaponY = $h - $drawH + $bob;
-        $copies = in_array($run->primaryStage, [1, 3, 6], true) ? 2 : 1;
-        $spread = (int)round($drawW * 0.20);
-        for ($gun = 0; $gun < $copies; $gun++) {
-            $offset = (int)round(($gun - ($copies - 1) / 2) * $spread);
-            $weaponX = (int)round($cx - $drawW * 0.18 + $offset);
-            $r->copy($weapon['texture'], [$weaponFrame * 144, 0, 144, 96], $weaponX, $weaponY, $drawW, $drawH);
-        }
+        $this->weaponRenderer->render($r, $run, $weapon);
 
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
@@ -334,7 +322,7 @@ final class PlayScene extends AbstractScene
                 $this->world->mapChunksDrawn, $run->neighborChecks), 4, 28, 1, $cyan);
             $font->draw($r, sprintf('TR %d  COR %d  IMP %d  COL %d  PICK %d', count($run->traces), count($run->corpses),
                 min(count($run->traces), World::MAX_IMPACTS), $run->collisionTests, count($run->pickups)), 4, 38, 1, $cyan);
-            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s  BPM %.0f', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level)), 4, 48, 1, $cyan);
+            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s  BPM %.0f  WPN %s', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level), $this->weaponRenderer->state()), 4, 48, 1, $cyan);
             $font->draw($r, sprintf('BAL PWR x%.2f  DPS %.0f  ENEMY HP x%.2f  DMG x%.2f',
                 $balance['powerIndex'], $balance['primaryDps'], $balance['healthScale'], $balance['damageScale']), 4, 58, 1, $cyan);
             if ($this->procedural && $this->assembledLevel !== null) {
