@@ -84,14 +84,14 @@ final class Meshes
     public static function decals(array $decals, string $material): array
     {
         $out = [];
+        $ordinal = 0;
         foreach ($decals as $decal) {
             if (($decal['material'] ?? '') !== $material) continue;
             [$x, $y, $z] = $decal['position'];
             [$nx, $ny, $nz] = $decal['normal'];
             $halfW = $decal['width'] * 0.5;
             $halfH = $decal['height'] * 0.5;
-            // Cardinal wall tangent. The previous sign mirrored readable posters;
-            // this orientation keeps text left-to-right from the room-facing side.
+            // Cardinal wall tangent. This orientation keeps readable posters left-to-right.
             $rx = $nz;
             $rz = -$nx;
             $offset = 0.012;
@@ -106,14 +106,35 @@ final class Meshes
             $top = $cy + $halfH;
             $normal = [$nx, $ny, $nz];
             $color = [1.0, 1.0, 1.0];
-            self::vertex($out, [$leftX, $bottom, $leftZ], $color, $normal, [0.0, 1.0]);
-            self::vertex($out, [$leftX, $top, $leftZ], $color, $normal, [0.0, 0.0]);
-            self::vertex($out, [$rightX, $top, $rightZ], $color, $normal, [1.0, 0.0]);
-            self::vertex($out, [$leftX, $bottom, $leftZ], $color, $normal, [0.0, 1.0]);
-            self::vertex($out, [$rightX, $top, $rightZ], $color, $normal, [1.0, 0.0]);
-            self::vertex($out, [$rightX, $bottom, $rightZ], $color, $normal, [1.0, 1.0]);
+
+            [$u0, $v0, $u1, $v1] = $material === 'posterAd'
+                ? self::posterAtlasUv($decal, $ordinal)
+                : [0.0, 0.0, 1.0, 1.0];
+            $ordinal++;
+
+            self::vertex($out, [$leftX, $bottom, $leftZ], $color, $normal, [$u0, $v1]);
+            self::vertex($out, [$leftX, $top, $leftZ], $color, $normal, [$u0, $v0]);
+            self::vertex($out, [$rightX, $top, $rightZ], $color, $normal, [$u1, $v0]);
+            self::vertex($out, [$leftX, $bottom, $leftZ], $color, $normal, [$u0, $v1]);
+            self::vertex($out, [$rightX, $top, $rightZ], $color, $normal, [$u1, $v0]);
+            self::vertex($out, [$rightX, $bottom, $rightZ], $color, $normal, [$u1, $v1]);
         }
         return $out;
+    }
+
+    /** Deterministic atlas cell from world placement: same level = same posters, different layout = different mix. */
+    private static function posterAtlasUv(array $decal, int $ordinal): array
+    {
+        [$x, $y, $z] = $decal['position'];
+        $variant = ((int)round(abs($x) * 37.0 + abs($y) * 17.0 + abs($z) * 53.0) + $ordinal * 7)
+            % (PosterFactory::ATLAS_COLS * PosterFactory::ATLAS_ROWS);
+        $col = $variant % PosterFactory::ATLAS_COLS;
+        $row = intdiv($variant, PosterFactory::ATLAS_COLS);
+        $u0 = $col / PosterFactory::ATLAS_COLS;
+        $u1 = ($col + 1) / PosterFactory::ATLAS_COLS;
+        $v0 = $row / PosterFactory::ATLAS_ROWS;
+        $v1 = ($row + 1) / PosterFactory::ATLAS_ROWS;
+        return [$u0, $v0, $u1, $v1];
     }
 
     /** @return float[] */
