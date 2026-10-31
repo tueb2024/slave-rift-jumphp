@@ -32,7 +32,10 @@ final class PosterFactoryTest extends TestCase
             'height' => 2.0,
         ]];
 
+        // The obsolete troll material itself can no longer produce geometry.
         self::assertSame([], Meshes::decals($legacy, 'poster3615'));
+
+        // Its wall placement is retained and re-used by the procedural DeepSeek atlas.
         self::assertCount(6 * Meshes::STRIDE, Meshes::decals($legacy, 'posterAd'));
     }
 }
