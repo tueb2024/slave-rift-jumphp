@@ -1,0 +1,36 @@
+name: Reframe FPS weapon sprites
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/reframe_weapon_sprites.py
+      - .github/workflows/reframe-weapon-sprites.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reframe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install renderer dependencies
+        run: python -m pip install --disable-pip-version-check pillow numpy
+      - name: Reframe weapon atlases into FPS perspective
+        run: python tools/reframe_weapon_sprites.py "$GITHUB_WORKSPACE"
+      - name: Commit generated atlases
+        shell: bash
+        run: |
+          git add assets/sprites/weapons/fps-*.png games/slave-rift/assets/sprites/weapons/fps-*.png
+          if git diff --cached --quiet; then
+            echo "No sprite changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "visual: reframe weapon atlases to FPS perspective"
+          git push origin HEAD:main
