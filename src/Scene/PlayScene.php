@@ -4,8 +4,11 @@ namespace App\Scene;
 
 use App\Audio\RiftMusic;
 use App\Audio\RiftSfx;
+use App\Game\AssembledLevel;
 use App\Game\BrushMap;
 use App\Game\DifficultyDirector;
+use App\Game\LevelAssembler;
+use App\Game\LevelGraph;
 use App\Game\RhythmClock;
 use App\Game\Run;
 use App\Gfx\World;
@@ -24,6 +27,10 @@ final class PlayScene extends AbstractScene
     private DifficultyDirector $difficulty;
     private bool $demo = false;
     private bool $debug = false;
+    private bool $procedural = false;
+    private int $levelSeed = 1337;
+    private int $proceduralDepth = 7;
+    private ?AssembledLevel $assembledLevel = null;
     private float $frameMs = 16.7;
     private bool $paused = false;
     private bool $jumpPending = false;
@@ -41,8 +48,18 @@ final class PlayScene extends AbstractScene
     {
         $this->demo = (bool)($params['demo'] ?? false);
         $this->debug = (bool)($params['debug'] ?? false);
-        $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
-        $this->run = new Run($map, (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520))));
+        $this->procedural = (bool)($params['procedural'] ?? false);
+        $this->levelSeed = (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520)));
+        $this->proceduralDepth = max(5, min(24, (int)($params['depth'] ?? 7)));
+        if ($this->procedural) {
+            $graph = new LevelGraph($this->levelSeed, $this->proceduralDepth);
+            $this->assembledLevel = (new LevelAssembler())->assemble($graph);
+            $map = $this->assembledLevel->map;
+        } else {
+            $this->assembledLevel = null;
+            $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
+        }
+        $this->run = new Run($map, $this->levelSeed);
         $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();
         $this->step = new FixedStep(60, 8);
@@ -114,7 +131,15 @@ final class PlayScene extends AbstractScene
 
         if ($this->run->state === 'dead') {
             $this->restartDelay += $dt;
-            if (($this->demo && $this->restartDelay > 1.0) || $this->actions()->isPressed('restart')) $this->enter(['demo' => $this->demo]);
+            if (($this->demo && $this->restartDelay > 1.0) || $this->actions()->isPressed('restart')) {
+                $this->enter([
+                    'demo' => $this->demo,
+                    'debug' => $this->debug,
+                    'procedural' => $this->procedural,
+                    'seed' => $this->levelSeed,
+                    'depth' => $this->proceduralDepth,
+                ]);
+            }
             return;
         }
 
@@ -215,6 +240,9 @@ final class PlayScene extends AbstractScene
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
 
         if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, 29, 1, $cream, 'center', [8,5,12]);
+        if ($run->time < 6 && !$this->demo && $run->state === 'play') {
+            $font->draw($r, 'NETTOIE LE NIVEAU / TROUVE LE TRESOR / AMELIORE TON SCORE', $cx, $cy - 42, 1, $cream, 'center', [8,5,12]);
+        }
         if ($run->time < 8 && !$this->demo) $font->draw($r, 'Z/S MOVE / Q/D STRAFE / LEFT-RIGHT TURN / WEAPONS AUTO / SPACE JUMP', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
@@ -247,6 +275,9 @@ final class PlayScene extends AbstractScene
             $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s  BPM %.0f', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level)), 4, 48, 1, $cyan);
             $font->draw($r, sprintf('BAL PWR x%.2f  DPS %.0f  ENEMY HP x%.2f  DMG x%.2f',
                 $balance['powerIndex'], $balance['primaryDps'], $balance['healthScale'], $balance['damageScale']), 4, 58, 1, $cyan);
+            if ($this->procedural && $this->assembledLevel !== null) {
+                $font->draw($r, sprintf('PROC SEED %d  ROOMS %d  DEPTH %d', $this->levelSeed, count($this->assembledLevel->rooms), $this->proceduralDepth), 4, 68, 1, $cyan);
+            }
         }
     }
 
