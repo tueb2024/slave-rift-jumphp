@@ -128,8 +128,8 @@ final class PlayScene extends AbstractScene
         $beforeState = $this->run->state;
         $beforeXp = $this->run->xp;
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
-            $this->rhythm->advance($h, $this->run->level);
-            $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, false);
+            $rhythmSteps = $this->rhythm->advance($h, $this->run->level);
+            $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, false, $rhythmSteps);
             $this->jumpPending = false;
         });
 
@@ -139,11 +139,10 @@ final class PlayScene extends AbstractScene
 
     private function playAudioEvents(string $beforeState, int $beforeXp, float $dt): void
     {
-        $this->weaponSfxCooldown = max(0.0, $this->weaponSfxCooldown - $dt);
-        if ($this->run->muzzle > $this->prevMuzzle + 0.01 && $this->weaponSfxCooldown <= 0.0) {
-            $name = $this->run->autoTier >= 3 ? 'heavy_fire' : ($this->run->autoTier > 0 ? 'sten_fire' : 'colt_fire');
+        foreach ($this->run->drainPrimaryAudioEvents() as $stage) {
+            $this->sound()->playSfx('rift_hat', 0, false);
+            $name = $stage <= 1 ? 'colt_fire' : ($stage <= 3 ? 'sten_fire' : 'heavy_fire');
             $this->sound()->playSfx($name, 0, true);
-            $this->weaponSfxCooldown = $this->run->autoTier > 0 ? 0.12 : 0.20;
         }
         if ($this->run->pulse > $this->prevPulse + 0.01) $this->sound()->playSfx('pulse_sfx', 0, false);
         if ($this->run->specialFlash > $this->prevSpecial + 0.01) $this->sound()->playSfx('special_sfx', 0, false);
@@ -180,18 +179,18 @@ final class PlayScene extends AbstractScene
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
         $weaponKey = match (true) {
-            $run->autoTier === 0 => 'weapon_colt',
-            $run->autoTier <= 2 => 'weapon_mp44',
-            $run->autoTier === 3 => 'weapon_bar',
+            $run->primaryStage <= 1 => 'weapon_colt',
+            $run->primaryStage <= 3 => 'weapon_mp44',
+            $run->primaryStage === 4 => 'weapon_bar',
             default => 'weapon_gatling',
         };
         $weaponFrame = $run->muzzle <= 0.0 ? 0 : ($run->muzzle > 0.08 ? 1 : ($run->muzzle > 0.04 ? 2 : 3));
         $weapon = $this->sdl()->getTexture($weaponKey);
-        $drawH = (int)round($h * ($run->autoTier === 0 ? 0.27 : 0.29));
+        $drawH = (int)round($h * ($run->primaryStage <= 1 ? 0.27 : 0.29));
         $drawW = (int)round($drawH * 1.5);
         $bob = (int)round(sin($run->time * 6) * $h * 0.004);
         $weaponY = $h - $drawH + $bob;
-        $copies = $run->autoTier >= 4 ? max(1, min(3, $run->autoGuns)) : 1;
+        $copies = in_array($run->primaryStage, [1, 3, 6], true) ? 2 : 1;
         $spread = (int)round($drawW * 0.20);
         for ($gun = 0; $gun < $copies; $gun++) {
             $offset = (int)round(($gun - ($copies - 1) / 2) * $spread);
@@ -206,7 +205,7 @@ final class PlayScene extends AbstractScene
         if ($run->flameActive > 0) $font->draw($r, 'FLAME SWEEP', $cx, $h - 40, 1, [255,170,90], 'center');
 
         $r->fillRect(0, $h - 10, $w, 10, [6,5,12,225]);
-        $arsenal = $run->arsenalLabel() === 'COLT .45 ONLY' ? 'COLT .45 AUTO' : $run->arsenalLabel();
+        $arsenal = $run->arsenalLabel();
         $font->draw($r, $arsenal, 4, $h - 8, 1, $cyan);
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
 

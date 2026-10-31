@@ -53,19 +53,24 @@ final class Run
     public int $xp = 0;
     public int $nextXp = 6;
     public bool $pulseUnlocked = false;
+    public int $primaryStage = 0;
+    // Compatibility mirrors for the current HUD renderer. primaryStage is authoritative.
     public int $autoTier = 0;
-    public string $autoWeapon = 'LOCKED';
+    public string $autoWeapon = 'COLT';
     public int $autoGuns = 1;
     public int $flameRank = 0;
     public int $shurikenRank = 0;
     public float $flameActive = 0.0;
     public array $choices = [];
-    public string $message = 'COLT .45 AUTO - KEYBOARD CONTROL';
+    public string $message = 'COLT .45 - RHYTHM FIRE';
     public float $messageTime = 4.0;
 
-    private float $manualClock = 0.0;
-    private float $autoClock = 0.0;
     private float $pulseClock = 1.0;
+    /** @var list<array{delay:float,guns:int,split:bool,stage:int,lateral:float}> */
+    private array $primaryBurstQueue = [];
+    /** @var list<int> */
+    private array $primaryAudioEvents = [];
+    private int $primaryGunPhase = 0;
     private float $flameCooldownClock = 4.5;
     private float $flameTickClock = 0.0;
     private float $shurikenClock = 3.0;
@@ -88,9 +93,10 @@ final class Run
         $this->yaw = $map->playerYaw;
         $this->lastGroundedPosition = [$this->x, $this->y, $this->z];
         $this->rng = max(1, $seed % 65521);
+        $this->syncPrimaryStage();
     }
 
-    public function step(float $dt, float $forward, float $strafe, float $turn, bool $fire = false, bool $jump = false, bool $special = false): void
+    public function step(float $dt, float $forward, float $strafe, float $turn, bool $fire = false, bool $jump = false, bool $special = false, array $rhythmSteps = []): void
     {
         if ($this->state !== 'play') return;
         $dt = max(0.0, min($dt, 0.05));
@@ -140,14 +146,9 @@ final class Run
             return;
         }
 
-        $this->manualClock -= $dt;
-        $this->autoClock -= $dt;
         $this->pulseClock -= $dt;
-
-        // Every weapon is automatic. The keyboard controls position and facing;
-        // the simulation owns all weapon clocks so browser frame drops cannot change cadence.
-        if ($this->manualClock <= 0) $this->fireColt();
-        if ($this->autoTier > 0 && $this->autoClock <= 0) $this->fireAutoWeapon();
+        $this->stepPrimaryBursts($dt);
+        foreach ($rhythmSteps as $rhythmStep) $this->triggerPrimaryRhythmStep((int)$rhythmStep);
         if ($this->pulseUnlocked && $this->pulseClock <= 0) $this->firePulse();
         if ($this->flameRank > 0) $this->stepFlamethrower($dt);
         if ($this->shurikenRank > 0) {
@@ -169,12 +170,6 @@ final class Run
             'PULSE' => $this->upgradePulse(),
             'FLAMETHROWER' => $this->upgradeFlamethrower(),
             'SHURIKEN' => $this->upgradeShuriken(),
-            'STEN' => $this->setAutoTier(1),
-            'SMG' => $this->setAutoTier(2),
-            'MACHINE GUN' => $this->setAutoTier(3),
-            'SULFATEUSE' => $this->setAutoTier(4),
-            'AKIMBO' => $this->autoGuns = max(2, $this->autoGuns),
-            'TRIPLE GUN' => $this->autoGuns = max(3, $this->autoGuns),
             default => $this->upgradeVitality(),
         };
         $this->choices = [];
@@ -210,51 +205,84 @@ final class Run
         $this->shurikenClock = min($this->shurikenClock, 0.45);
     }
 
-    private function setAutoTier(int $tier): void
+    private function syncPrimaryStage(): void
     {
-        $this->autoTier = max($this->autoTier, min(4, $tier));
-        $this->autoWeapon = match ($this->autoTier) {
-            1 => 'STEN',
-            2 => 'SMG',
-            3 => 'MACHINE GUN',
-            4 => 'SULFATEUSE',
-            default => 'LOCKED',
+        $next = self::primaryStageForLevel($this->level);
+        $changed = $next !== $this->primaryStage;
+        $this->primaryStage = $next;
+        [$tier, $weapon, $guns] = match ($next) {
+            0 => [0, 'COLT', 1],
+            1 => [0, 'COLT', 2],
+            2 => [1, 'MP44', 1],
+            3 => [1, 'MP44', 2],
+            4 => [3, 'BAR', 1],
+            5 => [4, 'GATLING', 1],
+            default => [4, 'GATLING', 2],
         };
-        $this->autoClock = min($this->autoClock, 0.15);
+        $this->autoTier = $tier;
+        $this->autoWeapon = $weapon;
+        $this->autoGuns = $guns;
+        if ($changed) {
+            $this->primaryBurstQueue = [];
+            $this->message = $this->primaryWeaponLabel() . ' / RHYTHM LOCK';
+            $this->messageTime = 2.6;
+        }
     }
 
+    public static function primaryStageForLevel(int $level): int
+    {
+        return match (true) {
+            $level >= 24 => 6,
+            $level >= 20 => 5,
+            $level >= 16 => 4,
+            $level >= 12 => 3,
+            $level >= 8 => 2,
+            $level >= 4 => 1,
+            default => 0,
+        };
+    }
+
+    public function primaryWeaponLabel(): string
+    {
+        return match ($this->primaryStage) {
+            0 => 'COLT .45',
+            1 => 'DUAL COLT',
+            2 => 'MP44',
+            3 => 'DUAL MP44',
+            4 => 'BAR',
+            5 => 'GATLING',
+            default => 'DUAL GATLING',
+        };
+    }
+
+    /** @return list<int> primary stages that actually emitted a shot event */
+    public function drainPrimaryAudioEvents(): array
+    {
+        $events = $this->primaryAudioEvents;
+        $this->primaryAudioEvents = [];
+        return $events;
+    }
     public function upgradeDescription(string $choice): string
     {
         return match ($choice) {
-            'POWER' => '+35% COLT / +28% AUTO / STRONGER SECONDARIES',
-            'HASTE' => 'FASTER COLT / AUTO / SECONDARY CYCLES',
+            'POWER' => '+30% PRIMARY DAMAGE / STRONGER SECONDARIES',
+            'HASTE' => 'FASTER SECONDARY CYCLES',
             'MAGNET' => 'WIDER PICKUP RANGE',
             'PULSE' => $this->pulseUnlocked ? 'STRONGER WIDER PULSE' : 'UNLOCK RADIAL PULSE',
             'FLAMETHROWER' => $this->flameRank === 0 ? 'TRACKING FIRE CONE FOR 2.4s' : 'LONGER / WIDER / HOTTER SWEEP',
             'SHURIKEN' => $this->shurikenRank === 0 ? 'VOLLEY HITS UP TO 4 TARGETS' : 'MORE TARGETS / FASTER VOLLEY',
-            'STEN' => 'UNLOCK 0.27s AUTO WEAPON',
-            'SMG' => 'EVOLVE AUTO WEAPON TO 0.20s',
-            'MACHINE GUN' => 'EVOLVE AUTO WEAPON TO 0.145s',
-            'SULFATEUSE' => 'EVOLVE AUTO WEAPON TO 0.095s',
-            'AKIMBO' => 'SECOND SULFATEUSE / SPLIT OR FOCUS FIRE',
-            'TRIPLE GUN' => 'THIRD SULFATEUSE',
             default => '+20 MAX HP / HEAL 40',
         };
     }
 
     public function arsenalLabel(): string
     {
-        if ($this->autoTier === 0 && $this->flameRank === 0 && $this->shurikenRank === 0 && !$this->pulseUnlocked) {
-            return 'COLT .45 ONLY';
-        }
-        $parts = ['COLT AUTO'];
-        if ($this->autoTier > 0) $parts[] = $this->autoWeapon . ($this->autoGuns > 1 ? ' x' . $this->autoGuns : '');
+        $parts = [$this->primaryWeaponLabel()];
         if ($this->flameRank > 0) $parts[] = 'FLAME L' . $this->flameRank;
         if ($this->shurikenRank > 0) $parts[] = 'SHURIKEN L' . $this->shurikenRank;
         if ($this->pulseUnlocked) $parts[] = 'PULSE L' . max(1, $this->pulseRank);
         return implode(' + ', $parts);
     }
-
     /** Demo controls, also used by the integration smoke test. */
     public function autopilot(): array
     {
@@ -573,46 +601,104 @@ final class Run
         unset($enemy);
     }
 
-    private function fireColt(): void
+    private function triggerPrimaryRhythmStep(int $step): void
     {
-        $target = $this->findTarget(19.0, 0.14);
-        if ($target === null) {
-            $this->manualClock = 0.20;
-            return;
+        $step = (($step % 16) + 16) % 16;
+        $beat = 60.0 / (RhythmClock::BPM_BASE + max(0, $this->level - 1) * RhythmClock::BPM_PER_LEVEL);
+        switch ($this->primaryStage) {
+            case 0:
+                if (($step % 4) === 0) $this->firePrimaryEvent(1, false, 0.0, 0);
+                break;
+            case 1:
+                if (($step % 2) === 0) {
+                    $lateral = $this->primaryGunPhase === 0 ? -0.16 : 0.16;
+                    $this->firePrimaryEvent(1, false, $lateral, 1);
+                    $this->primaryGunPhase = 1 - $this->primaryGunPhase;
+                }
+                break;
+            case 2:
+            case 3:
+                if (($step % 4) !== 0) break;
+                $guns = $this->primaryStage === 3 ? 2 : 1;
+                $stage = $this->primaryStage;
+                $this->firePrimaryEvent($guns, false, 0.0, $stage);
+                // Long-short spacing gives the MP44 burst a deliberate swing.
+                $this->queuePrimaryBurst($beat * 0.42, $guns, false, $stage);
+                $this->queuePrimaryBurst($beat * 0.66, $guns, false, $stage);
+                break;
+            case 4:
+                if (($step % 4) !== 0) break;
+                $this->firePrimaryEvent(1, false, 0.0, 4);
+                foreach ([0.11, 0.22, 0.33, 0.44, 0.55] as $fraction) {
+                    $this->queuePrimaryBurst($beat * $fraction, 1, false, 4);
+                }
+                break;
+            case 5:
+                $this->firePrimaryEvent(1, false, 0.0, 5);
+                break;
+            default:
+                // Ultimate stage: one rhythmic event, two guns, two targets when available.
+                $this->firePrimaryEvent(2, true, 0.0, 6);
+                break;
         }
-        $enemy = $this->enemies[$target];
-        $this->shots++;
-        $this->muzzle = 0.12;
-        $this->manualClock = max(0.34, 0.70 * pow(0.92, $this->hasteRank));
-        $this->addVisualTrace($enemy, 0.15, 'pistol');
-        $this->damage($target, (int)round(38 * (1 + $this->damageRank * 0.35)));
-        $this->hits++;
     }
 
-    private function fireAutoWeapon(): void
+    private function queuePrimaryBurst(float $delay, int $guns, bool $split, int $stage, float $lateral = 0.0): void
     {
-        $cone = match ($this->autoTier) { 1 => 0.50, 2 => 0.68, 3 => 0.90, default => 1.15 };
-        $targets = $this->findTargets(16.0, $cone, max(1, $this->autoGuns));
-        if ($targets === []) { $this->autoClock = 0.08; return; }
-        $baseDamage = match ($this->autoTier) { 1 => 9, 2 => 11, 3 => 13, default => 15 };
-        $baseRate = match ($this->autoTier) { 1 => 0.27, 2 => 0.20, 3 => 0.145, default => 0.095 };
-        for ($gun = 0; $gun < max(1, $this->autoGuns); $gun++) {
-            $target = $targets[$gun] ?? $targets[0];
+        if (count($this->primaryBurstQueue) >= 24) array_shift($this->primaryBurstQueue);
+        $this->primaryBurstQueue[] = compact('delay', 'guns', 'split', 'stage', 'lateral');
+    }
+
+    private function stepPrimaryBursts(float $dt): void
+    {
+        if ($this->primaryBurstQueue === []) return;
+        $ready = [];
+        foreach ($this->primaryBurstQueue as $index => &$burst) {
+            $burst['delay'] -= $dt;
+            if ($burst['delay'] <= 0.0) {
+                $ready[] = $burst;
+                unset($this->primaryBurstQueue[$index]);
+            }
+        }
+        unset($burst);
+        $this->primaryBurstQueue = array_values($this->primaryBurstQueue);
+        foreach ($ready as $burst) {
+            $this->firePrimaryEvent($burst['guns'], $burst['split'], $burst['lateral'], $burst['stage']);
+        }
+    }
+
+    private function firePrimaryEvent(int $guns, bool $splitTargets = false, float $singleLateral = 0.0, ?int $stage = null): void
+    {
+        $stage ??= $this->primaryStage;
+        $targetCount = $splitTargets ? max(1, $guns) : 1;
+        $cone = $stage >= 5 ? 0.24 : 0.18;
+        $targets = $this->findTargets(19.0, $cone, $targetCount);
+        if ($targets === []) return;
+
+        $baseDamage = match ($stage) {
+            0, 1 => 38,
+            2, 3 => 14,
+            4 => 10,
+            default => 13,
+        };
+        $damage = (int)round($baseDamage * (1 + $this->damageRank * 0.30));
+        $fired = 0;
+        for ($gun = 0; $gun < max(1, $guns); $gun++) {
+            $target = $splitTargets ? ($targets[$gun] ?? $targets[0]) : $targets[0];
             if (!isset($this->enemies[$target])) continue;
             $enemy = $this->enemies[$target];
-            $sample = $this->autoTier <= 1 ? 1 : ($this->autoTier <= 3 ? 2 : 3);
-            if (($this->shots + $gun) % $sample === 0) {
-                $lateral = ($gun - (max(1, $this->autoGuns) - 1) / 2) * 0.18;
-                $this->addVisualTrace($enemy, 0.12, 'auto', $lateral);
-            }
-            $this->damage($target, (int)round($baseDamage * (1 + $this->damageRank * 0.28)));
+            $lateral = $guns > 1 ? ($gun - ($guns - 1) / 2) * 0.22 : $singleLateral;
+            $this->addVisualTrace($enemy, 0.14, $stage <= 1 ? 'pistol' : 'auto', $lateral);
+            $this->damage($target, $damage);
             $this->shots++;
             $this->hits++;
+            $fired++;
         }
-        $this->muzzle = max($this->muzzle, 0.055);
-        $this->autoClock = max(0.065, $baseRate * pow(0.86, $this->hasteRank));
+        if ($fired === 0) return;
+        $this->muzzle = max($this->muzzle, 0.11);
+        if (count($this->primaryAudioEvents) >= 32) array_shift($this->primaryAudioEvents);
+        $this->primaryAudioEvents[] = $stage;
     }
-
     private function stepFlamethrower(float $dt): void
     {
         if ($this->flameActive > 0.0) {
@@ -794,6 +880,7 @@ final class Run
         $this->xp -= $this->nextXp;
         $this->level++;
         $this->nextXp = 6 + ($this->level - 1) * 4;
+        $this->syncPrimaryStage();
 
         $weaponPool = $this->weaponUpgradePool();
         $this->choices = [];
@@ -817,17 +904,10 @@ final class Run
     private function weaponUpgradePool(): array
     {
         $pool = [];
-        if ($this->autoTier === 0 && $this->level >= 5) $pool[] = 'STEN';
-        elseif ($this->autoTier === 1 && $this->level >= 10) $pool[] = 'SMG';
-        elseif ($this->autoTier === 2 && $this->level >= 15) $pool[] = 'MACHINE GUN';
-        elseif ($this->autoTier === 3 && $this->level >= 20) $pool[] = 'SULFATEUSE';
         if ($this->level >= 3 && $this->flameRank < 3) $pool[] = 'FLAMETHROWER';
         if ($this->level >= 3 && $this->shurikenRank < 3) $pool[] = 'SHURIKEN';
-        if ($this->autoTier >= 4 && $this->autoGuns < 2) $pool[] = 'AKIMBO';
-        if ($this->autoTier >= 4 && $this->autoGuns === 2 && $this->level >= 28) $pool[] = 'TRIPLE GUN';
         return $pool;
     }
-
     private function resetCombo(): void
     {
         $this->combo = 0;
