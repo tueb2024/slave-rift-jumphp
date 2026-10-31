@@ -4,7 +4,7 @@ on:
   push:
     branches: [agent/procedural-game-foundation]
     paths:
-      - 'patches/procedural-visual-pass.tar.gz'
+      - 'patches/procedural-final.ready'
 
 permissions:
   contents: write
@@ -16,11 +16,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: agent/procedural-game-foundation
-      - name: Apply verified local source pass
+      - name: Apply verified final source patches
         run: |
           set -euxo pipefail
-          test -f patches/procedural-visual-pass.tar.gz
-          tar -xzf patches/procedural-visual-pass.tar.gz
+          for patch_file in \
+            patches/final-run.patch \
+            patches/final-meshes.patch \
+            patches/final-world.patch \
+            patches/final-playscene.patch
+          do
+            test -s "$patch_file"
+            patch -p1 < "$patch_file"
+          done
           php tools/sync-package.php
           php tools/sync-package.php --check
           php tools/simulation-test.php
@@ -29,7 +36,9 @@ jobs:
       - name: Commit playable procedural visual pass
         run: |
           set -euxo pipefail
-          rm -f patches/procedural-visual-pass.tar.gz
+          rm -f patches/procedural-final.ready
+          rm -f patches/final-run.patch patches/final-meshes.patch patches/final-world.patch patches/final-playscene.patch
+          rm -f patches/procedural-visual-pass.tar.gz patches/procedural-visual-pass.part00 patches/procedural-visual-pass.part01
           rm -f .github/workflows/apply-procedural-visual-pass.yml
           rm -f .github/workflows/workspace-snapshot.yml
           rm -f .github/workflows/vendor-boss-and-poster-assets.yml
