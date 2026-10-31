@@ -2,13 +2,15 @@
 
 namespace App\Game;
 
-/** Topological level graph: deterministic main path, short optional branches, terminal boss room. */
+/** Topological level graph: deterministic seeded path, branches, vertical transitions and terminal boss room. */
 final class LevelGraph
 {
     public const START = 'START';
     public const CORRIDOR_SHORT = 'CORRIDOR_SHORT';
     public const CORRIDOR_LONG = 'CORRIDOR_LONG';
     public const TURN = 'TURN';
+    public const STAIR_UP = 'STAIR_UP';
+    public const STAIR_DOWN = 'STAIR_DOWN';
     public const SMALL_ROOM = 'SMALL_ROOM';
     public const LARGE_ROOM = 'LARGE_ROOM';
     public const JUNCTION = 'JUNCTION';
@@ -20,7 +22,11 @@ final class LevelGraph
 
     public function __construct(public readonly int $seed, int $targetMainDepth = 7)
     {
-        $this->build(max(5, min(24, $targetMainDepth)));
+        // The first procedural pass interpreted "depth 7" too literally and produced
+        // a five-minute idea in a two-minute corridor. Keep the public parameter but
+        // expand it into a proper FPS route with enough space for several waves.
+        $physicalDepth = max(12, min(32, $targetMainDepth * 2));
+        $this->build($physicalDepth);
     }
 
     private function build(int $depth): void
@@ -30,27 +36,56 @@ final class LevelGraph
         $this->addNode($nextId, self::START, null, true);
         $parent = $nextId++;
         $middleCount = $depth - 2;
-        $forcedJunction = $middleCount >= 4 ? 1 + $rng->nextInt(max(1, $middleCount - 2)) : -1;
-        $turnUsed = false;
         $previousType = self::START;
+        $turnBudget = max(2, min(4, intdiv($middleCount, 5)));
+        $turns = 0;
+        $floor = 0;
+
+        // Seeded junction slots guarantee several side opportunities without turning
+        // the main route into a maze. Their exact positions still vary by seed.
+        $junctionSlots = [];
+        $junctionTarget = max(2, min(4, intdiv($middleCount, 5)));
+        while (count($junctionSlots) < $junctionTarget) {
+            $slot = 2 + $rng->nextInt(max(1, $middleCount - 4));
+            $junctionSlots[$slot] = true;
+        }
 
         for ($i = 0; $i < $middleCount; $i++) {
-            if ($i === $forcedJunction) {
+            if (isset($junctionSlots[$i])) {
                 $type = self::JUNCTION;
             } else {
-                $pool = [
-                    self::CORRIDOR_SHORT,
-                    self::CORRIDOR_LONG,
-                    self::SMALL_ROOM,
-                    self::LARGE_ROOM,
-                    self::TURN,
-                ];
-                $type = $pool[$rng->nextInt(count($pool))];
-                if ($type === self::TURN && ($turnUsed || $previousType === self::TURN)) {
-                    $type = $rng->chance(0.5) ? self::CORRIDOR_SHORT : self::SMALL_ROOM;
+                $canVertical = $i >= 2 && $i <= $middleCount - 3 && $previousType !== self::STAIR_UP && $previousType !== self::STAIR_DOWN;
+                if ($canVertical && $rng->chance(0.18)) {
+                    if ($floor <= 0) {
+                        $type = self::STAIR_UP;
+                        $floor++;
+                    } elseif ($floor >= 2) {
+                        $type = self::STAIR_DOWN;
+                        $floor--;
+                    } elseif ($rng->chance(0.52)) {
+                        $type = self::STAIR_UP;
+                        $floor++;
+                    } else {
+                        $type = self::STAIR_DOWN;
+                        $floor--;
+                    }
+                } else {
+                    $pool = [
+                        self::CORRIDOR_SHORT,
+                        self::CORRIDOR_LONG,
+                        self::SMALL_ROOM,
+                        self::LARGE_ROOM,
+                        self::LARGE_ROOM,
+                        self::TURN,
+                    ];
+                    $type = $pool[$rng->nextInt(count($pool))];
+                    if ($type === self::TURN && ($turns >= $turnBudget || $previousType === self::TURN)) {
+                        $type = $rng->chance(0.5) ? self::CORRIDOR_LONG : self::LARGE_ROOM;
+                    }
                 }
             }
-            if ($type === self::TURN) $turnUsed = true;
+
+            if ($type === self::TURN) $turns++;
             $this->addNode($nextId, $type, $parent, true);
             $parent = $nextId++;
             $previousType = $type;
@@ -58,9 +93,12 @@ final class LevelGraph
 
         $this->addNode($nextId++, self::BOSS_ROOM, $parent, true);
 
-        $junction = $this->findFirst(self::JUNCTION);
-        if ($junction !== null && $rng->chance(0.85)) {
-            $this->addNode($nextId, self::BONUS, $junction['id'], false);
+        // DeepSeek's useful idea was to make side rooms a normal feature of the
+        // generated route rather than a rare special case. Keep them short and
+        // deterministic so they enrich exploration without obscuring A -> B.
+        foreach ($this->nodes as $node) {
+            if ($node['type'] !== self::JUNCTION || !$rng->chance(0.92)) continue;
+            $this->addNode($nextId++, self::BONUS, $node['id'], false);
         }
     }
 
