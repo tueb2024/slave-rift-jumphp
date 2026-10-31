@@ -106,9 +106,12 @@ final class DifficultyDirector
 
             $profile = self::enemyBaseProfile((string)($enemy['type'] ?? 'guardian'));
             $balance = $this->snapshot($run);
-            $health = max(1, (int)round($profile['health'] * $balance['healthScale']));
-            $enemy['health'] = $health;
-            $enemy['maxHealth'] = $health;
+            $oldMaxHealth = max(1, (int)($enemy['maxHealth'] ?? $enemy['health'] ?? 1));
+            $oldHealth = max(0, (int)($enemy['health'] ?? $oldMaxHealth));
+            $healthRatio = min(1.0, $oldHealth / $oldMaxHealth);
+            $maxHealth = max(1, (int)round($profile['health'] * $balance['healthScale']));
+            $enemy['maxHealth'] = $maxHealth;
+            $enemy['health'] = max(1, (int)round($maxHealth * $healthRatio));
             $enemy['speed'] = $profile['speed'] * $balance['speedScale'];
             $enemy['damage'] = max(1, (int)round($profile['damage'] * $balance['damageScale']));
             $enemy['radius'] = $profile['radius'];
