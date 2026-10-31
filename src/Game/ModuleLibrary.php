@@ -34,7 +34,7 @@ final class ModuleLibrary
         self::doorSouth($m, 4.0, 4.0, self::WALL_HEIGHT, 'stone');
         self::solidWestEast($m, 4.0, 4.0, self::WALL_HEIGHT, 'stone');
         $m->addConnector('main_exit', 0.0, 0.0, 4.0, 0.0, 0.0, 1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
-        $m->addSpawnAnchor(0.0, self::SPAWN_Y, 2.0, ['start', 'player']);
+        $m->addSpawnAnchor(0.0, self::SPAWN_Y, -1.0, ['start', 'player']);
         // Visible immediately from the start: beside the first doorway, at eye height.
         $m->addDecal('poster3615', -2.35, 1.55, 3.485, 0.0, 0.0, -1.0, 1.65, 2.25);
         return $m;
@@ -64,7 +64,7 @@ final class ModuleLibrary
         self::solidWest($m, $half, $half, $h, 'stone');
         $m->addConnector('entry', 0.0, 0.0, -$half, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addConnector('main_exit', $half, 0.0, 0.0, 1.0, 0.0, 0.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
-        $m->addSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['turn']);
+        $m->adSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['turn']);
         return $m;
     }
 
@@ -77,7 +77,7 @@ final class ModuleLibrary
         self::solidWestEast($m, $half, $half, $height, $wall);
         $m->addConnector('entry', 0.0, 0.0, -$half, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addConnector('main_exit', 0.0, 0.0, $half, 0.0, 0.0, 1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
-        $m->addSpawnAnchor(-$half * 0.45, self::SPAWN_Y, -$half * 0.35, ['room', 'corner']);
+        $m->adSpawnAnchor(-$half * 0.45, self::SPAWN_Y, -$half * 0.35, ['room', 'corner']);
         $m->addSpawnAnchor($half * 0.45, self::SPAWN_Y, $half * 0.35, ['room', 'corner']);
         $m->addPickupAnchor($half * 0.35, 0.25, -$half * 0.35, ['bonus']);
         if ($type === LevelGraph::LARGE_ROOM) {
@@ -123,7 +123,7 @@ final class ModuleLibrary
         self::solidSouth($m, $half, $half, $h, 'stone');
         self::solidWestEast($m, $half, $half, $h, 'stone');
         $m->addConnector('entry', 0.0, 0.0, -$half, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
-        $m->addSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['boss']);
+        $m->adSpawnAnchor(0.0, self::SPAWN_Y, 0.0, ['boss']);
         $m->addPickupAnchor(0.0, 0.25, 6.0, ['treasure']);
         return $m;
     }
