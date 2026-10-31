@@ -239,7 +239,22 @@ final class PlayScene extends AbstractScene
         $font->draw($r, $arsenal, 4, $h - 8, 1, $cyan);
         $font->draw($r, count($run->enemies) . ' HOSTILES', $w - 4, $h - 8, 1, $cream, 'right');
 
-        if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, 29, 1, $cream, 'center', [8,5,12]);
+        $messageY = 29;
+        if ($this->procedural && $this->assembledLevel !== null && $this->assembledLevel->treasureAnchor !== null && $run->state === 'play') {
+            $treasure = $this->assembledLevel->treasureAnchor;
+            $dx = $treasure['x'] - $run->x;
+            $dz = $treasure['z'] - $run->z;
+            $distance = hypot($dx, $dz);
+            $delta = fmod(atan2($dx, $dz) - $run->yaw + M_PI, 2 * M_PI);
+            if ($delta < 0) $delta += 2 * M_PI;
+            $delta -= M_PI;
+            $marker = abs($delta) < 0.22 ? '^' : ($delta > 0 ? '>' : '<');
+            $metres = (int)round($distance);
+            $label = $marker === '<' ? '<  TRESOR ' . $metres . 'm' : ($marker === '>' ? 'TRESOR ' . $metres . 'm  >' : '^ TRESOR ' . $metres . 'm');
+            $font->draw($r, $label, $cx, 27, 1, [255,205,90], 'center', [8,5,12]);
+            $messageY = 38;
+        }
+        if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, $messageY, 1, $cream, 'center', [8,5,12]);
         if ($run->time < 6 && !$this->demo && $run->state === 'play') {
             $font->draw($r, 'NETTOIE LE NIVEAU / TROUVE LE TRESOR / AMELIORE TON SCORE', $cx, $cy - 42, 1, $cream, 'center', [8,5,12]);
         }
