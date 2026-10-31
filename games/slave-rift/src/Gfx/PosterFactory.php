@@ -23,9 +23,12 @@ final class PosterFactory
 
         $rose = new MinitelRosePoster();
         for ($i = 0; $i < self::ATLAS_COLS * self::ATLAS_ROWS; $i++) {
-            $tile = ($i % 4 === 0)
-                ? self::advertTile($i)
-                : $rose->generate(361500 + $i * 97);
+            if ($i % 4 === 0) {
+                $tile = self::advertTile($i);
+            } else {
+                $tile = $rose->generate(361500 + $i * 97);
+                self::zoomPixelatePortrait($tile);
+            }
             $x = ($i % self::ATLAS_COLS) * self::TILE_W;
             $y = intdiv($i, self::ATLAS_COLS) * self::TILE_H;
             imagecopyresized(
@@ -43,6 +46,23 @@ final class PosterFactory
             imagedestroy($tile);
         }
         return $atlas;
+    }
+
+    /**
+     * Keep DeepSeek's generated portrait, but make it deliberately anonymous:
+     * crop tightly into the face, collapse it to a 10x10 source and blow it back
+     * up with nearest-neighbour blocks. At 320x180 it reads as "Minitel rose",
+     * not as a recognisable person.
+     */
+    private static function zoomPixelatePortrait(\GdImage $im): void
+    {
+        $tiny = imagecreatetruecolor(10, 10);
+        imagecopyresized($tiny, $im, 0, 0, 100, 90, 10, 10, 200, 200);
+        imagecopyresized($im, $tiny, 50, 45, 0, 0, 300, 300, 10, 10);
+        imagedestroy($tiny);
+
+        $frame = imagecolorallocate($im, 255, 96, 160);
+        imagerectangle($im, 48, 43, 351, 346, $frame);
     }
 
     private static function advertTile(int $variant): \GdImage
