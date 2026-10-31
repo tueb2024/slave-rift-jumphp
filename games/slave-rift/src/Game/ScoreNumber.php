@@ -66,6 +66,19 @@ final class ScoreNumber
         return $this;
     }
 
+    public function multiplyScore(self $factor): self
+    {
+        if ($factor->mantissa === 0.0 || $this->mantissa === 0.0) {
+            $this->mantissa = 0.0;
+            $this->exponent = 0;
+            return $this;
+        }
+        $this->mantissa *= $factor->mantissa;
+        $this->exponent += $factor->exponent;
+        $this->normalize();
+        return $this;
+    }
+
     public function add(self $other): self
     {
         if ($other->mantissa === 0.0) return $this;
@@ -76,8 +89,6 @@ final class ScoreNumber
         }
 
         $diff = $this->exponent - $other->exponent;
-        // A term more than 15 decimal orders smaller cannot materially affect
-        // the displayed score at double precision, so avoid pointless pow().
         if ($diff > 15) return $this;
         if ($diff < -15) {
             $this->mantissa = $other->mantissa;
@@ -131,7 +142,6 @@ final class ScoreNumber
             $this->mantissa /= pow(10.0, $shift);
             $this->exponent += $shift;
         }
-        // Protect against rounding leaving exactly 10 or below 1.
         while (abs($this->mantissa) >= 10.0) {
             $this->mantissa /= 10.0;
             $this->exponent++;
