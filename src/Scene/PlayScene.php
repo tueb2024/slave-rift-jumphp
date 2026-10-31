@@ -52,7 +52,7 @@ final class PlayScene extends AbstractScene
     {
         $this->demo = (bool)($params['demo'] ?? false);
         $this->debug = (bool)($params['debug'] ?? false);
-        $this->procedural = (bool)($params['procedural'] ?? false);
+        $this->procedural = (bool)($params['procedural'] ?? true);
         $this->levelSeed = (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520)));
         $this->proceduralDepth = max(5, min(24, (int)($params['depth'] ?? 7)));
         if ($this->procedural) {

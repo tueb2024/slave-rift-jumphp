@@ -16,6 +16,7 @@ final class World
 
     /** @var array<string,int> */
     private array $ids = [];
+    private ?int $preparedMapId = null;
     /** @var array<int,array<string,float|bool>> */
     private array $enemyVisibility = [];
     /** @var array<int,int> Last rendered health, used to derive visual damage deltas without coupling Run to rendering. */
@@ -31,7 +32,8 @@ final class World
     public function prepare(WebGl $gl, Run $run): void
     {
         if (!$gl->isAvailable()) return;
-        if ($this->ids === []) {
+        $mapId = spl_object_id($run->map);
+        if ($this->ids === [] || $this->preparedMapId !== $mapId) {
             $materialMap = function (string $material) use ($run): BrushMap {
                 $m = new BrushMap();
                 $m->solids = array_values(array_filter($run->map->solids, static function (array $solid) use ($material): bool {
@@ -39,7 +41,7 @@ final class World
                 }));
                 return $m;
             };
-            $this->ids = [
+            $ids = [
                 'program' => $gl->program(Meshes::VERTEX, Meshes::FRAGMENT),
                 'worldStone' => $gl->buffer(Meshes::world($materialMap('stone')), true),
                 'worldMetal' => $gl->buffer(Meshes::world($materialMap('metal')), true),
@@ -54,6 +56,13 @@ final class World
                 'ceilTex' => $gl->texture('assets/textures/librequake/med_flat8.png', false, true),
                 'crateTex' => $gl->texture('assets/textures/librequake/crate4.png', false, true),
             ];
+            $poster = Meshes::decals($run->map->decals, 'poster3615');
+            if ($poster !== []) {
+                $ids['poster3615'] = $gl->buffer($poster, true);
+                $ids['poster3615Tex'] = $gl->texture('assets/textures/posters/3615-troll.png', false, false);
+            }
+            $this->ids = $ids;
+            $this->preparedMapId = $mapId;
         }
         $gl->setLayer('below', 'native', self::KEY);
         $gl->setSupersample(1);
@@ -121,6 +130,9 @@ final class World
         $draw($this->ids['worldMetal'], Mat4::identity(), 0.0, true, 'metalTex');
         $draw($this->ids['worldCeil'], Mat4::identity(), 0.0, true, 'ceilTex');
         $draw($this->ids['worldCrate'], Mat4::identity(), 0.0, true, 'crateTex');
+        if (isset($this->ids['poster3615'], $this->ids['poster3615Tex'])) {
+            $draw($this->ids['poster3615'], Mat4::identity(), 0.0, true, 'poster3615Tex');
+        }
         if ($run->pulse > 0) {
             $size = (1 - $run->pulse / 0.25) * 4.2;
             $draw($this->ids['pulse'], Mat4::multiply(Mat4::translate($run->x, $run->y - 0.5, $run->z), Mat4::scale($size)));
