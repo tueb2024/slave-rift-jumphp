@@ -5,6 +5,7 @@ namespace App\Scene;
 use App\Audio\RiftMusic;
 use App\Audio\RiftSfx;
 use App\Game\BrushMap;
+use App\Game\DifficultyDirector;
 use App\Game\RhythmClock;
 use App\Game\Run;
 use App\Gfx\World;
@@ -20,6 +21,7 @@ final class PlayScene extends AbstractScene
     private FixedStep $step;
     private RiftMusic $music;
     private RhythmClock $rhythm;
+    private DifficultyDirector $difficulty;
     private bool $demo = false;
     private bool $debug = false;
     private float $frameMs = 16.7;
@@ -41,6 +43,7 @@ final class PlayScene extends AbstractScene
         $this->debug = (bool)($params['debug'] ?? false);
         $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
         $this->run = new Run($map, (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520))));
+        $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();
         $this->step = new FixedStep(60, 8);
         $this->rhythm = new RhythmClock();
@@ -128,8 +131,10 @@ final class PlayScene extends AbstractScene
         $beforeState = $this->run->state;
         $beforeXp = $this->run->xp;
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
+            $this->difficulty->beforeStep($this->run);
             $rhythmSteps = $this->rhythm->advance($h, $this->run->level);
             $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, false, $rhythmSteps);
+            $this->difficulty->afterStep($this->run);
             $this->jumpPending = false;
         });
 
@@ -232,6 +237,7 @@ final class PlayScene extends AbstractScene
         if ($this->paused) { $r->fillRect(82, 72, $w - 164, 30, [8,5,12,235]); $font->draw($r, 'PAUSED - P', $cx, 83, 1, $cream, 'center'); }
         if ($this->demo) $font->draw($r, 'DEMO', $w - 4, 27, 1, $cream, 'right');
         if ($this->debug) {
+            $balance = $this->difficulty->snapshot($run);
             $font->draw($r, sprintf('FPS %.0f  %.1f MS  E %d/%d  RLOS %d  SLOS %d  MAP %d  NEI %d',
                 1000.0 / max(1.0, $this->frameMs), $this->frameMs, $this->world->visibleEnemies,
                 count($run->enemies), $this->world->renderLosTests, $run->losTests,
@@ -239,6 +245,8 @@ final class PlayScene extends AbstractScene
             $font->draw($r, sprintf('TR %d  COR %d  IMP %d  COL %d  PICK %d', count($run->traces), count($run->corpses),
                 min(count($run->traces), World::MAX_IMPACTS), $run->collisionTests, count($run->pickups)), 4, 38, 1, $cyan);
             $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s  BPM %.0f', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level)), 4, 48, 1, $cyan);
+            $font->draw($r, sprintf('BAL PWR x%.2f  DPS %.0f  ENEMY HP x%.2f  DMG x%.2f',
+                $balance['powerIndex'], $balance['primaryDps'], $balance['healthScale'], $balance['damageScale']), 4, 58, 1, $cyan);
         }
     }
 
