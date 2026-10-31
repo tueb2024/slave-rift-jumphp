@@ -37,6 +37,7 @@ final class ModuleLibrary
         self::solidWestEast($m, 4.0, 4.0, self::WALL_HEIGHT, 'stone');
         $m->addConnector('main_exit', 0.0, 0.0, 4.0, 0.0, 0.0, 1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addSpawnAnchor(0.0, self::SPAWN_Y, -1.0, ['start', 'player']);
+        // Immediate visual signature: one Minitel troll and one deliberately banal ad slot.
         $m->addDecal('poster3615', -2.10, 1.55, 3.485, 0.0, 0.0, -1.0, 1.65, 2.25);
         $m->addDecal('posterAd', 2.05, 1.55, 3.485, 0.0, 0.0, -1.0, 1.65, 2.25);
         $m->addDecal('posterAd', -3.485, 1.40, -1.0, 1.0, 0.0, 0.0, 1.45, 1.95);
@@ -54,6 +55,7 @@ final class ModuleLibrary
         $m->addConnector('main_exit', 0.0, 0.0, $halfDepth, 0.0, 0.0, 1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addSpawnAnchor(0.0, self::SPAWN_Y, -$halfDepth * 0.45, ['corridor']);
         $m->addSpawnAnchor(0.0, self::SPAWN_Y, $halfDepth * 0.45, ['corridor']);
+        // Corridors should never be visually empty: alternating ads on both walls.
         $m->addDecal('poster3615', -0.985, 1.55, -$halfDepth * 0.35, 1.0, 0.0, 0.0, 1.20, 1.65);
         $m->addDecal('posterAd', 0.985, 1.50, $halfDepth * 0.28, -1.0, 0.0, 0.0, 1.20, 1.65);
         if ($halfDepth >= 6.0) {
@@ -85,6 +87,9 @@ final class ModuleLibrary
         $halfWidth = 2.4; $halfDepth = 6.0; $h = 4.2;
         $steps = 6; $stepRise = 0.45; $totalRise = $steps * $stepRise; $segment = ($halfDepth * 2.0) / $steps;
         $bottom = -$totalRise - 1.0;
+
+        // Side walls stay axis-aligned; stair treads are real collision boxes. Each
+        // 0.45 rise is below Run's 0.58 automatic step-up limit.
         $m->addBox(-$halfWidth, $bottom, -$halfDepth, -$halfWidth + 0.5, $h + $totalRise, $halfDepth, 'stone');
         $m->addBox($halfWidth - 0.5, $bottom, -$halfDepth, $halfWidth, $h + $totalRise, $halfDepth, 'stone');
         for ($i = 0; $i < $steps; $i++) {
@@ -95,6 +100,7 @@ final class ModuleLibrary
         }
         $ceilingY = $h + ($up ? $totalRise : 0.0);
         $m->addBox(-$halfWidth, $ceilingY, -$halfDepth, $halfWidth, $ceilingY + 0.2, $halfDepth, 'ceil');
+
         $exitY = $up ? $totalRise : -$totalRise;
         $m->addConnector('entry', 0.0, 0.0, -$halfDepth, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addConnector('main_exit', 0.0, $exitY, $halfDepth, 0.0, 0.0, 1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
@@ -184,6 +190,7 @@ final class ModuleLibrary
 
     private static function floorCeiling(RoomModule $m, float $hw, float $hd, float $h): void
     {
+        // Floors deliberately share one material while walls vary by room.
         $m->addBox(-$hw, -1.0, -$hd, $hw, 0.0, $hd, 'metal');
         $m->addBox(-$hw, $h, -$hd, $hw, $h + 0.2, $hd, 'ceil');
     }
