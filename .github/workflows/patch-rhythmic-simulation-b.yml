@@ -1,0 +1,31 @@
+name: Patch rhythmic simulation contract
+
+on:
+  push:
+    branches: [agent/primary-weapons-pass-b]
+    paths:
+      - tools/patch-rhythmic-simulation-b.py
+      - .github/workflows/patch-rhythmic-simulation-b.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/primary-weapons-pass-b
+      - name: Update direct simulation harness
+        run: python3 tools/patch-rhythmic-simulation-b.py
+      - name: Commit harness update
+        shell: bash
+        run: |
+          git diff --check
+          git add tools/simulation-test.php
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "test: drive direct simulation with rhythm clock"
+          git push origin HEAD:agent/primary-weapons-pass-b
