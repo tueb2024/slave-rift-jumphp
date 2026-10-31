@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../src/Game/BrushMap.php';
+require __DIR__ . '/../src/Game/RhythmClock.php';
 require __DIR__ . '/../src/Game/Run.php';
 require __DIR__ . '/../src/Gfx/Meshes.php';
 require __DIR__ . '/../src/Gfx/EnemyAtlas.php';
 require __DIR__ . '/../src/Gfx/World.php';
 
 use App\Game\BrushMap;
+use App\Game\RhythmClock;
 use App\Game\Run;
 use App\Gfx\Meshes;
 use App\Gfx\EnemyAtlas;
@@ -114,7 +116,10 @@ for ($i=0; $i<180; $i++) {
 check($a->x === $b->x && $a->y === $b->y && $a->z === $b->z && $a->yaw === $b->yaw && $a->enemies === $b->enemies,
     'identical seeds and controls remain deterministic');
 
-check($run->arsenalLabel() === 'COLT .45 ONLY', 'run starts with manual Colt arsenal');
+check($run->arsenalLabel() === 'COLT .45', 'run starts with rhythmic Colt arsenal');
+foreach ([1 => 0, 4 => 1, 8 => 2, 12 => 3, 16 => 4, 20 => 5, 24 => 6] as $level => $stage) {
+    check(Run::primaryStageForLevel($level) === $stage, "primary stage $stage unlocks at level $level");
+}
 
 // DM1's info_player_start is an intermission camera above empty space. The
 // demo must start at a deathmatch point and keep making combat progress there.
@@ -126,13 +131,15 @@ check($spawnProbe->enemies !== [] && count(array_filter($spawnProbe->enemies,
     'DM1 opening enemies stay on the player floor');
 $sawDeathAnimation = false;
 $sawTracer = false;
+$dm1Rhythm = new RhythmClock();
 for ($i = 0; $i < 600 && $dm1->state !== 'dead'; $i++) {
     if ($dm1->state === 'upgrade') {
         $dm1->chooseUpgrade(0);
         continue;
     }
     [$forward, $strafe, $turn, $fire] = $dm1->autopilot();
-    $dm1->step(1 / 60, $forward, $strafe, $turn, $fire);
+    $rhythmSteps = $dm1Rhythm->advance(1 / 60, $dm1->level);
+    $dm1->step(1 / 60, $forward, $strafe, $turn, $fire, false, false, $rhythmSteps);
     if ($dm1->corpses !== []) $sawDeathAnimation = true;
     if ($dm1->traces !== []) {
         $trace = reset($dm1->traces);
