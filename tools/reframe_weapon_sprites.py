@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from PIL import Image, ImageFilter
+from PIL import Image, ImageFilter, UnidentifiedImageError
+import base64
+import io
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1] if 'tools' in Path(__file__).parts else Path('/tmp')
@@ -22,9 +24,9 @@ def find_coeffs(dst, src):
     for p1, p2 in zip(dst, src):
         matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
         matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
-    a = np.matrix(matrix, dtype=float)
-    b = np.array(src).reshape(8)
-    return np.array(np.dot(np.linalg.pinv(a), b)).reshape(8)
+    a = np.asarray(matrix, dtype=float)
+    b = np.asarray(src, dtype=float).reshape(8)
+    return np.linalg.pinv(a).dot(b)
 
 
 def reframe(frame, name):
@@ -49,8 +51,18 @@ def reframe(frame, name):
     return out
 
 
+def open_atlas(path):
+    try:
+        return Image.open(path).convert('RGBA')
+    except UnidentifiedImageError:
+        # Early binary upload accidentally stored some PNG payloads as base64 text.
+        # Decode them once and rewrite them as proper PNGs in this same pass.
+        raw = base64.b64decode(path.read_text(encoding='ascii').strip())
+        return Image.open(io.BytesIO(raw)).convert('RGBA')
+
+
 def process(path, name):
-    atlas = Image.open(path).convert('RGBA')
+    atlas = open_atlas(path)
     if atlas.size != (FRAME_W * 4, FRAME_H):
         raise RuntimeError(f'{path}: expected 576x96 atlas, got {atlas.size}')
     out = Image.new('RGBA', atlas.size, (0,0,0,0))
