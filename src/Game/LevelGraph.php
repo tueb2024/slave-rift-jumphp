@@ -22,9 +22,6 @@ final class LevelGraph
 
     public function __construct(public readonly int $seed, int $targetMainDepth = 7)
     {
-        // The first procedural pass interpreted "depth 7" too literally and produced
-        // a five-minute idea in a two-minute corridor. Keep the public parameter but
-        // expand it into a proper FPS route with enough space for several waves.
         $physicalDepth = max(12, min(32, $targetMainDepth * 2));
         $this->build($physicalDepth);
     }
@@ -40,9 +37,6 @@ final class LevelGraph
         $turnBudget = max(2, min(4, intdiv($middleCount, 5)));
         $turns = 0;
         $floor = 0;
-
-        // Seeded junction slots guarantee several side opportunities without turning
-        // the main route into a maze. Their exact positions still vary by seed.
         $junctionSlots = [];
         $junctionTarget = max(2, min(4, intdiv($middleCount, 5)));
         while (count($junctionSlots) < $junctionTarget) {
@@ -70,32 +64,19 @@ final class LevelGraph
                         $floor--;
                     }
                 } else {
-                    $pool = [
-                        self::CORRIDOR_SHORT,
-                        self::CORRIDOR_LONG,
-                        self::SMALL_ROOM,
-                        self::LARGE_ROOM,
-                        self::LARGE_ROOM,
-                        self::TURN,
-                    ];
+                    $pool = [self::CORRIDOR_SHORT, self::CORRIDOR_LONG, self::SMALL_ROOM, self::LARGE_ROOM, self::LARGE_ROOM, self::TURN];
                     $type = $pool[$rng->nextInt(count($pool))];
                     if ($type === self::TURN && ($turns >= $turnBudget || $previousType === self::TURN)) {
                         $type = $rng->chance(0.5) ? self::CORRIDOR_LONG : self::LARGE_ROOM;
                     }
                 }
             }
-
             if ($type === self::TURN) $turns++;
             $this->addNode($nextId, $type, $parent, true);
             $parent = $nextId++;
             $previousType = $type;
         }
-
         $this->addNode($nextId++, self::BOSS_ROOM, $parent, true);
-
-        // DeepSeek's useful idea was to make side rooms a normal feature of the
-        // generated route rather than a rare special case. Keep them short and
-        // deterministic so they enrich exploration without obscuring A -> B.
         foreach ($this->nodes as $node) {
             if ($node['type'] !== self::JUNCTION || !$rng->chance(0.92)) continue;
             $this->addNode($nextId++, self::BONUS, $node['id'], false);
@@ -109,28 +90,8 @@ final class LevelGraph
         $this->nodes[$id] = compact('id', 'type', 'parent', 'depth', 'mainPath') + ['children' => []];
     }
 
-    /** @return array{id:int,type:string,parent:?int,children:list<int>,depth:int,mainPath:bool}|null */
-    public function findFirst(string $type): ?array
-    {
-        foreach ($this->nodes as $node) if ($node['type'] === $type) return $node;
-        return null;
-    }
-
-    /** @return list<array{id:int,type:string,parent:?int,children:list<int>,depth:int,mainPath:bool}> */
-    public function mainPath(): array
-    {
-        return array_values(array_filter($this->nodes, static fn (array $node): bool => $node['mainPath']));
-    }
-
-    /** @return array{id:int,type:string,parent:?int,children:list<int>,depth:int,mainPath:bool} */
-    public function terminal(): array
-    {
-        $main = $this->mainPath();
-        return $main[count($main) - 1];
-    }
-
-    public function signature(): string
-    {
-        return implode('>', array_map(static fn (array $node): string => $node['type'], $this->mainPath()));
-    }
+    public function findFirst(string $type): ?array { foreach ($this->nodes as $node) if ($node['type'] === $type) return $node; return null; }
+    public function mainPath(): array { return array_values(array_filter($this->nodes, static fn (array $node): bool => $node['mainPath'])); }
+    public function terminal(): array { $main = $this->mainPath(); return $main[count($main) - 1]; }
+    public function signature(): string { return implode('>', array_map(static fn (array $node): string => $node['type'], $this->mainPath())); }
 }
