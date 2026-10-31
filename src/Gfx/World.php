@@ -18,10 +18,15 @@ final class World
     private array $ids = [];
     /** @var array<int,array<string,float|bool>> */
     private array $enemyVisibility = [];
+    /** @var array<int,int> Last rendered health, used to derive visual damage deltas without coupling Run to rendering. */
+    private array $lastEnemyHealth = [];
+    /** @var list<array{x:float,y:float,z:float,amount:int,born:float}> */
+    private array $damagePopups = [];
     public int $visibleEnemies = 0;
     public int $renderLosTests = 0;
     public int $mapChunksDrawn = 0;
     public const MAX_IMPACTS = 24;
+    public const MAX_DAMAGE_POPUPS = 48;
 
     public function prepare(WebGl $gl, Run $run): void
     {
@@ -76,6 +81,7 @@ final class World
 
     public function render(Engine $engine, Renderer $r, Run $run, float $pitch = 0.0): void
     {
+        $this->captureDamagePopups($run);
         $gl = $engine->gl();
         if ($gl->isAvailable() && $this->ids !== []) {
             $this->mapChunksDrawn = 1;
@@ -85,6 +91,7 @@ final class World
             $this->drawEnemySprites($engine, $r, $run, $pitch);
             $this->drawDeathSprites($engine, $r, $run, $pitch);
             $this->drawImpactSprites($engine, $r, $run, $pitch);
+            $this->drawDamagePopups($r, $run, $pitch);
             return;
         }
         $this->mapChunksDrawn = 0;
@@ -338,6 +345,93 @@ final class World
             [$x, $y, $spriteW, $spriteH] = $this->spriteRect($corpse['type'], $sprite, $source, $point, $distance);
             $texture = $sdl->getTexture($sprite['texture']);
             $r->copy($texture['texture'], $source, $x, $y, $spriteW, $spriteH);
+        }
+    }
+
+    /** Detect health deltas at render time so every damage source gets feedback without duplicating simulation events. */
+    private function captureDamagePopups(Run $run): void
+    {
+        $current = [];
+        foreach ($run->enemies as $enemy) $current[(int)$enemy['id']] = $enemy;
+        foreach ($run->corpses as $corpse) $current[(int)$corpse['id']] = $corpse;
+
+        foreach ($current as $id => $enemy) {
+            $health = (int)$enemy['health'];
+            if (isset($this->lastEnemyHealth[$id]) && $health < $this->lastEnemyHealth[$id]) {
+                $amount = $this->lastEnemyHealth[$id] - $health;
+                if ($amount > 0) {
+                    if (count($this->damagePopups) >= self::MAX_DAMAGE_POPUPS) array_shift($this->damagePopups);
+                    $this->damagePopups[] = [
+                        'x' => (float)$enemy['x'], 'y' => (float)$enemy['y'] + 0.72, 'z' => (float)$enemy['z'],
+                        'amount' => $amount, 'born' => $run->time,
+                    ];
+                }
+            }
+            $this->lastEnemyHealth[$id] = $health;
+        }
+
+        foreach (array_keys($this->lastEnemyHealth) as $id) {
+            if (!isset($current[$id])) unset($this->lastEnemyHealth[$id]);
+        }
+        $this->damagePopups = array_values(array_filter(
+            $this->damagePopups,
+            static fn (array $popup): bool => $run->time - $popup['born'] < 0.72,
+        ));
+    }
+
+    private function drawDamagePopups(Renderer $r, Run $run, float $pitch): void
+    {
+        if ($this->damagePopups === []) return;
+        $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
+        $scale = max(1, min(2, (int)round($r->getHeight() / 180.0)));
+        foreach ($this->damagePopups as $popup) {
+            $age = max(0.0, $run->time - $popup['born']);
+            $progress = min(1.0, $age / 0.72);
+            $point = Mat4::project(
+                $vp,
+                [$popup['x'], $popup['y'] + $progress * 0.38, $popup['z']],
+                $r->getWidth(),
+                $r->getHeight(),
+            );
+            if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
+            if ($point[0] < -40 || $point[0] > $r->getWidth() + 40 || $point[1] < -20 || $point[1] > $r->getHeight() + 20) continue;
+            $alpha = (int)round(255 * (1.0 - $progress));
+            $text = '-' . $popup['amount'];
+            $width = $this->miniTextWidth($text, $scale);
+            $this->drawMiniText($r, $text, (int)round($point[0] - $width / 2), (int)round($point[1] - 8 * $scale), $scale, [255, 214, 92, $alpha]);
+        }
+    }
+
+    private function miniTextWidth(string $text, int $scale): int
+    {
+        return max(0, strlen($text) * 4 * $scale - $scale);
+    }
+
+    /** Tiny 3×5 numeric font: legible at 320×180 and scales to higher logical resolutions. */
+    private function drawMiniText(Renderer $r, string $text, int $x, int $y, int $scale, array $color): void
+    {
+        $glyphs = [
+            '-' => ['000','000','111','000','000'],
+            '0' => ['111','101','101','101','111'],
+            '1' => ['010','110','010','010','111'],
+            '2' => ['111','001','111','100','111'],
+            '3' => ['111','001','111','001','111'],
+            '4' => ['101','101','111','001','001'],
+            '5' => ['111','100','111','001','111'],
+            '6' => ['111','100','111','101','111'],
+            '7' => ['111','001','010','010','010'],
+            '8' => ['111','101','111','101','111'],
+            '9' => ['111','101','111','001','111'],
+        ];
+        $cursor = $x;
+        foreach (str_split($text) as $char) {
+            $rows = $glyphs[$char] ?? $glyphs['0'];
+            foreach ($rows as $row => $bits) {
+                for ($col = 0; $col < 3; $col++) {
+                    if ($bits[$col] === '1') $r->fillRect($cursor + $col * $scale, $y + $row * $scale, $scale, $scale, $color);
+                }
+            }
+            $cursor += 4 * $scale;
         }
     }
 
