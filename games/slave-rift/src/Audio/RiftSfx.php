@@ -14,6 +14,7 @@ final class RiftSfx
         if ($sound->hasSfx('colt_fire')) return;
         $sound->synth('rift_kick', self::kick());
         $sound->synth('rift_snare', self::snare());
+        $sound->synth('rift_clap', self::clap());
         $sound->synth('rift_hat', self::hat());
         $sound->synth('colt_fire', self::gun(0.22, 0.62, 0.52));
         $sound->synth('sten_fire', self::gun(0.12, 0.42, 0.50));
@@ -38,6 +39,19 @@ final class RiftSfx
         return self::wav(0.20, static function (float $t, int $i) use (&$seed): float {
             $noise = self::noise($seed);
             return self::env($t, 0.20) * (0.62 * $noise + 0.26 * sin(2 * M_PI * 185.0 * $t));
+        });
+    }
+
+    private static function clap(): string
+    {
+        $seed = 0x61ac3d; $last = 0.0;
+        return self::wav(0.14, static function (float $t, int $i) use (&$seed, &$last): float {
+            $x = self::noise($seed); $hp = $x - $last * 0.88; $last = $x;
+            $burst = 0.0;
+            foreach ([0.0, 0.018, 0.036] as $offset) {
+                if ($t >= $offset) $burst += exp(-92.0 * ($t - $offset));
+            }
+            return 0.28 * $burst * $hp;
         });
     }
 
