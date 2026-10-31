@@ -91,6 +91,7 @@ final class Meshes
             [$nx, $ny, $nz] = $decal['normal'];
             $halfW = $decal['width'] * 0.5;
             $halfH = $decal['height'] * 0.5;
+            // Cardinal wall tangent. This orientation keeps readable posters left-to-right.
             $rx = $nz;
             $rz = -$nx;
             $offset = 0.012;
@@ -121,6 +122,7 @@ final class Meshes
         return $out;
     }
 
+    /** Deterministic atlas cell from world placement: same level = same posters, different layout = different mix. */
     private static function posterAtlasUv(array $decal, int $ordinal): array
     {
         [$x, $y, $z] = $decal['position'];
@@ -128,12 +130,11 @@ final class Meshes
             % (PosterFactory::ATLAS_COLS * PosterFactory::ATLAS_ROWS);
         $col = $variant % PosterFactory::ATLAS_COLS;
         $row = intdiv($variant, PosterFactory::ATLAS_COLS);
-        return [
-            $col / PosterFactory::ATLAS_COLS,
-            $row / PosterFactory::ATLAS_ROWS,
-            ($col + 1) / PosterFactory::ATLAS_COLS,
-            ($row + 1) / PosterFactory::ATLAS_ROWS,
-        ];
+        $u0 = $col / PosterFactory::ATLAS_COLS;
+        $u1 = ($col + 1) / PosterFactory::ATLAS_COLS;
+        $v0 = $row / PosterFactory::ATLAS_ROWS;
+        $v1 = ($row + 1) / PosterFactory::ATLAS_ROWS;
+        return [$u0, $v0, $u1, $v1];
     }
 
     /** @return float[] */
@@ -162,6 +163,7 @@ final class Meshes
         return $out;
     }
 
+    /** Original low-poly pickup meshes; no external artwork. */
     public static function pickup(bool $health): array
     {
         $out = [];
@@ -179,15 +181,21 @@ final class Meshes
         $out = [];
         for ($i = 0; $i < 24; $i++) {
             $a = $i * M_PI / 12; $b = ($i + 1) * M_PI / 12;
-            foreach ([[sin($a),0,cos($a)], [sin($b),0,cos($b)], [sin($a)*0.94,0,cos($a)*0.94], [sin($b),0,cos($b)], [sin($b)*0.94,0,cos($b)*0.94], [sin($a)*0.94,0,cos($a)*0.94]] as $p) self::vertex($out, $p, [0.2,0.95,1.0], [0,1,0]);
+            foreach ([[sin($a),0,cos($a)], [sin($b),0,cos($b)], [sin($a)*0.94,0,cos($a)*0.94],
+                [sin($b),0,cos($b)], [sin($b)*0.94,0,cos($b)*0.94], [sin($a)*0.94,0,cos($a)*0.94]] as $p) {
+                self::vertex($out, $p, [0.2,0.95,1.0], [0,1,0]);
+            }
         }
         return $out;
     }
 
+    /** @param float[] $min @param float[] $max @param int[] $rgb */
     private static function boxInto(array &$out, array $min, array $max, array $rgb): void
     {
-        [$x0,$y0,$z0]=$min; [$x1,$y1,$z1]=$max; $c=[$rgb[0]/255,$rgb[1]/255,$rgb[2]/255];
-        $faces=[
+        [$x0, $y0, $z0] = $min;
+        [$x1, $y1, $z1] = $max;
+        $c = [$rgb[0] / 255, $rgb[1] / 255, $rgb[2] / 255];
+        $faces = [
             [[$x0,$y0,$z0],[$x0,$y1,$z0],[$x1,$y1,$z0],[$x1,$y0,$z0],[0,0,-1]],
             [[$x1,$y0,$z1],[$x1,$y1,$z1],[$x0,$y1,$z1],[$x0,$y0,$z1],[0,0,1]],
             [[$x0,$y0,$z1],[$x0,$y1,$z1],[$x0,$y1,$z0],[$x0,$y0,$z0],[-1,0,0]],
@@ -195,19 +203,31 @@ final class Meshes
             [[$x0,$y1,$z0],[$x0,$y1,$z1],[$x1,$y1,$z1],[$x1,$y1,$z0],[0,1,0]],
             [[$x0,$y0,$z1],[$x0,$y0,$z0],[$x1,$y0,$z0],[$x1,$y0,$z1],[0,-1,0]],
         ];
-        foreach($faces as[$a,$b,$c0,$d,$n]){self::vertex($out,$a,$c,$n);self::vertex($out,$b,$c,$n);self::vertex($out,$c0,$c,$n);self::vertex($out,$a,$c,$n);self::vertex($out,$c0,$c,$n);self::vertex($out,$d,$c,$n);}
+        foreach ($faces as [$a, $b, $c0, $d, $n]) {
+            self::vertex($out, $a, $c, $n);
+            self::vertex($out, $b, $c, $n);
+            self::vertex($out, $c0, $c, $n);
+            self::vertex($out, $a, $c, $n);
+            self::vertex($out, $c0, $c, $n);
+            self::vertex($out, $d, $c, $n);
+        }
     }
 
+    /** @param float[] $p @param float[] $c @param float[] $n */
     private static function vertex(array &$out, array $p, array $c, array $n, ?array $uv = null): void
     {
-        [$u,$v]=$uv??self::uv($p,$n); array_push($out,$p[0],$p[1],$p[2],$c[0],$c[1],$c[2],$n[0],$n[1],$n[2],$u,$v);
+        [$u, $v] = $uv ?? self::uv($p, $n);
+        array_push($out, $p[0], $p[1], $p[2], $c[0], $c[1], $c[2], $n[0], $n[1], $n[2], $u, $v);
     }
 
+    /** Cheap planar mapping: one 64px-ish repeat every two world units. */
     private static function uv(array $p, array $n): array
     {
-        $ax=abs($n[0]);$ay=abs($n[1]);$az=abs($n[2]);
-        if($ay>=$ax&&$ay>=$az)return[$p[0]*0.5,$p[2]*0.5];
-        if($ax>=$az)return[$p[2]*0.5,$p[1]*0.5];
-        return[$p[0]*0.5,$p[1]*0.5];
+        $ax = abs($n[0]);
+        $ay = abs($n[1]);
+        $az = abs($n[2]);
+        if ($ay >= $ax && $ay >= $az) return [$p[0] * 0.5, $p[2] * 0.5];
+        if ($ax >= $az) return [$p[2] * 0.5, $p[1] * 0.5];
+        return [$p[0] * 0.5, $p[1] * 0.5];
     }
 }
