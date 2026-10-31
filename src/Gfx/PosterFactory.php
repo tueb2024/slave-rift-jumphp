@@ -58,20 +58,51 @@ final class PosterFactory
         $white = imagecolorallocate($im, 250, 245, 224);
 
         imagefilledrectangle($im, 0, 0, 399, 579, $paper);
-        imagefilledrectangle($im, 16, 16, 383, 563, $ink);
-        imagefilledrectangle($im, 28, 32, 371, 142, $pink);
-        imagefilledrectangle($im, 28, 158, 371, 494, $white);
-        imagefilledrectangle($im, 28, 512, 371, 532, $cyan);
+        imagefilledrectangle($im, 14, 14, 385, 565, $ink);
+        imagefilledrectangle($im, 26, 30, 373, 178, $pink);
+        imagefilledrectangle($im, 26, 194, 373, 486, $white);
+        imagefilledrectangle($im, 26, 508, 373, 536, $cyan);
 
-        imagestring($im, 5, 150, 76, 'VOTRE', $white);
-        imagestring($im, 5, 170, 250, 'PUB', $ink);
-        imagestring($im, 5, 170, 320, 'ICI', $pink);
-        imagestring($im, 5, 116, 432, '3615 / RESERVE', $ink);
-        imagestring($im, 3, 126, 468, 'EMPLACEMENT DISPONIBLE', $ink);
+        // The wall poster is viewed from several metres away in a 320x180 game.
+        // Use deliberately huge bitmap typography so the gag reads immediately.
+        self::drawTextScaled($im, 'VOTRE', 200, 62, $white, 5);
+        self::drawTextScaled($im, 'PUB ICI', 200, 248, $ink, 5);
+        self::drawTextScaled($im, 'EMPLACEMENT', 200, 382, $pink, 2);
+        self::drawTextScaled($im, 'DISPONIBLE', 200, 420, $pink, 2);
+        self::drawTextScaled($im, '3615 / RESERVE', 200, 520, $ink, 1);
 
-        imagefilledrectangle($im, 40, 174, 68, 202, $cyan);
-        imagefilledrectangle($im, 332, 438, 360, 466, $cyan);
-        imagerectangle($im, 6, 6, 393, 573, $pink);
+        imagefilledrectangle($im, 38, 210, 72, 244, $cyan);
+        imagefilledrectangle($im, 328, 438, 362, 472, $cyan);
+        imagerectangle($im, 5, 5, 394, 574, $pink);
         return $im;
+    }
+
+    private static function drawTextScaled(\GdImage $im, string $text, int $cx, int $y, int $color, int $scale): void
+    {
+        $font = 5;
+        $w = imagefontwidth($font) * strlen($text);
+        $h = imagefontheight($font);
+        $tmp = imagecreatetruecolor(max(1, $w), $h);
+        $white = imagecolorallocate($tmp, 255, 255, 255);
+        $black = imagecolorallocate($tmp, 0, 0, 0);
+        imagefill($tmp, 0, 0, $white);
+        imagestring($tmp, $font, 0, 0, $text, $black);
+        $drawW = $w * $scale;
+        $x0 = $cx - intdiv($drawW, 2);
+        for ($py = 0; $py < $h; $py++) {
+            for ($px = 0; $px < $w; $px++) {
+                if ((imagecolorat($tmp, $px, $py) & 0xFF) < 128) {
+                    imagefilledrectangle(
+                        $im,
+                        $x0 + $px * $scale,
+                        $y + $py * $scale,
+                        $x0 + ($px + 1) * $scale - 1,
+                        $y + ($py + 1) * $scale - 1,
+                        $color,
+                    );
+                }
+            }
+        }
+        imagedestroy($tmp);
     }
 }
