@@ -5,6 +5,7 @@ namespace App\Scene;
 use App\Audio\RiftMusic;
 use App\Audio\RiftSfx;
 use App\Game\BrushMap;
+use App\Game\RhythmClock;
 use App\Game\Run;
 use App\Gfx\World;
 use JumPHP\Loop\FixedStep;
@@ -18,7 +19,7 @@ final class PlayScene extends AbstractScene
     private World $world;
     private FixedStep $step;
     private RiftMusic $music;
-    private int $musicWave = 1;
+    private RhythmClock $rhythm;
     private bool $demo = false;
     private bool $debug = false;
     private float $frameMs = 16.7;
@@ -42,6 +43,7 @@ final class PlayScene extends AbstractScene
         $this->run = new Run($map, (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520))));
         $this->world ??= new World();
         $this->step = new FixedStep(60, 8);
+        $this->rhythm = new RhythmClock();
         $this->restartDelay = 0.0;
         $this->paused = false;
         $this->jumpPending = false;
@@ -58,8 +60,6 @@ final class PlayScene extends AbstractScene
             $this->music = new RiftMusic($this->sound());
             $this->music->register();
         }
-        $this->musicWave = $this->run->wave;
-        $this->music->reset($this->musicWave);
     }
 
     private function loadAssetLayer(): void
@@ -128,16 +128,13 @@ final class PlayScene extends AbstractScene
         $beforeState = $this->run->state;
         $beforeXp = $this->run->xp;
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
+            $this->rhythm->advance($h, $this->run->level);
             $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, false);
             $this->jumpPending = false;
         });
 
         $this->playAudioEvents($beforeState, $beforeXp, $dt);
-        if ($this->run->wave !== $this->musicWave) {
-            $this->musicWave = $this->run->wave;
-            $this->music->onWaveStart($this->musicWave);
-        }
-        $this->music->update($dt, min(1.0, 0.32 + count($this->run->enemies) / 24.0));
+        $this->music->playSteps($this->rhythm->drain(), $this->run->level);
     }
 
     private function playAudioEvents(string $beforeState, int $beforeXp, float $dt): void
@@ -242,7 +239,7 @@ final class PlayScene extends AbstractScene
                 $this->world->mapChunksDrawn, $run->neighborChecks), 4, 28, 1, $cyan);
             $font->draw($r, sprintf('TR %d  COR %d  IMP %d  COL %d  PICK %d', count($run->traces), count($run->corpses),
                 min(count($run->traces), World::MAX_IMPACTS), $run->collisionTests, count($run->pickups)), 4, 38, 1, $cyan);
-            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s', Run::TURN_SPEED, $arsenal), 4, 48, 1, $cyan);
+            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s  BPM %.0f', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level)), 4, 48, 1, $cyan);
         }
     }
 
