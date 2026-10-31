@@ -1,0 +1,40 @@
+name: Apply procedural visual pass
+
+on:
+  push:
+    branches: [agent/procedural-game-foundation]
+    paths:
+      - 'patches/procedural-visual-pass.tar.gz'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/procedural-game-foundation
+      - name: Apply verified local source pass
+        run: |
+          set -euxo pipefail
+          test -f patches/procedural-visual-pass.tar.gz
+          tar -xzf patches/procedural-visual-pass.tar.gz
+          php tools/sync-package.php
+          php tools/sync-package.php --check
+          php tools/simulation-test.php
+          find src tests games/slave-rift/src games/slave-rift/tests -name '*.php' -print0 | xargs -0 -n1 php -l >/tmp/php-lint.log
+          tail -20 /tmp/php-lint.log
+      - name: Commit playable procedural visual pass
+        run: |
+          set -euxo pipefail
+          rm -f patches/procedural-visual-pass.tar.gz
+          rm -f .github/workflows/apply-procedural-visual-pass.yml
+          rm -f .github/workflows/workspace-snapshot.yml
+          rm -f .github/workflows/vendor-boss-and-poster-assets.yml
+          git config user.name 'slave-rift-build-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: procedural textured rooms, troll posters and weighted enemies'
+          git push origin HEAD:agent/procedural-game-foundation
