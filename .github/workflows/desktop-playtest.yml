@@ -1,0 +1,73 @@
+name: Desktop playtest
+
+on:
+  push:
+    branches: [agent/procedural-game-foundation]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Slave Rift
+        uses: actions/checkout@v4
+        with:
+          path: game
+
+      - name: Checkout pinned JumPHP runtime
+        uses: actions/checkout@v4
+        with:
+          repository: davidnurdin/jumPhp
+          ref: 28ea932981fb0b6d8dc41f2c9739f941cb4befea
+          path: runtime
+
+      - name: Stage game in JumPHP
+        run: |
+          set -euxo pipefail
+          cp -a game/games/slave-rift runtime/games/slave-rift
+          python3 - <<'PY'
+          import json
+          p = 'runtime/games/slave-rift/composer.json'
+          with open(p, encoding='utf-8') as f:
+              c = json.load(f)
+          c['repositories'] = [
+              {'type': 'path', 'url': '../../engine'},
+              {'type': 'vcs', 'url': 'https://github.com/davidnurdin/php-wasm-network'}
+          ]
+          with open(p, 'w', encoding='utf-8') as f:
+              json.dump(c, f, indent=2)
+          PY
+
+      - name: Build JumPHP desktop toolchain
+        working-directory: runtime
+        run: docker build -t jumphp/desktop:dev --build-context ext=docker/ext docker/desktop
+
+      - name: Install Slave Rift
+        working-directory: runtime
+        run: |
+          docker run --rm -v "$PWD:/workspace" -w /workspace/engine jumphp/desktop:dev composer install --no-interaction --no-progress
+          bin/jumphp install slave-rift
+
+      - name: Export Windows standalone
+        working-directory: runtime
+        run: bin/jumphp export:standalone slave-rift --windows
+
+      - name: Name playtest executable
+        run: |
+          set -euxo pipefail
+          short="${GITHUB_SHA::7}"
+          mkdir -p playtest
+          cp runtime/games/slave-rift/dist/standalone/slave-rift-windows-x86_64.exe "playtest/slave-rift-${short}.exe"
+          sha256sum playtest/*.exe > playtest/SHA256SUMS.txt
+
+      - name: Upload Windows playtest
+        uses: actions/upload-artifact@v4
+        with:
+          name: slave-rift-win64-${{ github.sha }}
+          path: playtest/
+          if-no-files-found: error
+          retention-days: 14
