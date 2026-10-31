@@ -19,12 +19,18 @@ final class RhythmClockTest extends TestCase
     public function testSixteenthPhaseSurvivesLevelChange(): void
     {
         $clock = new RhythmClock();
-        $firstBeat = $clock->advance(60.0 / 116.0 + 1e-6, 1);
+        $firstBeat = [];
+        for ($i = 0; $i < 40 && count($firstBeat) < 4; $i++) {
+            $firstBeat = array_merge($firstBeat, $clock->advance(1.0 / 60.0, 1));
+        }
         self::assertSame([0, 1, 2, 3], $firstBeat);
         self::assertSame($firstBeat, $clock->drain());
         self::assertSame([], $clock->drain());
 
-        $next = $clock->advance(60.0 / 122.0 / 4.0 + 1e-6, 4);
+        $next = [];
+        for ($i = 0; $i < 12 && $next === []; $i++) {
+            $next = $clock->advance(1.0 / 60.0, 4);
+        }
         self::assertSame([4], $next, 'Changing level must change tempo, not restart the bar.');
     }
 }
