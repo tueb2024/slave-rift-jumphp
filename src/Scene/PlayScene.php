@@ -64,14 +64,13 @@ final class PlayScene extends AbstractScene
 
     private function loadAssetLayer(): void
     {
-        if (!$this->sdl()->hasTexture('industrial_pistol')) {
-            $this->sdl()->loadTexture('industrial_pistol', 'assets/sprites/weapons/industrial-pistol-original.png');
-        }
-        if (!$this->sdl()->hasTexture('industrial_smg')) {
-            $this->sdl()->loadTexture('industrial_smg', 'assets/sprites/weapons/industrial-smg-original.png');
-        }
-        if (!$this->sdl()->hasTexture('muzzle_flash')) {
-            $this->sdl()->loadTexture('muzzle_flash', 'assets/sprites/effects/muzzle-large-fire.png');
+        foreach ([
+            'weapon_colt' => 'assets/sprites/weapons/fps-colt.png',
+            'weapon_mp44' => 'assets/sprites/weapons/fps-mp44.png',
+            'weapon_bar' => 'assets/sprites/weapons/fps-bar.png',
+            'weapon_gatling' => 'assets/sprites/weapons/fps-gatling.png',
+        ] as $key => $path) {
+            if (!$this->sdl()->hasTexture($key)) $this->sdl()->loadTexture($key, $path);
         }
         RiftSfx::register($this->sound());
     }
@@ -122,7 +121,7 @@ final class PlayScene extends AbstractScene
             $forward = $this->actions()->axis('move_back', 'move_forward');
             $strafe = $this->actions()->axis('strafe_left', 'strafe_right');
             $turn = $this->actions()->axis('turn_left', 'turn_right');
-            $fire = false; // weapon clocks live in Run; no frame-timed input firing
+            $fire = false;
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
         }
 
@@ -183,26 +182,26 @@ final class PlayScene extends AbstractScene
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross); $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
-        $kick = $run->muzzle > 0 ? (int)round($h * 0.008) : 0;
+        $weaponKey = match (true) {
+            $run->autoTier === 0 => 'weapon_colt',
+            $run->autoTier <= 2 => 'weapon_mp44',
+            $run->autoTier === 3 => 'weapon_bar',
+            default => 'weapon_gatling',
+        };
+        $weaponFrame = $run->muzzle <= 0.0 ? 0 : ($run->muzzle > 0.08 ? 1 : ($run->muzzle > 0.04 ? 2 : 3));
+        $weapon = $this->sdl()->getTexture($weaponKey);
+        $drawH = (int)round($h * ($run->autoTier === 0 ? 0.27 : 0.29));
+        $drawW = (int)round($drawH * 1.5);
         $bob = (int)round(sin($run->time * 6) * $h * 0.004);
-        $weapon = $this->sdl()->getTexture($run->autoTier === 0 ? 'industrial_pistol' : 'industrial_smg');
-        $drawH = (int)round($h * ($run->autoTier === 0 ? 0.24 : 0.25));
-        $drawW = (int)round($drawH * 1254 / 1054);
-        $weaponY = $h - $drawH + $kick + $bob;
+        $weaponY = $h - $drawH + $bob;
         $copies = $run->autoTier >= 4 ? max(1, min(3, $run->autoGuns)) : 1;
-        $spread = (int)round($drawW * 0.22);
+        $spread = (int)round($drawW * 0.20);
         for ($gun = 0; $gun < $copies; $gun++) {
             $offset = (int)round(($gun - ($copies - 1) / 2) * $spread);
-            $weaponX = (int)($cx - $drawW / 2 + $offset);
-            $r->copy($weapon['texture'], [0, 200, 1254, 1054], $weaponX, $weaponY, $drawW, $drawH);
-            if ($run->muzzle > 0) {
-                $flash = $this->sdl()->getTexture('muzzle_flash');
-                $flashFrame = min(2, max(0, (int)floor((0.12 - min(0.12, $run->muzzle)) / 0.04)));
-                $flashSize = max(12, (int)round($h * 0.045));
-                $r->copy($flash['texture'], [$flashFrame * 80, 0, 80, 80],
-                    (int)($cx + $drawW * 0.02 + $offset), (int)($weaponY + $drawH * ($run->autoTier === 0 ? 0.0 : 0.14)), $flashSize, $flashSize);
-            }
+            $weaponX = (int)round($cx - $drawW * 0.18 + $offset);
+            $r->copy($weapon['texture'], [$weaponFrame * 144, 0, 144, 96], $weaponX, $weaponY, $drawW, $drawH);
         }
+
         if ($run->pulseUnlocked) {
             $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
             $r->fillRect($w - 33, $h - 37, 8, 20, $run->pulse > 0 ? [180,255,255] : [70,180,195]);
