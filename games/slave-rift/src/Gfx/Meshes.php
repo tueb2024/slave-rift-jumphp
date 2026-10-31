@@ -49,8 +49,6 @@ final class Meshes
             vec3 n = normalize(v_normal);
             vec3 lightDir = normalize(vec3(-0.45, 0.80, -0.30));
             float diffuse = max(dot(n, lightDir), 0.0);
-            // Keep Quake's stepped lighting, but lift the floor enough that dark
-            // material texels still describe the room instead of clipping to black.
             float band = floor((0.78 + diffuse * 0.32) * 5.0) / 5.0;
             float dist = length(u_eye - v_world);
             float fog = clamp((dist - 7.0) / 15.0, 0.0, 1.0);
@@ -92,10 +90,10 @@ final class Meshes
             [$nx, $ny, $nz] = $decal['normal'];
             $halfW = $decal['width'] * 0.5;
             $halfH = $decal['height'] * 0.5;
-            // Horizontal tangent in the wall plane. The normal is always one of
-            // the four cardinal wall normals in generated modules.
-            $rx = -$nz;
-            $rz = $nx;
+            // Cardinal wall tangent. The previous sign mirrored readable posters;
+            // this orientation keeps text left-to-right from the room-facing side.
+            $rx = $nz;
+            $rz = -$nx;
             $offset = 0.012;
             $cx = $x + $nx * $offset;
             $cy = $y + $ny * $offset;
