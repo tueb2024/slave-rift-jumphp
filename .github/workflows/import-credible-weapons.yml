@@ -32,12 +32,52 @@ jobs:
           cp assets/sprites/weapons/fps-mp44.png games/slave-rift/assets/sprites/weapons/fps-mp44.png
           cp assets/sprites/weapons/fps-bar.png games/slave-rift/assets/sprites/weapons/fps-bar.png
           cp assets/sprites/weapons/fps-gatling.png games/slave-rift/assets/sprites/weapons/fps-gatling.png
-          sha256sum assets/sprites/weapons/fps-*.png
-      - name: Commit generated atlases
+      - name: Apply verified display names and vendored hashes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, re
+
+          block = """public function primaryWeaponLabel(): string
+              {
+                  return match ($this->primaryStage) {
+                      0 => 'PISTOL',
+                      1 => 'DUAL PISTOL',
+                      2 => 'MACHINE GUN',
+                      3 => 'DUAL MACHINE GUN',
+                      4 => 'BRN-10',
+                      5 => 'GATLING',
+                      default => 'DUAL GATLING',
+                  };
+              }"""
+          for rel in ('src/Game/Run.php', 'games/slave-rift/src/Game/Run.php'):
+              p = Path(rel)
+              text = p.read_text()
+              text, n = re.subn(r"public function primaryWeaponLabel\(\): string\s*\{.*?\n\s*\}", block, text, count=1, flags=re.S)
+              if n != 1:
+                  raise SystemExit(f'primaryWeaponLabel block not found in {rel}')
+              p.write_text(text)
+
+          names = ('fps-colt.png','fps-mp44.png','fps-bar.png','fps-gatling.png')
+          vendored = Path('assets/VENDORED.sha256')
+          text = vendored.read_text()
+          for name in names:
+              data = Path('assets/sprites/weapons') / name
+              digest = hashlib.sha256(data.read_bytes()).hexdigest()
+              pat = rf'^[0-9a-f]{{64}}  assets/sprites/weapons/{re.escape(name)}$'
+              repl = f'{digest}  assets/sprites/weapons/{name}'
+              text, n = re.subn(pat, repl, text, count=1, flags=re.M)
+              if n != 1:
+                  raise SystemExit(f'vendored entry not found for {name}')
+          vendored.write_text(text)
+          Path('games/slave-rift/assets/VENDORED.sha256').write_text(text)
+          PY
+      - name: Commit imported weapon pass
         run: |
           git add assets/sprites/weapons/fps-colt.png assets/sprites/weapons/fps-mp44.png assets/sprites/weapons/fps-bar.png assets/sprites/weapons/fps-gatling.png
           git add games/slave-rift/assets/sprites/weapons/fps-colt.png games/slave-rift/assets/sprites/weapons/fps-mp44.png games/slave-rift/assets/sprites/weapons/fps-bar.png games/slave-rift/assets/sprites/weapons/fps-gatling.png
+          git add src/Game/Run.php games/slave-rift/src/Game/Run.php assets/VENDORED.sha256 games/slave-rift/assets/VENDORED.sha256
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix: rebuild credible CC0 FPS weapon atlases'
+          git commit -m 'fix: complete credible FPS weapon import' || true
           git push origin HEAD:fix/credible-fps-weapons
