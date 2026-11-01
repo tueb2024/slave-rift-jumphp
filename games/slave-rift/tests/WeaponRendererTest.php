@@ -19,10 +19,26 @@ final class WeaponRendererTest extends TestCase
         self::assertLessThanOrEqual(320, $pistol['x'] + $pistol['drawW']);
         self::assertLessThanOrEqual(180, $pistol['y'] + $pistol['drawH']);
 
-        $smg = $renderer->layout(320, 180, 3, 0.0);
-        self::assertSame(104, $smg['drawH']);
-        self::assertSame(156, $smg['drawW']);
-        self::assertSame(1, $smg['copies']);
+        foreach ([1, 3, 6] as $stage) {
+            $dual = $renderer->layout(320, 180, $stage, 0.0);
+            self::assertSame(2, $dual['copies']);
+            self::assertGreaterThan(0, $dual['spread']);
+            self::assertGreaterThanOrEqual(0, $dual['x']);
+            self::assertLessThanOrEqual(320, $dual['x'] + $dual['spread'] + $dual['drawW']);
+            self::assertLessThanOrEqual(180, $dual['y'] + $dual['drawH']);
+        }
+    }
+
+    public function testOnlyDualStagesRequestTwoWeaponCopies(): void
+    {
+        $renderer = new WeaponRenderer();
+
+        foreach ([0, 2, 4, 5] as $stage) {
+            self::assertSame(1, $renderer->layout(320, 180, $stage, 0.0)['copies']);
+        }
+        foreach ([1, 3, 6] as $stage) {
+            self::assertSame(2, $renderer->layout(320, 180, $stage, 0.0)['copies']);
+        }
     }
 
     public function testLayoutScalesWithLogicalResolution(): void
