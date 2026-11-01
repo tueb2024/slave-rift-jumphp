@@ -1,0 +1,45 @@
+name: Fix rocket migration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-rocket-migration.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix remaining rocket references
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          p = Path('src/Game/Run.php')
+          s = p.read_text()
+          s = s.replace('$this->shurikenRank', '$this->rocketRank')
+          s = s.replace('$this->shurikenClock', '$this->rocketClock')
+          s = s.replace("$this->rocketRank = min(3, $this->rocketRank + 1);", "$this->rocketRank = min(4, $this->rocketRank + 1);")
+          s = s.replace("'MINI_ROCKETS' => $this->rocketRank === 0 ? 'VOLLEY HITS UP TO 4 TARGETS' : 'MORE TARGETS / FASTER VOLLEY',", "'MINI_ROCKETS' => $this->rocketRank === 0 ? 'AUTO-TARGET MINI-ROCKET SALVO' : 'MORE ROCKETS / MORE DAMAGE',")
+          s = s.replace('$count = 4 + ($this->rocketRank - 1) * 2;', '$count = 2 + ($this->rocketRank - 1) * 2;')
+          s = s.replace('$targets = $this->findTargets(18.0, 1.35, $count);', '$targets = $this->findTargets(22.0, 1.15, $count);')
+          s = s.replace("$this->rocketClock = 0.25;", "$this->rocketClock = 0.40;")
+          s = s.replace('$damage = (int)round((26 + ($this->rocketRank - 1) * 8) * (1 + $this->damageRank * 0.25));', '$damage = (int)round((34 + ($this->rocketRank - 1) * 12) * (1 + $this->damageRank * 0.25));')
+          s = s.replace('$this->rocketClock = max(1.4, 3.1 - ($this->rocketRank - 1) * 0.4 - $this->hasteRank * 0.12);', '$this->rocketClock = max(2.0, 4.5 - ($this->rocketRank - 1) * 0.55 - $this->hasteRank * 0.12);')
+          s = s.replace("if ($this->level >= 3 && $this->rocketRank < 3) $pool[] = 'MINI_ROCKETS';", "if ($this->level >= 3 && $this->rocketRank < 4) $pool[] = 'MINI_ROCKETS';")
+          if 'shurikenRank' in s or 'shurikenClock' in s:
+              raise SystemExit('stale shuriken state remains')
+          p.write_text(s)
+          shutil.copy2(p, 'games/slave-rift/src/Game/Run.php')
+          Path('.github/workflows/fix-rocket-migration.yml').unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: complete mini-rocket state migration"
+          git push origin HEAD:main
