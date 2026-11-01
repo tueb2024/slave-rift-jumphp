@@ -245,14 +245,15 @@ final class Run
     public function primaryWeaponLabel(): string
     {
         return match ($this->primaryStage) {
-            0 => 'COLT .45',
-            1 => 'DUAL COLT',
-            2 => 'MP44',
-            3 => 'DUAL MP44',
-            4 => 'BAR',
+            0 => 'PISTOL',
+            1 => 'DUAL PISTOL',
+            2 => 'MACHINE GUN',
+            3 => 'DUAL MACHINE GUN',
+            4 => 'BRN-10',
             5 => 'GATLING',
             default => 'DUAL GATLING',
         };
+    };
     }
 
     /** @return list<int> primary stages that actually emitted a shot event */
