@@ -80,24 +80,35 @@ final class WeaponRenderer
     /** @return array{drawW:int,drawH:int,x:int,y:int,copies:int,spread:int} */
     public function layout(int $width, int $height, int $stage, float $time): array
     {
-        $ratio = match (true) {
-            $stage <= 1 => 0.54,
-            $stage <= 3 => 0.58,
-            $stage <= 4 => 0.61,
-            default => 0.64,
+        $dual = in_array($stage, [1, 3, 6], true);
+        $ratio = match ($stage) {
+            1 => 0.46,
+            3 => 0.48,
+            6 => 0.52,
+            default => match (true) {
+                $stage <= 1 => 0.54,
+                $stage <= 3 => 0.58,
+                $stage <= 4 => 0.61,
+                default => 0.64,
+            },
         };
         $drawH = max(72, min((int)round($height * 0.70), (int)round($height * $ratio)));
         $drawW = (int)round($drawH * self::FRAME_W / self::FRAME_H);
         $bob = (int)round((sin($time * 6.0) + 1.0) * 0.8);
-        $x = (int)round($width / 2 - $drawW * 0.46);
+        $spread = $dual ? max(24, (int)round($drawW * 0.82)) : 0;
+        $x = $dual
+            ? (int)round($width / 2 - $drawW / 2 - $spread / 2)
+            : (int)round($width / 2 - $drawW * 0.46);
+        $x = max(0, min($width - $drawW - $spread, $x));
         $y = $height - $drawH - 2 - $bob;
+
         return [
             'drawW' => $drawW,
             'drawH' => $drawH,
-            'x' => max(0, min($width - $drawW, $x)),
+            'x' => $x,
             'y' => max(0, min($height - $drawH, $y)),
-            'copies' => 1,
-            'spread' => 0,
+            'copies' => $dual ? 2 : 1,
+            'spread' => $spread,
         ];
     }
 
@@ -115,10 +126,32 @@ final class WeaponRenderer
             default => 0,
         };
         $y = max(0, min($r->getHeight() - $layout['drawH'], $layout['y'] + $recoilY));
+        $src = [$frame * self::FRAME_W, 0, self::FRAME_W, self::FRAME_H];
+
+        if ($layout['copies'] === 2) {
+            $r->copy(
+                $texture['texture'],
+                $src,
+                $layout['x'],
+                $y,
+                $layout['drawW'],
+                $layout['drawH'],
+                true,
+            );
+            $r->copy(
+                $texture['texture'],
+                $src,
+                $layout['x'] + $layout['spread'],
+                $y,
+                $layout['drawW'],
+                $layout['drawH'],
+            );
+            return;
+        }
 
         $r->copy(
             $texture['texture'],
-            [$frame * self::FRAME_W, 0, self::FRAME_W, self::FRAME_H],
+            $src,
             $layout['x'],
             $y,
             $layout['drawW'],
