@@ -59,7 +59,7 @@ final class Run
     public string $autoWeapon = 'COLT';
     public int $autoGuns = 1;
     public int $flameRank = 0;
-    public int $shurikenRank = 0;
+    public int $rocketRank = 0;
     public float $flameActive = 0.0;
     public array $choices = [];
     public string $message = 'COLT .45 - RHYTHM FIRE';
@@ -73,7 +73,7 @@ final class Run
     private int $primaryGunPhase = 0;
     private float $flameCooldownClock = 4.5;
     private float $flameTickClock = 0.0;
-    private float $shurikenClock = 3.0;
+    private float $rocketClock = 3.0;
     private float $spawnClock = 0.4;
     private float $invincible = 0.0;
     private int $nextId = 1;
@@ -153,7 +153,7 @@ final class Run
         if ($this->flameRank > 0) $this->stepFlamethrower($dt);
         if ($this->shurikenRank > 0) {
             $this->shurikenClock -= $dt;
-            if ($this->shurikenClock <= 0) $this->fireShuriken();
+            if ($this->shurikenClock <= 0) $this->fireMiniRockets();
         }
 
         $this->stepPickups($dt);
@@ -169,7 +169,7 @@ final class Run
             'MAGNET' => $this->magnetRank++,
             'PULSE' => $this->upgradePulse(),
             'FLAMETHROWER' => $this->upgradeFlamethrower(),
-            'SHURIKEN' => $this->upgradeShuriken(),
+            'MINI_ROCKETS' => $this->upgradeMiniRockets(),
             default => $this->upgradeVitality(),
         };
         $this->choices = [];
@@ -199,7 +199,7 @@ final class Run
         $this->flameCooldownClock = min($this->flameCooldownClock, 0.45);
     }
 
-    private function upgradeShuriken(): void
+    private function upgradeMiniRockets(): void
     {
         $this->shurikenRank = min(3, $this->shurikenRank + 1);
         $this->shurikenClock = min($this->shurikenClock, 0.45);
@@ -270,7 +270,7 @@ final class Run
             'MAGNET' => 'WIDER PICKUP RANGE',
             'PULSE' => $this->pulseUnlocked ? 'STRONGER WIDER PULSE' : 'UNLOCK RADIAL PULSE',
             'FLAMETHROWER' => $this->flameRank === 0 ? 'TRACKING FIRE CONE FOR 2.4s' : 'LONGER / WIDER / HOTTER SWEEP',
-            'SHURIKEN' => $this->shurikenRank === 0 ? 'VOLLEY HITS UP TO 4 TARGETS' : 'MORE TARGETS / FASTER VOLLEY',
+            'MINI_ROCKETS' => $this->shurikenRank === 0 ? 'VOLLEY HITS UP TO 4 TARGETS' : 'MORE TARGETS / FASTER VOLLEY',
             default => '+20 MAX HP / HEAL 40',
         };
     }
@@ -279,7 +279,7 @@ final class Run
     {
         $parts = [$this->primaryWeaponLabel()];
         if ($this->flameRank > 0) $parts[] = 'FLAME L' . $this->flameRank;
-        if ($this->shurikenRank > 0) $parts[] = 'SHURIKEN L' . $this->shurikenRank;
+        if ($this->shurikenRank > 0) $parts[] = 'ROCKET L' . $this->shurikenRank;
         if ($this->pulseUnlocked) $parts[] = 'PULSE L' . max(1, $this->pulseRank);
         return implode(' + ', $parts);
     }
@@ -692,7 +692,7 @@ final class Run
     {
         $stage ??= $this->primaryStage;
         $targetCount = $splitTargets ? max(1, $guns) : 1;
-        $cone = $stage >= 5 ? 0.24 : 0.18;
+        $cone = 1.05; // normal weapons deliberately keep strong auto-aim
         $targets = $this->findTargets(19.0, $cone, $targetCount);
         if ($targets === []) return;
 
@@ -759,7 +759,7 @@ final class Run
         }
     }
 
-    private function fireShuriken(): void
+    private function fireMiniRockets(): void
     {
         $count = 4 + ($this->shurikenRank - 1) * 2;
         $targets = $this->findTargets(18.0, 1.35, $count);
@@ -771,7 +771,7 @@ final class Run
         foreach ($targets as $index => $id) {
             if (!isset($this->enemies[$id])) continue;
             $enemy = $this->enemies[$id];
-            $this->addVisualTrace($enemy, 0.18, 'shuriken', ($index - (count($targets) - 1) / 2) * 0.04);
+            $this->addVisualTrace($enemy, 0.18, 'rocket', ($index - (count($targets) - 1) / 2) * 0.04);
             $this->damage($id, $damage);
             $this->shots++;
             $this->hits++;
@@ -783,7 +783,7 @@ final class Run
     private function addVisualTrace(array $enemy, float $height, string $type, float $lateral = 0.0): void
     {
         if (count($this->traces) >= self::MAX_VISUAL_TRACES) array_shift($this->traces);
-        $life = in_array($type, ['flame', 'shuriken'], true) ? 0.075 : 0.06;
+        $life = in_array($type, ['flame', 'rocket'], true) ? 0.075 : 0.06;
         $this->traces[] = [
             'startX' => $this->x + sin($this->yaw) * 0.5 - cos($this->yaw) * (0.14 + $lateral),
             'startY' => $this->y + 0.18,
@@ -926,7 +926,7 @@ final class Run
     {
         $pool = [];
         if ($this->level >= 3 && $this->flameRank < 3) $pool[] = 'FLAMETHROWER';
-        if ($this->level >= 3 && $this->shurikenRank < 3) $pool[] = 'SHURIKEN';
+        if ($this->level >= 3 && $this->shurikenRank < 3) $pool[] = 'MINI_ROCKETS';
         return $pool;
     }
     private function resetCombo(): void

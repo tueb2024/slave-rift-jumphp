@@ -146,7 +146,7 @@ final class World
             if ($start === null || $end === null || $start[2] < 0 || $start[2] > 1 || $end[2] < 0 || $end[2] > 1) continue;
             $color = match ($trace['type']) {
                 'flame' => [255, 122, 45],
-                'shuriken' => [125, 225, 255],
+                'rocket' => [255, 150, 65],
                 'special' => [120, 240, 255],
                 default => [255, 205, 105],
             };

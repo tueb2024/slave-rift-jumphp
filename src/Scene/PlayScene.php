@@ -255,10 +255,6 @@ final class PlayScene extends AbstractScene
         $weapon = $this->sdl()->getTexture($weaponKey);
         $this->weaponRenderer->render($r, $run, $weapon);
 
-        if ($run->pulseUnlocked) {
-            $r->fillRect($w - 41, $h - 30, 24, 23, [43,63,80]);
-            $r->fillRect($w - 33, $h - 37, 8, 20, $run->pulse > 0 ? [180,255,255] : [70,180,195]);
-        }
         if ($run->flameActive > 0) $font->draw($r, 'FLAME SWEEP', $cx, $h - 40, 1, [255,170,90], 'center');
 
         $r->fillRect(0, $h - 10, $w, 10, [6,5,12,225]);
