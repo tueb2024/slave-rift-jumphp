@@ -60,15 +60,14 @@ jobs:
 
           names = ('fps-colt.png','fps-mp44.png','fps-bar.png','fps-gatling.png')
           vendored = Path('assets/VENDORED.sha256')
-          text = vendored.read_text()
+          lines = vendored.read_text().splitlines()
+          suffixes = {f'assets/sprites/weapons/{name}' for name in names}
+          lines = [line for line in lines if not any(line.endswith('  ' + suffix) for suffix in suffixes)]
           for name in names:
-              data = Path('assets/sprites/weapons') / name
-              digest = hashlib.sha256(data.read_bytes()).hexdigest()
-              pat = rf'^[0-9a-f]{{64}}  assets/sprites/weapons/{re.escape(name)}$'
-              repl = f'{digest}  assets/sprites/weapons/{name}'
-              text, n = re.subn(pat, repl, text, count=1, flags=re.M)
-              if n != 1:
-                  raise SystemExit(f'vendored entry not found for {name}')
+              path = Path('assets/sprites/weapons') / name
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              lines.append(f'{digest}  assets/sprites/weapons/{name}')
+          text = '\n'.join(lines) + '\n'
           vendored.write_text(text)
           Path('games/slave-rift/assets/VENDORED.sha256').write_text(text)
           PY
