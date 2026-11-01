@@ -32,6 +32,7 @@ final class WeaponRenderer
         $this->lastMuzzle = 0.0;
     }
 
+    /** Four visible primary weapons over the seven simulation stages. */
     public function textureKey(int $stage): string
     {
         return match (true) {
@@ -70,11 +71,13 @@ final class WeaponRenderer
         };
     }
 
+    /** Atlases are one row high; kept for compatibility with older callers/tests. */
     public function rowForStage(int $stage): int
     {
         return 0;
     }
 
+    /** @return array{drawW:int,drawH:int,x:int,y:int,copies:int,spread:int} */
     public function layout(int $width, int $height, int $stage, float $time): array
     {
         $dual = in_array($stage, [1, 3, 6], true);
@@ -109,11 +112,13 @@ final class WeaponRenderer
         ];
     }
 
+    /** @param array{texture:mixed} $texture */
     public function render(Renderer $r, Run $run, array $texture): void
     {
         $state = $this->update($run->time, $run->muzzle);
         $frame = $this->frameForState($state);
         $layout = $this->layout($r->getWidth(), $r->getHeight(), $run->primaryStage, $run->time);
+
         $recoilY = match ($state) {
             self::FIRE => -3,
             self::RECOIL => -6,
@@ -124,12 +129,34 @@ final class WeaponRenderer
         $src = [$frame * self::FRAME_W, 0, self::FRAME_W, self::FRAME_H];
 
         if ($layout['copies'] === 2) {
-            $r->copy($texture['texture'], $src, $layout['x'], $y, $layout['drawW'], $layout['drawH'], true);
-            $r->copy($texture['texture'], $src, $layout['x'] + $layout['spread'], $y, $layout['drawW'], $layout['drawH']);
+            $r->copy(
+                $texture['texture'],
+                $src,
+                $layout['x'],
+                $y,
+                $layout['drawW'],
+                $layout['drawH'],
+                true,
+            );
+            $r->copy(
+                $texture['texture'],
+                $src,
+                $layout['x'] + $layout['spread'],
+                $y,
+                $layout['drawW'],
+                $layout['drawH'],
+            );
             return;
         }
 
-        $r->copy($texture['texture'], $src, $layout['x'], $y, $layout['drawW'], $layout['drawH']);
+        $r->copy(
+            $texture['texture'],
+            $src,
+            $layout['x'],
+            $y,
+            $layout['drawW'],
+            $layout['drawH'],
+        );
     }
 
     public function state(): string
