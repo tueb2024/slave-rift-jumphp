@@ -1,0 +1,14 @@
+{
+  "build": "2026-11-01T12:31:38Z",
+  "php-web.mjs": "5f5f8ef0ed3f",
+  "php-web.wasm": "eeb522547ab0",
+  "php-web.data": "fd2f1aa6a6ea",
+  "jumphp-device.js": "20b1eeb543f9",
+  "jumphp-files.js": "c20fcafb1aa7",
+  "jumphp-gamepad.js": "01564efc73e1",
+  "jumphp-http.js": "0305da854c37",
+  "jumphp-pwa.js": "cb869fbe74f9",
+  "jumphp-worker.js": "8d3a5d176410",
+  "touch.js": "2380d5167e45",
+  "php-wasm-network.js": "c0b61341e0cf"
+}
