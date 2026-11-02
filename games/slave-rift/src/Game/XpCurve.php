@@ -10,7 +10,7 @@ final class XpCurve
     public const WEIGHTED = '1-2-3-6';
     public const ACCESSIBLE = '2-3-4-6';
 
-    public function __construct(public readonly string $model = self::CURRENT, public readonly array $milestones = self::LEGACY_MILESTONES)
+    public function __construct(public readonly string $model = self::ACCESSIBLE, public readonly array $milestones = self::LEGACY_MILESTONES)
     {
         if (!in_array($model,[self::CURRENT,self::WEIGHTED,self::ACCESSIBLE],true)) throw new \InvalidArgumentException('Unknown XP curve');
         $sorted=$milestones;sort($sorted);

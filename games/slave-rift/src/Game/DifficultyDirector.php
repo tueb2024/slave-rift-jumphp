@@ -42,9 +42,9 @@ final class DifficultyDirector
         return $unit * intdiv(self::enemyBaseProfile($type)['health'], 24);
     }
 
-    public static function primaryDpsEstimate(int $level, int $manualDamageRank = 0): float
+    public static function primaryDpsEstimate(int $level, int $manualDamageRank = 0, ?int $stage = null): float
     {
-        $stage = Run::primaryStageForLevel($level);
+        $stage ??= Run::primaryStageForLevel($level);
         $shotsPerBeat = match ($stage) {
             0 => 1.0,
             1 => 2.0,
@@ -89,7 +89,7 @@ final class DifficultyDirector
     {
         $damageRank = $this->readInt($run, 'damageRank');
         $manualDamageRank = $damageRank;
-        $primaryDps = self::primaryDpsEstimate($run->level, $manualDamageRank);
+        $primaryDps = self::primaryDpsEstimate($run->level, $manualDamageRank, $run->primaryStage);
         $baselineDps = self::primaryDpsEstimate(1, 0);
         $pulseRank = $this->readInt($run, 'pulseRank');
         $hasteRank = $this->readInt($run, 'hasteRank');
@@ -103,7 +103,7 @@ final class DifficultyDirector
             'primaryDps' => $primaryDps,
             'powerIndex' => $powerIndex,
             'healthScale' => $run->mode->enemyHealthScale($run->wave),
-            'damageScale' => self::damageScaleFor($powerIndex, $run->wave, $run->level),
+            'damageScale' => $run->mode->damageScale($run->wave),
             'speedScale' => self::speedScaleFor($run->wave, $run->level),
         ];
     }

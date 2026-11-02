@@ -10,7 +10,7 @@ final class CampaignRun
     public float $baseArea = 0;
     public array $geometry = [];
 
-    public function __construct(public readonly int $seed, public readonly XpCurve $xpCurve = new XpCurve(), public readonly float $healMissing = 0.35)
+    public function __construct(public readonly int $seed, public readonly XpCurve $xpCurve = new XpCurve(XpCurve::ACCESSIBLE, XpCurve::CAMPAIGN_MILESTONES), public readonly float $healMissing = 0.35)
     {
         if($seed<1 || $seed>65520)throw new \InvalidArgumentException('Campaign seed must be 1..65520');
         $this->build(null);

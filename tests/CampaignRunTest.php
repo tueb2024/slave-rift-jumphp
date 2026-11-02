@@ -31,4 +31,23 @@ final class CampaignRunTest extends TestCase
     {
         $c=new CampaignRun(42);self::assertFalse($c->advance());$c->run->state='dead';self::assertFalse($c->advance());
     }
+    public function testPressureUsesBoundedIndependentAxes(): void
+    {
+        $previous=null;
+        foreach(range(1,4)as$stage){
+            $mode=\App\Game\GameMode::campaignStage(42,$stage);
+            self::assertLessThanOrEqual(1.4,$mode->enemyHealthScale(1));
+            self::assertLessThanOrEqual(4000,$mode->bossHealth);
+            if($previous!==null){
+                self::assertGreaterThan($previous->compositionWave(1),$mode->compositionWave(1));
+                self::assertGreaterThan($previous->waveBudget(1),$mode->waveBudget(1));
+                self::assertGreaterThan($previous->damageScale(1),$mode->damageScale(1));
+                self::assertLessThan($previous->spawnInterval(1),$mode->spawnInterval(1));
+                self::assertGreaterThan($previous->bossPressure(),$mode->bossPressure());
+            }
+            $previous=$mode;
+        }
+        $campaign=new CampaignRun(42);
+        self::assertSame(XpCurve::CAMPAIGN_MILESTONES,$campaign->xpCurve->milestones);
+    }
 }

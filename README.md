@@ -32,6 +32,12 @@ Le rythme reste à 116 BPM au départ, puis +2 BPM par niveau. Le double MP44 do
 
 PV de base : runner 24, guardian 48, enforcer 72, brute 144. Un seul coefficient de progression est appliqué à l’apparition : `1 + min(20, vague - 1) × 0,025`. Une unité commune de PV est arrondie, puis multipliée par le poids 1/2/3/6 ; les proportions restent exactes. Les vagues attendent leur élimination complète, avec quatre secondes de répit et dix PV rendus. Leur budget est plafonné à 34 ennemis ; les apparitions restent bornées à deux par lot et 48 ennemis actifs. La vitalité est plafonnée à 180 PV ; elle fournit ensuite des soins.
 
+Les drops XP valent **2 / 3 / 4 / 6** pour runner / guardian / enforcer / brute, sans multiplicateur par vague. Tous les neuf kills, un soin de 18 PV remplace le drop XP.
+
+Un rail en haut à droite représente les secondaires acquis : lance-flammes, mini-roquettes et impulsion. Sprite assombri et jauge indiquent la recharge ; flash au départ. Les activations sont espacées d'au moins une croche du tempo et les armes prêtes attendent leur tour sans perdre leur cooldown.
+
+L'[étude XP et campagne](docs/xp-campaign.md) compare les trois barèmes et **80 campagnes de quatre niveaux**. Cette campagne reste un prototype de simulation, avec arsenal conservé, cartes d'emprise ×1/×2/×4/×8 et paliers propres : elle n'est pas encore un mode du menu.
+
 Le coût XP commence à 6 et augmente de `floor((niveau - 1) × 0,7)` ; la portée de collecte initiale est 3,2 unités. Les noms internes des améliorations restent stables ; les textes affichés sont français. La police bitmap JumPHP transforme les accents en lettres simples à l’affichage.
 
 

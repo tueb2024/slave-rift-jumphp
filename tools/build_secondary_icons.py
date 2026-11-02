@@ -24,5 +24,5 @@ for kind in ['flame','rockets','pulse']:
  dim=im.copy();pixels=dim.load()
  for y in range(16):
   for x in range(32):
-   r,g,b,a=pixels[x,y];pixels[x,y]=(int(r*.35),int(g*.35),int(b*.35),a)
+   r,g,b,a=pixels[x,y];pixels[x,y]=(int(r*.55),int(g*.55),int(b*.55),a)
  dim.save(out/(kind+'-dim.png'))

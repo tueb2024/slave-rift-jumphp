@@ -4,7 +4,7 @@ use App\Game\CampaignRun;
 use App\Game\XpCurve;
 use App\Game\RhythmClock;
 
-function simulateCampaign(string $profile,int $seed,string $model=XpCurve::CURRENT,float $heal=.35, bool $compactMilestones=false): array
+function simulateCampaign(string $profile,int $seed,string $model=XpCurve::ACCESSIBLE,float $heal=.35, bool $compactMilestones=false): array
 {
     $campaign=new CampaignRun($seed,new XpCurve($model,$compactMilestones?XpCurve::CAMPAIGN_MILESTONES:XpCurve::LEGACY_MILESTONES),$heal);$rows=[];$clock=new RhythmClock();
     for($stage=1;$stage<=4;$stage++){

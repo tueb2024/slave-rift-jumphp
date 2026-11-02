@@ -9,6 +9,7 @@ final class XpCurveTest extends TestCase
 {
     public function testClassRewardsAndEveryNinthHealingDropArePreserved(): void
     {
+        self::assertSame(XpCurve::ACCESSIBLE,(new XpCurve())->model);
         foreach([XpCurve::CURRENT=>[2,2,2,5],XpCurve::WEIGHTED=>[1,2,3,6],XpCurve::ACCESSIBLE=>[2,3,4,6]]as$model=>$values){
             $curve=new XpCurve($model);$run=new Run(HordeArena::build(),42,null,$curve);
             for($i=1;$i<=18;$i++){
@@ -42,6 +43,11 @@ final class XpCurveTest extends TestCase
         self::assertSame(1,$campaign->stageForLevel(3));
         self::assertSame(5,$campaign->stageForLevel(16));
         self::assertSame(6,$campaign->stageForLevel(17));
+        $run=new Run(HordeArena::build(),42,null,$campaign);
+        $run->restoreProgression(['level'=>11],0);
+        self::assertSame(4,$run->primaryStage);
+        $d=new \App\Game\DifficultyDirector;
+        self::assertSame(\App\Game\DifficultyDirector::primaryDpsEstimate(11,0,4),$d->snapshot($run)['primaryDps']);
         foreach(range(1,30)as$level)self::assertLessThanOrEqual(1,$campaign->stageForLevel($level+1)-$campaign->stageForLevel($level));
     }
 }
