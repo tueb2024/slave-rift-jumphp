@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: wasm-playtest
-  cancel-in-progress: false
+  group: wasm-playtest-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write

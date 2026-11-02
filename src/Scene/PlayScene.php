@@ -16,6 +16,7 @@ use App\Game\RhythmClock;
 use App\Game\Run;
 use App\Game\TreasureDirector;
 use App\Gfx\WeaponRenderer;
+use App\Gfx\SecondaryHud;
 use App\Gfx\World;
 use JumPHP\Loop\FixedStep;
 use JumPHP\Renderer\Renderer;
@@ -123,6 +124,9 @@ final class PlayScene extends AbstractScene
             'weapon_gatling' => 'assets/sprites/weapons/fps-gatling.png',
         ] as $key => $path) {
             if (!$this->sdl()->hasTexture($key)) $this->sdl()->loadTexture($key, $path);
+        }
+        foreach (SecondaryHud::textures() as $key=>$path) {
+            if (!$this->sdl()->hasTexture($key)) $this->sdl()->loadTexture($key,$path);
         }
         RiftSfx::register($this->sound());
     }
@@ -251,6 +255,8 @@ final class PlayScene extends AbstractScene
         $this->world->render($this->engine, $r, $run, $this->pitch);
         $font = $this->font();
         $w = $this->width(); $h = $this->height(); $cx = intdiv($w, 2); $cy = intdiv($h, 2);
+        $hasSecondaries = $run->secondaryInventory() !== [];
+        $objectiveCx = $hasSecondaries ? intdiv($w-60,2) : $cx;
         $cream = [240,215,170]; $cyan = [90,235,225];
         $r->fillRect(0, 0, $w, 23, [6,5,12,225]);
         $font->draw($r, 'PV ' . $run->health . '/' . $run->maxHealth, 4, 3, 1, $cream);
@@ -280,9 +286,9 @@ final class PlayScene extends AbstractScene
             $boss = $run->boss;
             $liveOrbs = count(array_filter($boss->orbs, static fn(array $orb): bool => $orb['alive']));
             $label = $boss->vulnerable ? 'COEUR OUVERT '.(int)ceil($boss->vulnerableTimer).' S : TIREZ !' : 'ORBES RESTANTES : '.$liveOrbs.'/3';
-            $font->draw($r, $label . ' / PHASE ' . $boss->phase, $cx, 40, 1, $boss->vulnerable ? [100,255,130] : [255,160,90], 'center');
-            Hud::bar($r, 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
-            if ($run->bossWarning !== null) $font->draw($r, 'DANGER AU SOL : BOUGEZ !', $cx, 61, 1, [255,100,65], 'center');
+            $font->draw($r, $label . ' / PHASE ' . $boss->phase, $objectiveCx, 40, 1, $boss->vulnerable ? [100,255,130] : [255,160,90], 'center');
+            Hud::bar($r, $hasSecondaries ? 30 : 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
+            if ($run->bossWarning !== null) $font->draw($r, 'DANGER AU SOL : BOUGEZ !', $objectiveCx, 61, 1, [255,100,65], 'center');
         }
         $messageY = $run->boss?->active && !$run->boss->defeated ? 84 : 38;
         if ($this->procedural && $this->assembledLevel !== null && $this->assembledLevel->treasureAnchor !== null && $run->state === 'play') {
@@ -291,7 +297,7 @@ final class PlayScene extends AbstractScene
                 if ($this->objective->state === TreasureDirector::FINAL_WAVE) {
                     $objectiveText .= '  ' . ($run->remaining + count($run->enemies));
                 }
-                $font->draw($r, $objectiveText, $cx, 27, 1, [255,205,90], 'center', [8,5,12]);
+                $font->draw($r, $objectiveText, $objectiveCx, 27, 1, [255,205,90], 'center', [8,5,12]);
             } else {
                 $treasure = $run->routeTarget() ?? $this->assembledLevel->treasureAnchor;
                 $dx = $treasure['x'] - $run->x;
@@ -303,15 +309,15 @@ final class PlayScene extends AbstractScene
                 $marker = abs($delta) < 0.22 ? '^' : ($delta > 0 ? '>' : '<');
                 $metres = (int)round($distance);
                 $label = $marker === '<' ? '<  OBJECTIF ' . $metres . 'm' : ($marker === '>' ? 'OBJECTIF ' . $metres . 'm  >' : '^ OBJECTIF ' . $metres . 'm');
-                $font->draw($r, $label, $cx, 27, 1, [255,205,90], 'center', [8,5,12]);
+                $font->draw($r, $label, $objectiveCx, 27, 1, [255,205,90], 'center', [8,5,12]);
             }
 
         }
-        if ($run->messageTime > 0 && $run->state === 'play' && !($run->boss?->active && !$run->boss->defeated)) $font->draw($r, $run->message, $cx, $messageY, 1, $cream, 'center', [8,5,12]);
-        if ($run->time < 6 && !$this->demo && $run->state === 'play' && !($run->boss?->active ?? false)) {
+        if ($run->messageTime > 0 && $run->state === 'play' && !($run->boss?->active && !$run->boss->defeated)) $font->draw($r, $run->message, $objectiveCx, $messageY, 1, $cream, 'center', [8,5,12]);
+        if (!$hasSecondaries && $run->time < 6 && !$this->demo && $run->state === 'play' && !($run->boss?->active ?? false)) {
             $font->draw($r, 'SUIVEZ LA FLÈCHE / RAMASSEZ L\'XP', $cx, $cy - 42, 1, $cream, 'center', [8,5,12]);
         }
-        if ($run->time < 8 && !$this->demo && !($run->boss?->active ?? false)) $font->draw($r, 'Z/S : AVANCER / FLÈCHES : TOURNER / ESPACE : SAUT', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
+        if (!$hasSecondaries && $run->time < 8 && !$this->demo && !($run->boss?->active ?? false)) $font->draw($r, 'Z/S : AVANCER / FLÈCHES : TOURNER / ESPACE : SAUT', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
         if ($run->state === 'upgrade') {
@@ -325,6 +331,7 @@ final class PlayScene extends AbstractScene
             }
             $font->draw($r, 'FLÈCHES : CHOIX / ENTRÉE : VALIDER', $cx, 135, 1, $cream, 'center');
         }
+        if ($this->menu->screen === 'play' && $run->state === 'play') SecondaryHud::render($r,$this->sdl(),$font,$run,$w);
         if ($this->menu->screen !== 'play') $this->renderMenu($r);
         else {
             $r->fillRect($w - 44, 0, 44, 23, [8,5,12,235]);

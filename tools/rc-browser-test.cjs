@@ -20,7 +20,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
    await page.waitForFunction(()=>typeof window.JumPHP?.php==='function');
    const php=code=>page.evaluate(code=>window.JumPHP.php(code),prefix+code);
    const state=async()=>{
-    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
+    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'secondaries'=>$rcRun?->secondaryInventory(),'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
     return page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/rc-state.json',{encoding:'utf8'})));
    };
    const tap=async(x,y)=>{
@@ -65,6 +65,8 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await tap(160,152); await expect('screen','main');
     if(!mobile){await page.keyboard.press('Enter');await delay(450);}else await tap(160,60);
     await expect('mode','normal');
+    await php("$rcRun->flameRank=1;$rcRun->rocketRank=1;$rcRun->pulseUnlocked=true;");
+    await delay(150); assert.equal((await state()).secondaries.length,3); await page.screenshot({path:`${out}/${name}-secondary-arsenal.png`});
     // Enter an upgrade fixture and select its second row by a real pointer/tap.
     await php("$rcRun->state='upgrade'; $rcRun->choices=['POWER','MAGNET','VITALITY'];");
     await delay(100); await tap(160,100); await expect('state','play');
