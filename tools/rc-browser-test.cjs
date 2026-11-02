@@ -34,6 +34,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await page.screenshot({path:`${out}/${name}-main.png`});
     await tap(160,60); await expect('mode','normal'); await expect('screen','play');
     const first=(await state()).seed;
+    const seedStorageBefore=await page.evaluate(()=>({local:JSON.stringify(localStorage),session:JSON.stringify(sessionStorage),cookies:document.cookie}));
     await tap(298,10); await expect('screen','pause');
     await tap(160,71); await expect('screen','play');
     await php("$rcRun->state='dead';"); await delay(100);
@@ -44,6 +45,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await php("$rcRun->state='won';"); await delay(100);
     await page.screenshot({path:`${out}/${name}-won.png`});
     await tap(160,146); await expect('screen','main'); await expect('state',null);
+    assert.deepEqual(await page.evaluate(()=>({local:JSON.stringify(localStorage),session:JSON.stringify(sessionStorage),cookies:document.cookie})),seedStorageBefore,'normal runs must not persist seeds in browser storage');
     for(let tier=1;tier<=4;tier++){
      await tap(160,88); await expect('screen','daily');
      await tap(160,58+(tier-1)*22); await expect('mode','daily'); await expect('tier',tier);

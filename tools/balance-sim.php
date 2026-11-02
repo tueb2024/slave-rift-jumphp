@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/test-bootstrap.php';
 
 use App\Game\BrushMap;
+use App\Game\GameMode;
 use App\Game\BrushMapFactory;
 use App\Game\RoomModule;
 use App\Game\LevelAssembler;
@@ -12,9 +13,9 @@ use App\Game\RhythmClock;
 use App\Game\Run;
 
 /** An imperfect, deterministic input policy. Never changes health, XP, targets or damage. */
-function simulateProfile(string $profile, int $seed, float $limit = 600.0, string $scenario = 'route'): array
+function simulateProfile(string $profile, int $seed, float $limit = 600.0, string $scenario = 'route', ?GameMode $gameMode = null): array
 {
-    $level = (new LevelAssembler())->assemble(new LevelGraph($seed, 7));
+    $level = (new LevelAssembler())->assemble(new LevelGraph($seed, $gameMode?->depth ?? 7));
     $map = $level->map;
     if ($scenario === 'survival') {
         // Open training arena isolates the wave/XP curve from navigation skill.
@@ -28,8 +29,8 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         foreach ([-9.0, 0.0, 9.0] as $x) foreach ([-9.0, 9.0] as $z) $points[] = [$x, 0.75, $z];
         $map = BrushMapFactory::fromGenerated($arena->solids, $points, [0.0, 0.75, 0.0], 0.0);
     }
-    $run = new Run($map, $seed);
-    if ($scenario === 'route') $run->setObjective($level);
+    $run = new Run($map, $seed, $gameMode);
+    if ($scenario === 'route') $run->setObjective($level, $gameMode?->finalWaveSize ?? 12);
     $rhythm = new RhythmClock();
     [$reaction, $aimError, $collection, $speed] = match ($profile) {
         'faible' => [0.65, 0.65, 3.0, 0.55],
@@ -37,7 +38,10 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         default => [0.35, 0.3, 5.0, 0.8],
     };
     $dt = 1 / 30; $nextReaction = 0.0; $forward = $strafe = $turn = 0.0;
-    $wave7 = null; $lowestHealth = 100;
+    $wave7 = null; $lowestHealth = 100; $lowestHealthRatio = 1.0;
+    $checkpoints = ['finalRoom'=>null,'boss'=>null,'bossDefeated'=>null,'treasure'=>null];
+    $snapshot = static fn () => ['time'=>round($run->time,1),'wave'=>$run->wave,'level'=>$run->level,
+        'weapon'=>$run->primaryWeaponLabel(),'health'=>$run->health,'maxHealth'=>$run->maxHealth,'healthRatio'=>$run->health/$run->maxHealth];
     for ($frame = 0; $frame < (int)($limit / $dt); $frame++) {
         if ($run->state === 'dead' || $run->state === 'won') break;
         if ($run->state === 'upgrade') {
@@ -65,12 +69,20 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             $aim = null; $nearest = INF;
             foreach ($run->enemies as $enemy) {
                 $d = hypot($enemy['x'] - $run->x, $enemy['z'] - $run->z);
+                $angle = atan2($enemy['x']-$run->x,$enemy['z']-$run->z)-$run->yaw;
+                $visibleAngle = abs(atan2(sin($angle),cos($angle)));
+                // No omniscient targeting behind the camera. A hit can trigger a turn toward the attacker.
+                if ($visibleAngle > 0.75 && $run->hurt <= 0) continue;
                 if ($d < $nearest && $run->lineClear([$run->x, $run->y + 0.35, $run->z], [$enemy['x'], $enemy['y'] + 0.15, $enemy['z']])) {
                     $aim = $enemy; $nearest = $d;
                 }
             }
             $pickupDistance = $collection;
             foreach ($run->pickups as $pickup) {
+                $attentionToXp = match ($profile) {'faible'=>50, 'bon'=>95, default=>80};
+                $noticed = ((int)floor($pickup['x']*17+$pickup['z']*31)+$seed) % 100;
+                if ($noticed < 0) $noticed += 100;
+                if ($pickup['kind'] === 'xp' && $noticed >= $attentionToXp) continue;
                 $d = hypot($pickup['x'] - $run->x, $pickup['z'] - $run->z);
                 if ($d < $pickupDistance && $run->lineClear([$run->x, $run->y, $run->z], [$pickup['x'], $pickup['y'], $pickup['z']])) {
                     $goal = $pickup; $pickupDistance = $d;
@@ -96,7 +108,9 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             $desired = $aim === null ? $run->yaw : atan2($aim['x'] - $run->x, $aim['z'] - $run->z);
             $error = atan2(sin($desired - $run->yaw), cos($desired - $run->yaw));
             $turn = max(-1.0, min(1.0, -$error * 2.0 + sin($run->time * 1.7 + $seed) * $aimError));
-            $dx = ($goal['x'] ?? $run->x) - $run->x; $dz = ($goal['z'] ?? $run->z) - $run->z;
+            $noise = match ($profile) {'faible'=>0.25,'bon'=>0.02,default=>0.12};
+            $dx = ($goal['x'] ?? $run->x) - $run->x + sin($run->time*0.7+$seed)*$noise;
+            $dz = ($goal['z'] ?? $run->z) - $run->z + cos($run->time*0.9+$seed)*$noise;
             if ($nearest < 1.8 && $aim !== null) {
                 $dx -= ($aim['x'] - $run->x) * 2; $dz -= ($aim['z'] - $run->z) * 2;
             }
@@ -109,11 +123,16 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         $run->step($dt, $forward, $strafe, $turn, false, false, false, $rhythm->advance($dt, $run->level));
         $rhythm->drain();
         $lowestHealth = min($lowestHealth, $run->health);
+        $lowestHealthRatio = min($lowestHealthRatio, $run->health/$run->maxHealth);
+        foreach (['finalRoom'=>($run->objective?->finalRoomReached ?? false),'boss'=>($run->boss?->active ?? false),
+            'bossDefeated'=>($run->boss?->defeated ?? false),'treasure'=>$run->state==='won'] as $event=>$reached) {
+            if ($reached && $checkpoints[$event] === null) $checkpoints[$event] = $snapshot();
+        }
         if ($wave7 === null && $run->wave >= 7) $wave7 = ['level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health];
     }
     return ['scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
         'wave' => $run->wave, 'level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health,
-        'lowestHealth' => $lowestHealth, 'kills' => $run->kills, 'wave7' => $wave7,
+        'lowestHealth' => $lowestHealth, 'lowestHealthRatio'=>$lowestHealthRatio,'checkpoints'=>$checkpoints,'maxHealth'=>$run->maxHealth, 'kills' => $run->kills, 'wave7' => $wave7,
         'finalRoom' => ($run->objective?->finalRoomReached ?? false), 'bossReached' => ($run->boss?->active ?? false),
         'bossDefeated' => ($run->boss?->defeated ?? false), 'objective' => $run->objective?->state, 'remaining' => $run->remaining, 'liveEnemies' => count($run->enemies), 'player' => [$run->x, $run->y, $run->z], 'stalledEnemies' => $run->state === 'play' ? array_values($run->enemies) : []];
 }
@@ -133,12 +152,30 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {
         $deaths = []; $weapons = [];
         foreach ($group as $r) if ($r['result'] === 'dead') $deaths[$r['wave']] = ($deaths[$r['wave']] ?? 0) + 1;
         foreach ($wave7 as $r) $weapons[$r['wave7']['weapon']] = ($weapons[$r['wave7']['weapon']] ?? 0) + 1;
-        $summary[$mode][$profile] = ['runs' => count($group), 'deathWaves' => $deaths, 'wave7Weapons' => $weapons, 'meanHealth' => array_sum(array_column($group, 'health')) / count($group), 'finalRoomPercent' => 100 * count(array_filter($group, static fn ($r) => $r['finalRoom'])) / count($group),
+        $summary[$mode][$profile] = ['runs' => count($group), 'deathWaves' => $deaths, 'wave7Weapons' => $weapons, 'meanHealth' => array_sum(array_column($group, 'health')) / count($group), 'timeouts'=>count(array_filter($group,static fn($r)=>in_array($r['result'],['play','upgrade'],true))), 'finalRoomPercent' => 100 * count(array_filter($group, static fn ($r) => $r['finalRoom'])) / count($group),
             'bossPercent' => 100 * count(array_filter($group, static fn ($r) => $r['bossReached'])) / count($group),
             'bossWinPercent' => 100 * count(array_filter($group, static fn ($r) => $r['bossDefeated'])) / count($group),
             'victoryPercent' => 100 * count(array_filter($group, static fn ($r) => $r['result'] === 'won')) / count($group),
             'wave7Samples' => count($wave7), 'wave7MeanLevel' => $wave7 === [] ? null : array_sum(array_map(static fn ($r) => $r['wave7']['level'], $wave7)) / count($wave7),
             'wave7MeanHealth' => $wave7 === [] ? null : array_sum(array_map(static fn ($r) => $r['wave7']['health'], $wave7)) / count($wave7)];
+    }
+    $distribution = static function (array $values): ?array {
+        return $values === [] ? null : ['min'=>min($values),'mean'=>array_sum($values)/count($values),'max'=>max($values)];
+    };
+    foreach ($scenarios as $mode) foreach (['faible','moyen','bon'] as $profile) {
+        $group = array_values(array_filter($rows,static fn($r)=>$r['scenario']===$mode && $r['profile']===$profile));
+        $stats = &$summary[$mode][$profile];
+        $stats['treasureRecoveredPercent'] = 100*count(array_filter($group,static fn($r)=>$r['checkpoints']['treasure']!==null))/count($group);
+        foreach (['level','health','lowestHealthRatio'] as $field) $stats['distribution'][$field]=$distribution(array_column($group,$field));
+        $stats['weapons']=[];
+        foreach ($group as $r) $stats['weapons'][$r['weapon']]=($stats['weapons'][$r['weapon']]??0)+1;
+        $stats['nearDeathPercent']=100*count(array_filter($group,static fn($r)=>$r['lowestHealthRatio']<0.3))/count($group);
+        foreach (['finalRoom','boss','bossDefeated','treasure'] as $event) {
+            $events=array_values(array_filter(array_map(static fn($r)=>$r['checkpoints'][$event],$group),static fn($r)=>$r!==null));
+            $stats['checkpoints'][$event]=['count'=>count($events)];
+            foreach (['health','maxHealth','healthRatio','level','time'] as $field) $stats['checkpoints'][$event][$field]=$distribution(array_column($events,$field));
+        }
+        unset($stats);
     }
     echo json_encode(['note' => 'Input-policy guardrail, not a human win-rate prediction. Timeouts remain play/upgrade; no teleporting or extra XP.', 'summary' => $summary, 'runs' => $rows], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 }

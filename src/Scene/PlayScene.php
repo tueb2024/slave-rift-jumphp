@@ -272,7 +272,8 @@ final class PlayScene extends AbstractScene
 
         if ($run->boss !== null && $run->boss->active && !$run->boss->defeated) {
             $boss = $run->boss;
-            $label = $boss->vulnerable ? 'COEUR VULNERABLE : TIREZ !' : 'DETRUISEZ LES ORBES';
+            $liveOrbs = count(array_filter($boss->orbs, static fn(array $orb): bool => $orb['alive']));
+            $label = $boss->vulnerable ? 'COEUR OUVERT '.(int)ceil($boss->vulnerableTimer).' S : TIREZ !' : 'ORBES RESTANTES : '.$liveOrbs.'/3';
             $font->draw($r, $label . ' / PHASE ' . $boss->phase, $cx, 40, 1, $boss->vulnerable ? [100,255,130] : [255,160,90], 'center');
             Hud::bar($r, 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
             if ($run->bossWarning !== null) $font->draw($r, 'DANGER AU SOL : BOUGEZ !', $cx, 61, 1, [255,100,65], 'center');
@@ -300,7 +301,7 @@ final class PlayScene extends AbstractScene
             }
 
         }
-        if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, $messageY, 1, $cream, 'center', [8,5,12]);
+        if ($run->messageTime > 0 && $run->state === 'play' && !($run->boss?->active && !$run->boss->defeated)) $font->draw($r, $run->message, $cx, $messageY, 1, $cream, 'center', [8,5,12]);
         if ($run->time < 6 && !$this->demo && $run->state === 'play' && !($run->boss?->active ?? false)) {
             $font->draw($r, 'SUIVEZ LA FLÈCHE / RAMASSEZ L\'XP', $cx, $cy - 42, 1, $cream, 'center', [8,5,12]);
         }
@@ -333,8 +334,8 @@ final class PlayScene extends AbstractScene
                 $this->world->mapChunksDrawn, $run->neighborChecks), 4, 28, 1, $cyan);
             $font->draw($r, sprintf('TR %d  COR %d  IMP %d  COL %d  PICK %d', count($run->traces), count($run->corpses),
                 min(count($run->traces), World::MAX_IMPACTS), $run->collisionTests, count($run->pickups)), 4, 38, 1, $cyan);
-            $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s  BPM %.0f  WPN %s', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level), $this->weaponRenderer->state()), 4, 48, 1, $cyan);
-            $font->draw($r, sprintf('BAL PWR x%.2f  DPS %.0f  ENEMY PV x%.2f  DMG x%.2f',
+            $font->draw($r, sprintf('CLAVIER  ROTATION %.2f RAD/S  %s  BPM %.0f  ARME %s', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level), $this->weaponRenderer->state()), 4, 48, 1, $cyan);
+            $font->draw($r, sprintf('PUISS. x%.2f  DPS %.0f  PV x%.2f  DÉGÂTS x%.2f',
                 $balance['powerIndex'], $balance['primaryDps'], $balance['healthScale'], $balance['damageScale']), 4, 58, 1, $cyan);
             if ($this->mode?->kind === GameMode::HORDE) {
                 $avg = array_sum($this->recentFrames) / max(1, count($this->recentFrames));
@@ -389,7 +390,7 @@ final class PlayScene extends AbstractScene
             'daily'=>'DÉFI DU JOUR', 'controls'=>'COMMANDES', 'pause'=>'PAUSE', 'dead'=>'VOUS ÊTES MORT', 'won'=>'VICTOIRE !', default=>'SLAVE RIFT',
         };
         $font->draw($r, $title, $cx, 12, 2, [90,235,225], 'center');
-        if ($this->menu->screen === 'daily') $font->draw($r, GameMode::today() . ' / HEURE DE PARIS', $cx, 32, 1, [240,215,170], 'center');
+        if ($this->menu->screen === 'daily') $font->draw($r, GameMode::dateLabel(GameMode::today()), $cx, 32, 1, [240,215,170], 'center');
         if (in_array($this->menu->screen,['dead','won'],true) && $this->run !== null) {
             $font->draw($r, 'SCORE '.$this->run->score.' / '.$this->clock($this->run->time), $cx, 40, 1, [240,215,170], 'center');
             $font->draw($r, 'VAGUE '.$this->run->wave.' / '.$this->run->kills.' ÉLIMINATIONS', $cx, 54, 1, [240,215,170], 'center');

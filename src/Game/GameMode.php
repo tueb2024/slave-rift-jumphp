@@ -53,6 +53,13 @@ final class GameMode
         return (new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris')))->format('Y-m-d');
     }
 
+    public static function dateLabel(string $date): string
+    {
+        $parts = explode('-', $date);
+        $months = ['JANVIER','FÉVRIER','MARS','AVRIL','MAI','JUIN','JUILLET','AOÛT','SEPTEMBRE','OCTOBRE','NOVEMBRE','DÉCEMBRE'];
+        return (int)$parts[2] . ' ' . $months[(int)$parts[1]-1] . ' ' . $parts[0];
+    }
+
     public static function horde(?int $seed = null): self
     {
         $seed ??= random_int(1, 65520);

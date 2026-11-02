@@ -668,7 +668,7 @@ final class Run
     {
         if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) return false;
         $profile = DifficultyDirector::enemyBaseProfile($type);
-        $hp = (int)round($profile['health'] * $this->mode->enemyHealthScale($this->wave));
+        $hp = DifficultyDirector::enemyHealthFor($type, $this->mode->enemyHealthScale($this->wave));
         $speed = $profile['speed'] * DifficultyDirector::speedScaleFor($this->wave, $this->level);
         $damage = (int)round($profile['damage'] * DifficultyDirector::damageScaleFor(1.0, $this->wave, $this->level));
         $radius = $profile['radius'];

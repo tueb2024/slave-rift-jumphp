@@ -35,6 +35,13 @@ final class DifficultyDirector
         };
     }
 
+    /** Round the shared HP unit once so the 1:2:3:6 weights remain exact. */
+    public static function enemyHealthFor(string $type, float $scale): int
+    {
+        $unit = max(1, (int)round(24 * $scale));
+        return $unit * intdiv(self::enemyBaseProfile($type)['health'], 24);
+    }
+
     public static function primaryDpsEstimate(int $level, int $manualDamageRank = 0): float
     {
         $stage = Run::primaryStageForLevel($level);
@@ -95,7 +102,7 @@ final class DifficultyDirector
         return [
             'primaryDps' => $primaryDps,
             'powerIndex' => $powerIndex,
-            'healthScale' => self::healthScaleFor($powerIndex, $run->wave),
+            'healthScale' => $run->mode->enemyHealthScale($run->wave),
             'damageScale' => self::damageScaleFor($powerIndex, $run->wave, $run->level),
             'speedScale' => self::speedScaleFor($run->wave, $run->level),
         ];
