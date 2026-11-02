@@ -28,6 +28,7 @@ final class PlayScene extends AbstractScene
     private ?GameMode $mode = null;
     private MenuFlow $menu;
     private array $recentFrames = [];
+    private ?float $lastFrameAt = null;
     private World $world;
     private WeaponRenderer $weaponRenderer;
     private FixedStep $step;
@@ -63,6 +64,7 @@ final class PlayScene extends AbstractScene
         $this->menu = new MenuFlow();
         $this->pointerCooldown = 0.0;
         $this->recentFrames = [];
+        $this->lastFrameAt = null;
         $this->paused = false;
         $this->welcome = !$this->demo && !($params['playing'] ?? false);
         if ($this->welcome) {
@@ -127,8 +129,12 @@ final class PlayScene extends AbstractScene
 
     public function update(float $dt): void
     {
-        $this->frameMs = $this->frameMs * 0.9 + $dt * 1000.0 * 0.1;
-        $this->recentFrames[] = max(0.0, $dt * 1000.0);
+        // Engine caps physics dt at 100 ms; benchmarking must retain real stalls.
+        $now = microtime(true);
+        $elapsedMs = $this->lastFrameAt === null ? $dt * 1000 : max(0.0, ($now - $this->lastFrameAt) * 1000);
+        $this->lastFrameAt = $now;
+        $this->frameMs = $this->frameMs * 0.9 + $elapsedMs * 0.1;
+        $this->recentFrames[] = $elapsedMs;
         if (count($this->recentFrames) > 120) array_shift($this->recentFrames);
         $this->pointerCooldown = max(0.0, $this->pointerCooldown - $dt);
         $tap = $this->pointerCooldown > 0 ? null : $this->pointerPress();

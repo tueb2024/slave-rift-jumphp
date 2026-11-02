@@ -162,4 +162,14 @@ final class GameSmokeTest extends GameTestCase
         self::assertNull($this->game->peek('run')->objective);
         self::assertSame(1337,$this->game->peek('run')->mode->seed);
     }
+
+    public function testFrameMetricsRetainStallsBeyondPhysicsDeltaCap(): void
+    {
+        $this->game->start(PlayScene::class);
+        $scene=$this->game->scene();
+        (new \ReflectionProperty($scene,'lastFrameAt'))->setValue($scene,microtime(true)-0.25);
+        $scene->update(1/60);
+        $frames=$this->game->peek('recentFrames');
+        self::assertGreaterThanOrEqual(240.0,$frames[array_key_last($frames)]);
+    }
 }

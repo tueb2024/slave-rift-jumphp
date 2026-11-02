@@ -91,7 +91,7 @@ Les textes internes au jeu sont français ; la police du moteur retire les accen
 
 ## Benchmark Horde
 
-Le plafond normal reste 48. Horde fait monter sa limite active de 24 à 200 ; cette valeur est une borne mesurée, pas une promesse de fluidité graphique. Le benchmark instancie une population fixe, désactive les tirs et utilise beaucoup de PV pour mesurer le CPU sans interrompre le test. Il ne sert pas à calculer un taux de victoire.
+Le HUD mesure les intervalles réels entre updates avec une horloge flottante : le delta de physique du moteur est plafonné à 100 ms et masquerait autrement les gros blocages. Un test vérifie qu’un intervalle de 250 ms reste visible. Le plafond normal reste 48. Horde fait monter sa limite active de 24 à 200 ; cette valeur est une borne mesurée, pas une promesse de fluidité graphique. Le benchmark instancie une population fixe, désactive les tirs et utilise beaucoup de PV pour mesurer le CPU sans interrompre le test. Il ne sert pas à calculer un taux de victoire.
 
 Résultats bruts et temps de la machine de test : `horde-stress-report.json`. Chaque population 50/100/150/200 reste stable pendant 300 pas, soit 5 secondes simulées à 60 Hz. Un test de non-régression couvre également ces quatre populations. La moyenne, le maximum et le p95 sont fournis, avec la mémoire PHP maximale ; aucune mesure GPU, VRAM ou FPS WebGL n’est inférée de ces nombres.
 
