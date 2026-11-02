@@ -2,7 +2,7 @@
 
 namespace App\Game;
 
-/** Bounded, deterministic PHP simulation. No renderer or host dependency. */
+/** Bounded, deterministic PPV simulation. No renderer or host dependency. */
 final class Run
 {
     public const PLAYER_RADIUS = 0.28;
@@ -13,6 +13,7 @@ final class Run
     public const GRAVITY = 13.5;
     public const MAX_ENEMIES = 48;
     public const MAX_PICKUPS = 80;
+    public const HEALTH_CAP = 180;
     public const MAX_VISUAL_TRACES = 40;
     public const MAX_VISUAL_CORPSES = 16;
 
@@ -62,8 +63,16 @@ final class Run
     public int $rocketRank = 0;
     public float $flameActive = 0.0;
     public array $choices = [];
-    public string $message = 'COLT .45 - RHYTHM FIRE';
+    public string $message = 'COLT .45 - TIR RYTHMÉ';
     public float $messageTime = 4.0;
+
+    public ?TreasureDirector $objective = null;
+    public ?BossController $boss = null;
+    public ?array $bossPosition = null;
+    public ?array $bossWarning = null;
+    public array $route = [];
+    private int $routeIndex = 0;
+    private float $bossAttackClock = 2.5;
 
     private float $pulseClock = 1.0;
     /** @var list<array{delay:float,guns:int,split:bool,stage:int,lateral:float}> */
@@ -138,6 +147,8 @@ final class Run
             $this->grounded = true;
         }
 
+        $this->stepObjective($dt);
+        if ($this->state !== 'play') return;
         $this->stepWaves($dt);
         $this->stepEnemies($dt);
         if ($this->health <= 0) {
@@ -159,6 +170,118 @@ final class Run
         $this->stepPickups($dt);
     }
 
+    public function setObjective(AssembledLevel $level, int $finalWaveSize = 12): void
+    {
+        $this->objective = TreasureDirector::fromLevel($level, $finalWaveSize);
+        $this->route = [];
+        foreach ($level->rooms as $room) {
+            if (!$room['mainPath']) continue;
+            foreach ($room['connectors'] as $c) if ($c['role'] === 'main_exit') {
+                $this->route[] = ['x' => $c['position'][0], 'y' => $c['position'][1] + 0.75, 'z' => $c['position'][2]];
+            }
+        }
+        if ($level->treasureAnchor !== null) $this->route[] = $level->treasureAnchor;
+        if ($this->objective === null || $level->bossAnchor === null) return;
+        // Wall opposite the entry, behind the treasure. Works after room rotation.
+        $anchor = $level->bossAnchor;
+        $treasure = $level->treasureAnchor;
+        $dx = $treasure['x'] - $anchor['x']; $dz = $treasure['z'] - $anchor['z'];
+        $length = max(0.001, hypot($dx, $dz));
+        $nx = $dx / $length; $nz = $dz / $length;
+        $this->bossPosition = ['x' => $anchor['x'] + $nx * 8.5,
+            'y' => $anchor['y'] + 0.5, 'z' => $anchor['z'] + $nz * 8.5];
+        $this->boss = new BossController(BossController::WALL, 1200, 6.0);
+        $positions = [];
+        foreach ([-2.5, 0.0, 2.5] as $offset) {
+            $positions[] = ['x' => $this->bossPosition['x'] + $nz * $offset - $nx * 0.8,
+                'y' => $this->bossPosition['y'], 'z' => $this->bossPosition['z'] - $nx * $offset - $nz * 0.8];
+        }
+        $this->boss->armOrbs($positions, 48);
+    }
+
+    private function advanceRoute(): void
+    {
+        while (isset($this->route[$this->routeIndex + 1])) {
+            $p = $this->route[$this->routeIndex];
+            if (hypot($p['x'] - $this->x, $p['z'] - $this->z) > 0.65) break;
+            $this->routeIndex++;
+        }
+    }
+
+    public function routeTarget(): ?array
+    {
+        return $this->route[$this->routeIndex] ?? null;
+    }
+
+    private function stepObjective(float $dt): void
+    {
+        $this->advanceRoute();
+        $objective = $this->objective;
+        if ($objective === null) return;
+        if ($objective->updatePlayer($this->x, $this->y, $this->z)) {
+            // Keep only reachable threats in the final room. No remote cleanup hunt.
+            foreach ($this->enemies as $id => $enemy) {
+                if (!$this->insideFinalArena($enemy['x'], $enemy['z'])) unset($this->enemies[$id]);
+            }
+            $this->remaining = $objective->finalWaveSize;
+            $this->intermission = 0.0;
+            $this->message = 'SALLE FINALE : ELIMINEZ LES ENNEMIS';
+            $this->messageTime = 3.0;
+        }
+        if ($objective->state === TreasureDirector::FINAL_WAVE && $this->remaining === 0 && $this->enemies === []) $objective->notifyFinalWaveCleared();
+        if ($objective->state === TreasureDirector::BOSS_READY && $this->boss !== null) {
+            $objective->startBoss();
+            $this->boss->activate();
+            $this->message = 'DETRUISEZ LES 3 ORBES, PUIS VISEZ LE COEUR';
+            $this->messageTime = 6.0;
+        }
+        if ($objective->state === TreasureDirector::BOSS && $this->boss !== null) {
+            $this->boss->update($dt);
+            if ($this->boss->defeated) {
+                $objective->notifyBossDefeated();
+                $this->bossWarning = null;
+                $this->message = 'BOSS VAINCU : RECUPEREZ LE TRESOR DORE';
+                $this->messageTime = 6.0;
+            } else {
+                $this->bossAttackClock -= $dt;
+                if ($this->bossWarning !== null) {
+                    $this->bossWarning['time'] -= $dt;
+                    if ($this->bossWarning['time'] <= 0.0) {
+                        if (hypot($this->x - $this->bossWarning['x'], $this->z - $this->bossWarning['z']) < 1.8 && $this->invincible <= 0) {
+                            $this->health -= 10 + $this->boss->phase * 4;
+                            $this->hurt = 0.35; $this->invincible = 0.4;
+                        }
+                        $this->bossWarning = null;
+                    }
+                } elseif ($this->bossAttackClock <= 0.0) {
+                    $this->bossWarning = ['x' => $this->x, 'y' => $this->y - 0.6, 'z' => $this->z, 'time' => 1.1];
+                    $this->bossAttackClock = 3.8 - $this->boss->phase * 0.45;
+                }
+            }
+        }
+        if ($objective->state === TreasureDirector::COMPLETE) {
+            $this->score += 10000;
+            $this->state = 'won';
+        }
+    }
+
+    private function fireAtBoss(int $damage, int $stage): bool
+    {
+        if ($this->boss === null || !$this->boss->active || $this->boss->defeated) return false;
+        $targets = $this->boss->vulnerable ? [-1 => $this->bossPosition] : $this->boss->orbs;
+        foreach ($targets as $index => $target) {
+            if ($target === null || ($index >= 0 && !$target['alive'])) continue;
+            if (hypot($target['x'] - $this->x, $target['z'] - $this->z) > 24.0) continue;
+            if (abs(self::angleDelta(atan2($target['x'] - $this->x, $target['z'] - $this->z), $this->yaw)) > 1.05) continue;
+            if (!$this->lineClear([$this->x, $this->y + 0.35, $this->z], [$target['x'], $target['y'], $target['z']])) continue;
+            $this->addVisualTrace($target, 0.0, $stage <= 1 ? 'pistol' : 'auto');
+            if ($index < 0) $this->boss->damage($damage);
+            else $this->boss->damageOrb($index, $damage);
+            return true;
+        }
+        return false;
+    }
+
     public function chooseUpgrade(int $slot): bool
     {
         if ($this->state !== 'upgrade' || !isset($this->choices[$slot])) return false;
@@ -174,7 +297,7 @@ final class Run
         };
         $this->choices = [];
         $this->state = 'play';
-        $this->message = $choice . ' / ' . $this->arsenalLabel();
+        $this->message = $this->upgradeLabel($choice) . ' / ' . $this->primaryWeaponLabel();
         $this->messageTime = 2.4;
         $this->checkLevel();
         return true;
@@ -182,7 +305,7 @@ final class Run
 
     private function upgradeVitality(): void
     {
-        $this->maxHealth += 20;
+        $this->maxHealth = min(self::HEALTH_CAP, $this->maxHealth + 20);
         $this->health = min($this->maxHealth, $this->health + 40);
     }
 
@@ -224,7 +347,7 @@ final class Run
         $this->autoGuns = $guns;
         if ($changed) {
             $this->primaryBurstQueue = [];
-            $this->message = $this->primaryWeaponLabel() . ' / RHYTHM LOCK';
+            $this->message = $this->primaryWeaponLabel() . ' / RYTHME SYNCHRONISÉ';
             $this->messageTime = 2.6;
         }
     }
@@ -246,12 +369,12 @@ final class Run
     {
         return match ($this->primaryStage) {
             0 => 'COLT .45',
-            1 => 'DUAL COLT',
+            1 => 'DOUBLE COLT',
             2 => 'MP44',
-            3 => 'DUAL MP44',
+            3 => 'DOUBLE MP44',
             4 => 'BAR',
             5 => 'GATLING',
-            default => 'DUAL GATLING',
+            default => 'DOUBLE GATLING',
         };
     }
 
@@ -262,25 +385,35 @@ final class Run
         $this->primaryAudioEvents = [];
         return $events;
     }
+    public function upgradeLabel(string $choice): string
+    {
+        return match ($choice) {
+            'POWER' => 'PUISSANCE', 'HASTE' => 'CADENCE', 'MAGNET' => 'AIMANT',
+            'VITALITY' => $this->maxHealth >= self::HEALTH_CAP ? 'SOINS' : 'VITALITÉ', 'PULSE' => 'IMPULSION',
+            'FLAMETHROWER' => 'LANCE-FLAMMES', 'MINI_ROCKETS' => 'MINI-ROQUETTES',
+            default => $choice,
+        };
+    }
+
     public function upgradeDescription(string $choice): string
     {
         return match ($choice) {
-            'POWER' => '+30% PRIMARY DAMAGE / STRONGER SECONDARIES',
-            'HASTE' => 'FASTER SECONDARY CYCLES',
-            'MAGNET' => 'WIDER PICKUP RANGE',
-            'PULSE' => $this->pulseUnlocked ? 'STRONGER WIDER PULSE' : 'UNLOCK RADIAL PULSE',
-            'FLAMETHROWER' => $this->flameRank === 0 ? 'TRACKING FIRE CONE FOR 2.4s' : 'LONGER / WIDER / HOTTER SWEEP',
-            'MINI_ROCKETS' => $this->rocketRank === 0 ? 'AUTO-TARGET MINI-ROCKET SALVO' : 'MORE ROCKETS / MORE DAMAGE',
-            default => '+20 MAX HP / HEAL 40',
+            'POWER' => '+30% DÉGÂTS / SECONDAIRES RENFORCÉES',
+            'HASTE' => 'SECONDAIRES PLUS RAPIDES',
+            'MAGNET' => 'COLLECTE À PLUS GRANDE DISTANCE',
+            'PULSE' => $this->pulseUnlocked ? 'IMPULSION PLUS FORTE ET PLUS LARGE' : 'DÉBLOQUE UNE IMPULSION RADIALE',
+            'FLAMETHROWER' => $this->flameRank === 0 ? 'CÔNE DE FLAMMES PENDANT 2.4 S' : 'FLAMMES PLUS LONGUES ET PUISSANTES',
+            'MINI_ROCKETS' => $this->rocketRank === 0 ? 'AUTO-TARGET MINI-ROCKET SANIV O' : 'PLUS DE ROQUETTES ET DE DÉGÂTS',
+            default => $this->maxHealth >= self::HEALTH_CAP ? 'SOIGNE 40 PV' : '+20 PV MAX / SOIGNE 40 PV',
         };
     }
 
     public function arsenalLabel(): string
     {
         $parts = [$this->primaryWeaponLabel()];
-        if ($this->flameRank > 0) $parts[] = 'FLAME L' . $this->flameRank;
-        if ($this->rocketRank > 0) $parts[] = 'ROCKET L' . $this->rocketRank;
-        if ($this->pulseUnlocked) $parts[] = 'PULSE L' . max(1, $this->pulseRank);
+        if ($this->flameRank > 0) $parts[] = 'FEU NIV ' . $this->flameRank;
+        if ($this->rocketRank > 0) $parts[] = 'ROQUETTES NIV ' . $this->rocketRank;
+        if ($this->pulseUnlocked) $parts[] = 'IMPULSION NIV ' . max(1, $this->pulseRank);
         return implode(' + ', $parts);
     }
     /** Demo controls, also used by the integration smoke test. */
@@ -347,34 +480,36 @@ final class Run
 
     private function stepWaves(float $dt): void
     {
+        if ($this->objective !== null && in_array($this->objective->state, [TreasureDirector::BOSS_READY, TreasureDirector::BOSS, TreasureDirector::TREASURE_READY, TreasureDirector::COMPLETE], true)) return;
+        if ($this->objective?->state === TreasureDirector::FINAL_WAVE && $this->remaining === 0 && $this->enemies === []) return;
         if ($this->intermission > 0) {
             $this->intermission = max(0.0, $this->intermission - $dt);
             if ($this->intermission <= 0) {
                 $this->wave++;
                 $this->waveTime = 0.0;
-                $this->remaining = min(70, 8 + $this->wave * 4);
+                $this->remaining = min(34, 10 + $this->wave * 2);
                 $this->spawnClock = 0.0;
-                $this->message = 'WAVE ' . $this->wave . ($this->wave % 4 === 0 ? ' - BRUTE SURGE' : '');
+                $this->message = 'VAGUE ' . $this->wave . ($this->wave % 4 === 0 ? ' - BRUTES' : '');
                 $this->messageTime = 2.5;
             }
             return;
         }
-        if (($this->remaining === 0 && $this->enemies === []) || $this->waveTime >= 26.0) {
+        if ($this->remaining === 0 && $this->enemies === []) {
             $waveBonus = (int)round(($this->wave * 150 + $this->combo * 50) * $this->multiplier);
             $this->score += $waveBonus;
             $this->intermission = 4.0;
             $this->health = min($this->maxHealth, $this->health + 10);
-            $this->message = 'WAVE BONUS +' . $waveBonus . ' / HEAL +10';
+            $this->message = 'BONUS VAGUE +' . $waveBonus . ' / SOIN +10';
             $this->messageTime = 3.0;
             return;
         }
         $this->spawnClock -= $dt;
         if ($this->remaining <= 0 || $this->spawnClock > 0 || count($this->enemies) >= self::MAX_ENEMIES) return;
-        $batch = min($this->remaining, 1 + intdiv($this->wave, 3));
+        $batch = min($this->remaining, min(2, 1 + intdiv($this->wave, 4)));
         for ($i = 0; $i < $batch && count($this->enemies) < self::MAX_ENEMIES; $i++) {
             if ($this->spawnEnemy()) $this->remaining--;
         }
-        $this->spawnClock = max(0.22, 1.2 - $this->wave * 0.065);
+        $this->spawnClock = max(0.85, 1.4 - $this->wave * 0.04);
     }
 
     private function spawnEnemy(): bool
@@ -386,6 +521,7 @@ final class Run
             foreach ($this->map->spawnPoints as $index => $point) {
                 [$x, $mapY, $z] = $point;
                 $y = $mapY - 0.20;
+                if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
                 $distance = hypot($x - $this->x, $z - $this->z);
                 if ($distance < 4.5 || $distance > 34.0) continue;
                 // DM1 has stacked floors. A spawn directly above the player
@@ -396,6 +532,7 @@ final class Run
                 if ($occupied) continue;
                 $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
                 $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
+                if ($this->objective !== null && !$visible) continue;
                 $distanceScore = abs($distance - 12.0) * 0.28;
                 $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
                 $visibilityPenalty = $visible ? 2.4 : -1.3;
@@ -431,6 +568,7 @@ final class Run
             $z = $baseZ + cos($a) * $r;
             $distance = hypot($x - $this->x, $z - $this->z);
             if ($distance < 5.0 || $distance > 34.0) continue;
+            if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
             $ground = $this->supportHeight($x, $z, 0.42, $baseY + 2.0);
             if ($ground === null) continue;
             $y = $ground + 0.55;
@@ -440,6 +578,7 @@ final class Run
             if ($occupied) continue;
             $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
             $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.2, $z]);
+            if ($this->objective !== null && !$visible) continue;
             $recentPenalty = 0.0;
             foreach ($this->recentSpawnPoints as $age => $used) {
                 if ($used === $anchorIndex) $recentPenalty += 3.0 - $age * 0.8;
@@ -513,15 +652,23 @@ final class Run
         $this->recentSpawnPoints = array_slice($this->recentSpawnPoints, 0, 4);
     }
 
+    private function insideFinalArena(float $x, float $z): bool
+    {
+        if ($this->objective === null) return true;
+        $b = $this->objective->finalRoomBounds;
+        return $x >= $b['min'][0] + 0.6 && $x <= $b['max'][0] - 0.6
+            && $z >= $b['min'][2] + 0.6 && $z <= $b['max'][2] - 0.6;
+    }
+
     private function spawnEnemyAt(float $x, float $y, float $z, string $type): bool
     {
-        [$hp, $speed, $damage, $radius] = match ($type) {
-            'runner' => [24, 2.08, 7, 0.23],
-            'brute' => [180, 0.84, 20, 0.40],
-            'enforcer' => [74, 1.02, 8, 0.27],
-            default => [52, 1.25, 10, 0.30],
-        };
-        $hp = (int)round($hp * (1 + min(20, $this->wave - 1) * 0.07));
+        if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) return false;
+        $profile = DifficultyDirector::enemyBaseProfile($type);
+        $hp = (int)round($profile['health'] * DifficultyDirector::healthScaleFor(1.0, $this->wave));
+        $speed = $profile['speed'] * DifficultyDirector::speedScaleFor($this->wave, $this->level);
+        $damage = (int)round($profile['damage'] * DifficultyDirector::damageScaleFor(1.0, $this->wave, $this->level));
+        $radius = $profile['radius'];
+        if ($this->objective !== null && !$this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.15, $z])) return false;
         $id = $this->nextId++;
         $yaw = atan2($this->x - $x, $this->z - $z);
         $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
@@ -562,7 +709,7 @@ final class Run
                     $this->invincible = 0.40;
                     $this->resetCombo();
                 }
-                $enemy['cooldown'] = $ranged ? 1.45 : 0.85;
+                $enemy['cooldown'] = $ranged ? 2.4 : 0.85;
                 $enemy['attackTime'] = 0.32;
             }
             if ($d >= 0.55) {
@@ -694,15 +841,22 @@ final class Run
         $targetCount = $splitTargets ? max(1, $guns) : 1;
         $cone = 1.05; // normal weapons deliberately keep strong auto-aim
         $targets = $this->findTargets(19.0, $cone, $targetCount);
-        if ($targets === []) return;
-
         $baseDamage = match ($stage) {
             0, 1 => 38,
             2, 3 => 14,
             4 => 10,
             default => 13,
         };
-        $damage = (int)round($baseDamage * (1 + $this->damageRank * 0.30));
+        $damage = (int)round($baseDamage * (1 + ($this->damageRank + DifficultyDirector::virtualDamageRankForStage($stage)) * 0.30));
+        if ($targets === []) {
+            if ($this->fireAtBoss($damage * max(1, $guns), $stage)) {
+                $this->shots += $guns;
+                $this->hits += $guns;
+                $this->muzzle = 0.11;
+                if (count($this->primaryAudioEvents) < 32) $this->primaryAudioEvents[] = $stage;
+            }
+            return;
+        }
         $fired = 0;
         for ($gun = 0; $gun < max(1, $guns); $gun++) {
             $target = $splitTargets ? ($targets[$gun] ?? $targets[0]) : $targets[0];
@@ -879,7 +1033,7 @@ final class Run
             $dx = $this->x - $pickup['x'];
             $dz = $this->z - $pickup['z'];
             $d = hypot($dx, $dz);
-            if ($d < 1.9 + $this->magnetRank * 1.0 && $this->lineClear([$pickup['x'], $pickup['y'], $pickup['z']], [$this->x, $this->y, $this->z])) {
+            if ($d < 3.2 + $this->magnetRank * 1.0 && $this->lineClear([$pickup['x'], $pickup['y'], $pickup['z']], [$this->x, $this->y, $this->z])) {
                 if ($d < 0.6) {
                     if ($pickup['kind'] === 'xp') $this->xp += $pickup['value'];
                     else $this->health = min($this->maxHealth, $this->health + $pickup['value']);
@@ -900,7 +1054,7 @@ final class Run
         if ($this->xp < $this->nextXp || $this->state !== 'play') return;
         $this->xp -= $this->nextXp;
         $this->level++;
-        $this->nextXp = 6 + ($this->level - 1) * 4;
+        $this->nextXp = 6 + (int)floor(($this->level - 1) * 0.7);
         $this->syncPrimaryStage();
 
         $weaponPool = $this->weaponUpgradePool();

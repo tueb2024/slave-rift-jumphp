@@ -2,19 +2,9 @@
 
 namespace App\Game;
 
-/**
- * Applies player-power-aware enemy scaling without letting difficulty fully cancel upgrades.
- *
- * Enemy HP follows player power with a 0.58 elasticity: doubling effective player power
- * only multiplies enemy HP by about 1.50. Wave pressure still stacks on top, so the run
- * gets harder while every weapon milestone remains a real advantage.
- */
+/** Single spawn-time wave curve; weapon bonuses never raise enemy health. */
 final class DifficultyDirector
 {
-    /** @var array<int,true> */
-    private array $balancedEnemies = [];
-    private int $injectedDamageRank = 0;
-
     /** @var array<string,\ReflectionProperty> */
     private static array $privateProperties = [];
 
@@ -39,9 +29,9 @@ final class DifficultyDirector
     {
         return match ($type) {
             'runner' => ['health' => 24, 'speed' => 2.08, 'damage' => 7, 'radius' => 0.23, 'threat' => 0.70],
-            'enforcer' => ['health' => 74, 'speed' => 1.02, 'damage' => 8, 'radius' => 0.27, 'threat' => 1.45],
-            'brute' => ['health' => 180, 'speed' => 0.84, 'damage' => 20, 'radius' => 0.40, 'threat' => 2.80],
-            default => ['health' => 52, 'speed' => 1.25, 'damage' => 10, 'radius' => 0.30, 'threat' => 1.00],
+            'enforcer' => ['health' => 72, 'speed' => 1.02, 'damage' => 6, 'radius' => 0.27, 'threat' => 1.45],
+            'brute' => ['health' => 144, 'speed' => 0.84, 'damage' => 20, 'radius' => 0.40, 'threat' => 2.80],
+            default => ['health' => 48, 'speed' => 1.25, 'damage' => 10, 'radius' => 0.30, 'threat' => 1.00],
         };
     }
 
@@ -70,72 +60,35 @@ final class DifficultyDirector
 
     public static function healthScaleFor(float $powerIndex, int $wave): float
     {
-        $power = max(1.0, $powerIndex);
-        $waveScale = 1.0 + max(0, $wave - 1) * 0.045;
-        return min(6.5, $waveScale * pow($power, 0.58));
+        return 1.0 + min(20, max(0, $wave - 1)) * 0.025;
     }
 
     public static function damageScaleFor(float $powerIndex, int $wave, int $level): float
     {
-        $powerTerm = log(max(1.0, $powerIndex), 2.0) * 0.025;
-        return min(2.25, 1.0 + max(0, $wave - 1) * 0.032 + max(0, $level - 1) * 0.010 + $powerTerm);
+        return 1.0 + min(20, max(0, $wave - 1)) * 0.015;
     }
 
     public static function speedScaleFor(int $wave, int $level): float
     {
-        return min(1.18, 1.0 + max(0, $wave - 1) * 0.004 + max(0, $level - 1) * 0.002);
+        return 1.0 + min(20, max(0, $wave - 1)) * 0.003;
     }
 
-    /** Apply the stage-specific weapon compensation before Run resolves a simulation step. */
-    public function beforeStep(Run $run): void
-    {
-        $current = $this->readInt($run, 'damageRank');
-        $manualRank = max(0, $current - $this->injectedDamageRank);
-        $this->injectedDamageRank = self::virtualDamageRankForStage($run->primaryStage);
-        $this->writeInt($run, 'damageRank', $manualRank + $this->injectedDamageRank);
-    }
-
-    /** Balance only newly spawned enemies; existing enemies never heal when the player levels. */
-    public function afterStep(Run $run): void
-    {
-        $liveIds = [];
-        foreach ($run->enemies as $id => &$enemy) {
-            $id = (int)$id;
-            $liveIds[$id] = true;
-            if (isset($this->balancedEnemies[$id])) continue;
-
-            $profile = self::enemyBaseProfile((string)($enemy['type'] ?? 'guardian'));
-            $balance = $this->snapshot($run);
-            $oldMaxHealth = max(1, (int)($enemy['maxHealth'] ?? $enemy['health'] ?? 1));
-            $oldHealth = max(0, (int)($enemy['health'] ?? $oldMaxHealth));
-            $healthRatio = min(1.0, $oldHealth / $oldMaxHealth);
-            $maxHealth = max(1, (int)round($profile['health'] * $balance['healthScale']));
-            $enemy['maxHealth'] = $maxHealth;
-            $enemy['health'] = max(1, (int)round($maxHealth * $healthRatio));
-            $enemy['speed'] = $profile['speed'] * $balance['speedScale'];
-            $enemy['damage'] = max(1, (int)round($profile['damage'] * $balance['damageScale']));
-            $enemy['radius'] = $profile['radius'];
-            $enemy['threat'] = $profile['threat'];
-            $enemy['balanceLevel'] = $run->level;
-            $enemy['balanceWave'] = $run->wave;
-            $this->balancedEnemies[$id] = true;
-        }
-        unset($enemy);
-        $this->balancedEnemies = array_intersect_key($this->balancedEnemies, $liveIds);
-    }
+    // Kept for callers of the old director. Profiles now apply exactly once at spawn.
+    public function beforeStep(Run $run): void {}
+    public function afterStep(Run $run): void {}
 
     /** @return array{primaryDps:float,powerIndex:float,healthScale:float,damageScale:float,speedScale:float} */
     public function snapshot(Run $run): array
     {
         $damageRank = $this->readInt($run, 'damageRank');
-        $manualDamageRank = max(0, $damageRank - $this->injectedDamageRank);
+        $manualDamageRank = $damageRank;
         $primaryDps = self::primaryDpsEstimate($run->level, $manualDamageRank);
         $baselineDps = self::primaryDpsEstimate(1, 0);
         $pulseRank = $this->readInt($run, 'pulseRank');
         $hasteRank = $this->readInt($run, 'hasteRank');
         $secondaryFactor = 1.0
             + $run->flameRank * 0.07
-            + $run->shurikenRank * 0.06
+            + $run->rocketRank * 0.06
             + $pulseRank * 0.04
             + $hasteRank * 0.015;
         $powerIndex = max(1.0, ($primaryDps / max(1.0, $baselineDps)) * $secondaryFactor);
@@ -151,11 +104,6 @@ final class DifficultyDirector
     private function readInt(Run $run, string $name): int
     {
         return (int)$this->property($name)->getValue($run);
-    }
-
-    private function writeInt(Run $run, string $name, int $value): void
-    {
-        $this->property($name)->setValue($run, $value);
     }
 
     private function property(string $name): \ReflectionProperty

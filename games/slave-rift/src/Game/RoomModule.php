@@ -84,6 +84,29 @@ final class RoomModule
         return null;
     }
 
+    /** Reflect a turn without losing normals, decals or semantic anchors. */
+    public function mirrorX(): self
+    {
+        $copy = clone $this;
+        foreach ($copy->solids as &$solid) {
+            [$solid['min'][0], $solid['max'][0]] = [-$solid['max'][0], -$solid['min'][0]];
+        }
+        unset($solid);
+        foreach ($copy->connectors as &$connector) {
+            $connector['position'][0] *= -1; $connector['normal'][0] *= -1;
+        }
+        unset($connector);
+        foreach (['spawnAnchors', 'pickupAnchors'] as $field) {
+            foreach ($copy->$field as &$anchor) $anchor['x'] *= -1;
+            unset($anchor);
+        }
+        foreach ($copy->decals as &$decal) {
+            $decal['position'][0] *= -1; $decal['normal'][0] *= -1;
+        }
+        unset($decal);
+        return $copy;
+    }
+
     public function transform(int $rotationDeg, float $tx, float $ty, float $tz): self
     {
         $rotationDeg = (($rotationDeg % 360) + 360) % 360;

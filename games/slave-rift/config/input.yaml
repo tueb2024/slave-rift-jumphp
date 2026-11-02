@@ -1,7 +1,7 @@
 actions:
-  move_forward: [Z, Up, pad0:up]
+  move_forward: [Z, W, Up, pad0:up]
   move_back: [S, Down, pad0:down]
-  strafe_left: [Q]
+  strafe_left: [Q, A]
   strafe_right: [D]
   turn_left: [Left, pad0:left]
   turn_right: [Right, pad0:right]
@@ -13,4 +13,5 @@ actions:
   upgrade_one: ['1']
   upgrade_two: ['2']
   upgrade_three: ['3']
-  pause_game: [P]
+  pause_game: [P, Escape, pad0:select]
+  menu_restart: [R, pad0:x]

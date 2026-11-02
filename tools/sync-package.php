@@ -22,6 +22,17 @@ foreach ($files as $file) {
         if (!copy($source, $target)) throw new RuntimeException('Cannot copy ' . $file);
     }
 }
+// Runtime trees must match in both directions. Historical package-only patch archives are retained.
+foreach (['src', 'config', 'assets', 'tests'] as $folder) {
+    $dir = $package . '/' . $folder;
+    if (!is_dir($dir)) continue;
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+    foreach ($iterator as $file) {
+        if (!$file->isFile()) continue;
+        $relative = substr($file->getPathname(), strlen($package) + 1);
+        if (!is_file($root . '/' . $relative)) $errors[] = 'stale: ' . $relative;
+    }
+}
 if ($errors !== []) {
     fwrite(STDERR, "Playground copy differs: " . implode(', ', $errors) . "\n");
     exit(1);

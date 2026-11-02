@@ -21,9 +21,11 @@ final class LevelAssembler
         $playerStart = [0.0, 0.75, 0.0];
         $playerYaw = 0.0;
         $previousExit = null;
+        $turnNumber = 0;
 
         foreach ($graph->mainPath() as $index => $node) {
             $module = ModuleLibrary::get($node['type']);
+            if ($node['type'] === LevelGraph::TURN && (++$turnNumber % 2) === 0) $module = $module->mirrorX();
             if ($index === 0) {
                 $placed = $module;
             } else {
@@ -46,8 +48,38 @@ final class LevelAssembler
             $branchExit = $parent->connector('branch_exit');
             if ($branchExit === null) continue;
             $placed = $this->placeAgainst(ModuleLibrary::get(LevelGraph::BONUS), 'entry', $branchExit);
+            $bounds = $placed->bounds();
+            $overlap = false;
+            foreach ($rooms as $room) {
+                if ($room['id'] === $node['parent']) continue;
+                $b = $room['bounds'];
+                if ($bounds['min'][0] < $b['max'][0] - 0.1 && $bounds['max'][0] > $b['min'][0] + 0.1
+                    && $bounds['min'][2] < $b['max'][2] - 0.1 && $bounds['max'][2] > $b['min'][2] + 0.1) $overlap = true;
+            }
+            if ($overlap) continue;
             $placedById[$node['id']] = $placed;
             $this->appendPlaced($node, $placed, $solids, $spawnPoints, $spawnMeta, $pickupMeta, $decals, $rooms, $treasureAnchor, $bossAnchor);
+        }
+
+        // A junction may have no bonus room. Seal every unused opening, never leave a door into void.
+        $connectors = [];
+        foreach ($placedById as $placed) foreach ($placed->connectors as $c) $connectors[] = $c;
+        foreach ($connectors as $i => $c) {
+            $connected = false;
+            foreach ($connectors as $j => $other) {
+                if ($i === $j) continue;
+                if (abs($c['position'][0] - $other['position'][0]) < 0.01
+                    && abs($c['position'][1] - $other['position'][1]) < 0.01
+                    && abs($c['position'][2] - $other['position'][2]) < 0.01) $connected = true;
+            }
+            if ($connected) continue;
+            [$x, $y, $z] = $c['position'];
+            [$nx, , $nz] = $c['normal'];
+            $seal = new RoomModule('seal');
+            $hx = abs($nx) > 0.5 ? 0.25 : $c['width'] / 2;
+            $hz = abs($nz) > 0.5 ? 0.25 : $c['width'] / 2;
+            $seal->addBox($x - $hx, $y, $z - $hz, $x + $hx, $y + $c['height'], $z + $hz);
+            array_push($solids, ...$seal->solids);
         }
 
         if ($treasureAnchor === null || $bossAnchor === null) {
@@ -94,7 +126,7 @@ final class LevelAssembler
                 'roomId' => (int)$node['id'], 'roomType' => $node['type'],
             ];
             $spawnMeta[] = $meta;
-            if (in_array('boss', $anchor['tags'], true)) $bossAnchor = $meta;
+            if (in_array('boss', $anchor['tags'], true) && !in_array('wing', $anchor['tags'], true)) $bossAnchor = $meta;
         }
         foreach ($placed->pickupAnchors as $anchor) {
             $meta = [
