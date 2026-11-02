@@ -32,6 +32,12 @@ jobs:
         with:
           name: balance-php-${{ matrix.php }}
           path: balance-report.json
+      - name: Horde CPU robustness report
+        run: php tools/horde-stress.php > horde-stress-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: horde-php-${{ matrix.php }}
+          path: horde-stress-report.json
       - name: Verify playground package
         run: php tools/sync-package.php --check
 

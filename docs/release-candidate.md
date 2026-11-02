@@ -1,4 +1,6 @@
-# Audit et validation RC
+# Audit initial RC (historique)
+
+La qualification actualisée, les trois modes et les résultats CI sont dans [qualification.md](qualification.md). Les limitations ci-dessous décrivent la première passe locale, avant publication de la branche.
 
 Base de travail : `main`, commit `9ea6094`, arbre propre au clonage. Branche de préparation : `release/playable-rc`.
 
