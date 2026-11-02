@@ -133,7 +133,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         }
         if ($wave7 === null && $run->wave >= 7) $wave7 = ['level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health];
     }
-    return ['arsenalTimeline'=>$arsenalTimeline,'xpModel'=>$run->xpCurve->model,'xpTotal'=>$run->collectedXp,'droppedXp'=>$run->droppedXp,'progression'=>$run->progressionSnapshot(), 'scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
+    return ['arsenalTimeline'=>$arsenalTimeline,'secondaries'=>$run->secondaryInventory(),'xpModel'=>$run->xpCurve->model,'xpTotal'=>$run->collectedXp,'droppedXp'=>$run->droppedXp,'progression'=>$run->progressionSnapshot(), 'scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
         'wave' => $run->wave, 'level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health,
         'lowestHealth' => $lowestHealth, 'lowestHealthRatio'=>$lowestHealthRatio,'checkpoints'=>$checkpoints,'maxHealth'=>$run->maxHealth, 'kills' => $run->kills, 'wave7' => $wave7,
         'finalRoom' => ($run->objective?->finalRoomReached ?? false), 'bossReached' => ($run->boss?->active ?? false),

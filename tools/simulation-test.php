@@ -9,6 +9,7 @@ require __DIR__ . '/../src/Game/TreasureDirector.php';
 require __DIR__ . '/../src/Game/BossController.php';
 require __DIR__ . '/../src/Game/GameMode.php';
 require __DIR__ . '/../src/Game/XpCurve.php';
+require __DIR__ . '/../src/Game/SecondaryScheduler.php';
 require __DIR__ . '/../src/Game/Run.php';
 require __DIR__ . '/../src/Gfx/Meshes.php';
 require __DIR__ . '/../src/Gfx/EnemyAtlas.php';

@@ -80,6 +80,9 @@ final class Run
     private float $bossAttackClock = 2.5;
 
     private float $pulseClock = 1.0;
+    private SecondaryScheduler $secondaryScheduler;
+    private array $secondaryLastFired = [];
+    private array $secondaryEvents = [];
     /** @var list<array{delay:float,guns:int,split:bool,stage:int,lateral:float}> */
     private array $primaryBurstQueue = [];
     /** @var list<int> */
@@ -102,6 +105,7 @@ final class Run
     public function __construct(public readonly BrushMap $map, int $seed = 1337, ?GameMode $mode = null, ?XpCurve $xpCurve = null)
     {
         $this->xpCurve = $xpCurve ?? new XpCurve();
+        $this->secondaryScheduler = new SecondaryScheduler();
         $this->mode = $mode ?? GameMode::fixed($seed);
         $this->remaining = $this->mode->waveBudget(1);
         // Quake deathmatch maps often use info_player_start as an intermission
@@ -165,15 +169,9 @@ final class Run
             return;
         }
 
-        $this->pulseClock -= $dt;
         $this->stepPrimaryBursts($dt);
         foreach ($rhythmSteps as $rhythmStep) $this->triggerPrimaryRhythmStep((int)$rhythmStep);
-        if ($this->pulseUnlocked && $this->pulseClock <= 0) $this->firePulse();
-        if ($this->flameRank > 0) $this->stepFlamethrower($dt);
-        if ($this->rocketRank > 0) {
-            $this->rocketClock -= $dt;
-            if ($this->rocketClock <= 0) $this->fireMiniRockets();
-        }
+        $this->stepSecondaries($dt);
 
         $this->stepPickups($dt);
     }
@@ -293,14 +291,14 @@ final class Run
         }
     }
 
-    private function fireAtBoss(int $damage, int $stage): bool
+    private function fireAtBoss(int $damage, int $stage, float $range = 24.0, float $cone = 1.05): bool
     {
         if ($this->boss === null || !$this->boss->active || $this->boss->defeated) return false;
         $targets = $this->boss->vulnerable ? [-1 => $this->bossPosition] : $this->boss->orbs;
         foreach ($targets as $index => $target) {
             if ($target === null || ($index >= 0 && !$target['alive'])) continue;
-            if (hypot($target['x'] - $this->x, $target['z'] - $this->z) > 24.0) continue;
-            if (abs(self::angleDelta(atan2($target['x'] - $this->x, $target['z'] - $this->z), $this->yaw)) > 1.05) continue;
+            if (hypot($target['x'] - $this->x, $target['z'] - $this->z) > $range) continue;
+            if (abs(self::angleDelta(atan2($target['x'] - $this->x, $target['z'] - $this->z), $this->yaw)) > $cone) continue;
             if (!$this->lineClear([$this->x, $this->y + 0.35, $this->z], [$target['x'], $target['y'], $target['z']])) continue;
             $this->addVisualTrace($target, 0.0, $stage <= 1 ? 'pistol' : 'auto');
             if ($index < 0) $this->boss->damage($damage);
@@ -903,6 +901,80 @@ final class Run
         if (count($this->primaryAudioEvents) >= 32) array_shift($this->primaryAudioEvents);
         $this->primaryAudioEvents[] = $stage;
     }
+    public function secondaryCooldown(string $id): float
+    {
+        return match($id){
+            'pulse'=>max(1.0,2.4-$this->pulseRank*.15-$this->hasteRank*.04),
+            'rockets'=>max(2.0,4.5-($this->rocketRank-1)*.55-$this->hasteRank*.12),
+            default=>max(5.4,8.0-($this->flameRank-1)*.7-$this->hasteRank*.15),
+        };
+    }
+
+    public function secondaryInventory(): array
+    {
+        $out=[];
+        foreach(['flame'=>[$this->flameRank,$this->flameCooldownClock], 'rockets'=>[$this->rocketRank,$this->rocketClock],
+            'pulse'=>[$this->pulseUnlocked?max(1,$this->pulseRank):0,$this->pulseClock]] as$id=>[$rank,$remaining]){
+            if($rank<=0)continue;
+            $active=$id==='flame' && $this->flameActive>0;
+            $out[]=['id'=>$id,'rank'=>$rank,'remaining'=>max(0,$remaining),'cooldown'=>$this->secondaryCooldown($id),
+                'ready'=>$remaining<=0 && !$active,'active'=>$active,'flash'=>isset($this->secondaryLastFired[$id]) && $this->time-$this->secondaryLastFired[$id]<0.18];
+        }
+        return $out;
+    }
+
+    public function drainSecondaryEvents(): array
+    {
+        $events=$this->secondaryEvents;$this->secondaryEvents=[];return $events;
+    }
+
+    private function bossTargetAvailable(float $range,float $cone): bool
+    {
+        if($this->boss===null || !$this->boss->active || $this->boss->defeated)return false;
+        $targets=$this->boss->vulnerable?[$this->bossPosition]:$this->boss->orbs;
+        foreach($targets as$t){
+            if($t===null || (isset($t['alive'])&&!$t['alive']))continue;
+            if(hypot($t['x']-$this->x,$t['z']-$this->z)>$range)continue;
+            if(abs(self::angleDelta(atan2($t['x']-$this->x,$t['z']-$this->z),$this->yaw))>$cone)continue;
+            if($this->lineClear([$this->x,$this->y+.35,$this->z],[$t['x'],$t['y'],$t['z']]))return true;
+        }
+        return false;
+    }
+
+    private function stepSecondaries(float $dt): void
+    {
+        if (!$this->pulseUnlocked && $this->flameRank<=0 && $this->rocketRank<=0) return;
+        if($this->pulseUnlocked)$this->pulseClock-=$dt;
+        if($this->rocketRank>0)$this->rocketClock-=$dt;
+        if($this->flameRank>0){
+            if($this->flameActive<=0)$this->flameCooldownClock-=$dt;
+            $this->stepFlamethrower($dt);
+        }
+        // Context changes only the insertion order; previously queued weapons keep their turn.
+        $urgent=$this->findTarget(2.5,M_PI)!==null;
+        $order=$urgent?['pulse','flame','rockets']:['rockets','flame','pulse'];
+        $ready=[];$eligible=[];
+        foreach($order as$id){
+            [$owned,$clock,$range,$cone]=match($id){
+                'pulse'=>[$this->pulseUnlocked,$this->pulseClock,3.6+$this->pulseRank*.35,M_PI],
+                'flame'=>[$this->flameRank>0 && $this->flameActive<=0,$this->flameCooldownClock,5.2+max(0,$this->flameRank-1)*.7,.48+max(0,$this->flameRank-1)*.1],
+                default=>[$this->rocketRank>0,$this->rocketClock,22.0,1.15],
+            };
+            if(!$owned || $clock>0)continue;
+            $ready[]=$id;
+            if($this->findTarget($range,$cone)!==null || $this->bossTargetAvailable($range,$cone))$eligible[]=$id;
+        }
+        $spacing=30.0/(RhythmClock::BPM_BASE+max(0,$this->level-1)*RhythmClock::BPM_PER_LEVEL);
+        $id=$this->secondaryScheduler->step($dt,$ready,$eligible,$spacing);
+        if($id===null)return;
+        $fired=match($id){'pulse'=>$this->firePulse(),'rockets'=>$this->fireMiniRockets(),default=>(function(){ $this->startFlamethrower();return true; })()};
+        if($fired){
+            $this->secondaryLastFired[$id]=$this->time;
+            if(count($this->secondaryEvents)>=64)array_shift($this->secondaryEvents);
+            $this->secondaryEvents[]=['id'=>$id,'time'=>$this->time,'spacing'=>$spacing];
+        }
+    }
+
     private function stepFlamethrower(float $dt): void
     {
         if ($this->flameActive > 0.0) {
@@ -914,8 +986,10 @@ final class Run
             }
             return;
         }
-        $this->flameCooldownClock -= $dt;
-        if ($this->flameCooldownClock > 0.0) return;
+    }
+
+    private function startFlamethrower(): void
+    {
         $this->flameActive = 2.4 + ($this->flameRank - 1) * 0.45;
         $this->flameCooldownClock = max(5.4, 8.0 - ($this->flameRank - 1) * 0.7 - $this->hasteRank * 0.15);
         $this->flameTickClock = 0.0;
@@ -936,19 +1010,21 @@ final class Run
             $this->damage($id, (int)round($baseDamage * (1 + $this->damageRank * 0.18)));
             $this->hits++;
         }
+        if ($targets === [] && $this->fireAtBoss((int)round($baseDamage*(1+$this->damageRank*.18)),5,$range,$cone)) $this->muzzle=max($this->muzzle,0.035);
         if ($targets !== []) {
             $this->shots++;
             $this->muzzle = max($this->muzzle, 0.035);
         }
     }
 
-    private function fireMiniRockets(): void
+    private function fireMiniRockets(): bool
     {
         $count = 2 + ($this->rocketRank - 1) * 2;
         $targets = $this->findTargets(22.0, 1.15, $count);
         if ($targets === []) {
-            $this->rocketClock = 0.40;
-            return;
+            $fired = $this->fireAtBoss((int)round((34+($this->rocketRank-1)*12)*(1+$this->damageRank*.25))*(2+($this->rocketRank-1)*2),5,22.0,1.15);
+            if ($fired) { $this->rocketClock=$this->secondaryCooldown('rockets'); $this->specialFlash=0.12; }
+            return $fired;
         }
         $damage = (int)round((34 + ($this->rocketRank - 1) * 12) * (1 + $this->damageRank * 0.25));
         foreach ($targets as $index => $id) {
@@ -960,7 +1036,8 @@ final class Run
             $this->hits++;
         }
         $this->specialFlash = max($this->specialFlash, 0.12);
-        $this->rocketClock = max(2.0, 4.5 - ($this->rocketRank - 1) * 0.55 - $this->hasteRank * 0.12);
+        $this->rocketClock = $this->secondaryCooldown('rockets');
+        return true;
     }
 
     private function addVisualTrace(array $enemy, float $height, string $type, float $lateral = 0.0): void
@@ -1000,17 +1077,20 @@ final class Run
         return array_slice(array_map('intval', array_keys($candidates)), 0, max(1, $limit));
     }
 
-    private function firePulse(): void
+    private function firePulse(): bool
     {
         $targets = [];
         foreach ($this->enemies as $id => $enemy) {
             if (hypot($enemy['x'] - $this->x, $enemy['z'] - $this->z) <= 3.6 + $this->pulseRank * 0.35 &&
                 $this->lineClear([$this->x, $this->y, $this->z], [$enemy['x'], $enemy['y'], $enemy['z']])) $targets[] = $id;
         }
-        if ($targets === []) { $this->pulseClock = 0.20; return; }
+        if ($targets === []) {
+            if (!$this->fireAtBoss(30+$this->pulseRank*14,5,3.6+$this->pulseRank*.35,M_PI)) return false;
+        }
         foreach ($targets as $id) $this->damage($id, 30 + $this->pulseRank * 14);
         $this->pulse = 0.25;
-        $this->pulseClock = max(1.0, 2.4 - $this->pulseRank * 0.15 - $this->hasteRank * 0.04);
+        $this->pulseClock = $this->secondaryCooldown('pulse');
+        return true;
     }
 
     private function damage(int $id, int $amount): void
