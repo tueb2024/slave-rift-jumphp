@@ -216,8 +216,8 @@ final class Run
         $dx = $treasure['x'] - $anchor['x']; $dz = $treasure['z'] - $anchor['z'];
         $length = max(0.001, hypot($dx, $dz));
         $nx = $dx / $length; $nz = $dz / $length;
-        $this->bossPosition = ['x' => $anchor['x'] + $nx * 8.5,
-            'y' => $anchor['y'] + 0.5, 'z' => $anchor['z'] + $nz * 8.5];
+        $this->bossPosition = ['x' => $anchor['x'] + $nx * $length * (8.5/6),
+            'y' => $anchor['y'] + 0.5, 'z' => $anchor['z'] + $nz * $length * (8.5/6)];
         $this->boss = new BossController(BossController::WALL, $this->mode->bossHealth, 6.0);
         $positions = [];
         foreach ([-2.5, 0.0, 2.5] as $offset) {
@@ -276,14 +276,14 @@ final class Run
                     $this->bossWarning['time'] -= $dt;
                     if ($this->bossWarning['time'] <= 0.0) {
                         if (hypot($this->x - $this->bossWarning['x'], $this->z - $this->bossWarning['z']) < 1.8 && $this->invincible <= 0) {
-                            $this->health -= 10 + $this->boss->phase * 4;
+                            $this->health -= (int)round((10 + $this->boss->phase * 4) * (1+max(0,$this->mode->campaignStage-1)*0.1));
                             $this->hurt = 0.35; $this->invincible = 0.4;
                         }
                         $this->bossWarning = null;
                     }
                 } elseif ($this->bossAttackClock <= 0.0) {
                     $this->bossWarning = ['x' => $this->x, 'y' => $this->y - 0.6, 'z' => $this->z, 'time' => 1.1];
-                    $this->bossAttackClock = 3.8 - $this->boss->phase * 0.45;
+                    $this->bossAttackClock = (3.8 - $this->boss->phase * 0.45) / $this->mode->bossPressure();
                 }
             }
         }
@@ -358,7 +358,7 @@ final class Run
 
     private function syncPrimaryStage(): void
     {
-        $next = self::primaryStageForLevel($this->level);
+        $next = $this->xpCurve->stageForLevel($this->level);
         $changed = $next !== $this->primaryStage;
         $this->primaryStage = $next;
         [$tier, $weapon, $guns] = match ($next) {
@@ -627,7 +627,7 @@ final class Run
 
     private function chooseEnemyType(): string
     {
-        $weights = self::enemyWeightsForWave($this->wave);
+        $weights = self::enemyWeightsForWave($this->mode->compositionWave($this->wave));
         $roll = $this->random();
         $cursor = 0.0;
         foreach ($weights as $type => $weight) {
@@ -694,7 +694,7 @@ final class Run
         $profile = DifficultyDirector::enemyBaseProfile($type);
         $hp = DifficultyDirector::enemyHealthFor($type, $this->mode->enemyHealthScale($this->wave));
         $speed = $profile['speed'] * DifficultyDirector::speedScaleFor($this->wave, $this->level);
-        $damage = (int)round($profile['damage'] * DifficultyDirector::damageScaleFor(1.0, $this->wave, $this->level));
+        $damage = (int)round($profile['damage'] * $this->mode->damageScale($this->wave));
         $radius = $profile['radius'];
         if ($this->objective !== null && !$this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.15, $z])) return false;
         $this->spawned++;

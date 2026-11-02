@@ -31,4 +31,17 @@ final class XpCurveTest extends TestCase
             self::assertSame($level-1,XpCurve::levelForTotal($xp-1));
         }
     }
+    public function testCampaignMilestonesAreExplicitAndDoNotAlterLevelCosts(): void
+    {
+        $legacy=new XpCurve(XpCurve::ACCESSIBLE);
+        $campaign=new XpCurve(XpCurve::ACCESSIBLE,XpCurve::CAMPAIGN_MILESTONES);
+        foreach([3=>12,5=>27,8=>54,11=>87,14=>127,17=>173]as$level=>$total){
+            self::assertSame($total,XpCurve::totalForLevel($level));
+        }
+        self::assertSame(0,$legacy->stageForLevel(3));
+        self::assertSame(1,$campaign->stageForLevel(3));
+        self::assertSame(5,$campaign->stageForLevel(16));
+        self::assertSame(6,$campaign->stageForLevel(17));
+        foreach(range(1,30)as$level)self::assertLessThanOrEqual(1,$campaign->stageForLevel($level+1)-$campaign->stageForLevel($level));
+    }
 }

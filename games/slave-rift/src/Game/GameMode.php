@@ -18,6 +18,7 @@ final class GameMode
         public readonly float $intensity = 1.0,
         public readonly int $finalWaveSize = 12,
         public readonly int $bossHealth = 1200,
+        public readonly int $campaignStage = 0,
     ) {}
 
     public static function normal(?int $previousSeed = null): self
@@ -46,6 +47,29 @@ final class GameMode
         return new self(self::DAILY, $seed, $tier, $dailyId ?? $date . '/' . $tier,
             [5, 7, 9, 11][$tier - 1], [0.85, 1.0, 1.15, 1.30][$tier - 1],
             [10, 12, 16, 20][$tier - 1], [900, 1200, 1500, 1800][$tier - 1]);
+    }
+
+    public static function campaignStage(int $seed, int $stage): self
+    {
+        self::validateSeed($seed);
+        if($stage<1 || $stage>4) throw new \InvalidArgumentException('Campaign stage must be 1..4');
+        return new self(self::NORMAL,$seed,depth:[6,9,12,16][$stage-1],intensity:[1,1.12,1.25,1.4][$stage-1],
+            finalWaveSize:[12,15,18,22][$stage-1],bossHealth:[1200,1800,2700,4000][$stage-1],campaignStage:$stage);
+    }
+
+    public function compositionWave(int $wave): int
+    {
+        return $wave+max(0,$this->campaignStage-1)*2;
+    }
+
+    public function damageScale(int $wave): float
+    {
+        return DifficultyDirector::damageScaleFor(1,$wave,1)*(1+max(0,$this->campaignStage-1)*0.1);
+    }
+
+    public function bossPressure(): float
+    {
+        return 1+max(0,$this->campaignStage-1)*0.12;
     }
 
     public static function today(): string
@@ -85,7 +109,7 @@ final class GameMode
 
     public function spawnInterval(int $wave): float
     {
-        return $this->kind === self::HORDE ? max(0.12, 1.2 - $wave * 0.035) : max(0.85, 1.4 - $wave * 0.04);
+        return $this->kind === self::HORDE ? max(0.12, 1.2 - $wave * 0.035) : max(0.85, 1.4 - $wave * 0.04) / (1+max(0,$this->campaignStage-1)*0.08);
     }
 
     public function enemyHealthScale(int $wave): float
