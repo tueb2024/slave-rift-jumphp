@@ -1,67 +1,71 @@
-# Slave Rift — FPS horde survival in PHP / JumPHP
+# Slave Rift — candidat 0.4.0-rc.1
 
-A playable first survival loop built on the textured FPS prototype at `e706459`. Move and jump in first person, face the horde for automatic fire, collect XP crystals and choose upgrades while the action is paused. The simulation, progression, input, HUD and rendering orchestration are PHP. JumPHP supplies SDL / OpenGL on desktop and PHP WebAssembly / WebGL in the browser.
+FPS de survie en PHP/JumPHP : tirs automatiques rythmiques, expérience, améliorations, niveau procédural, salle finale, boss mural, trésor et victoire.
 
-## Play
+Le dépôt d’auteur est à la racine. Le package importé par JumPHP est **`games/slave-rift/`**, synchronisé par `php tools/sync-package.php`. Importer `https://github.com/tueb2024/slave-rift-jumphp` avec la branche contenant les changements souhaités. La préparation RC est sur `release/playable-rc` ; aucun changement de cette branche n’est publié automatiquement avant son push.
 
-Import `https://github.com/tueb2024/slave-rift-jumphp` in the JumPHP playground and select the `mvp/fps-survivors` branch (or its eventual merged commit). The packaged entry point is **`games/slave-rift/`**. Root sources and that package are synchronized by `php tools/sync-package.php`; CI checks their contents match.
+## Jouer
 
-- **W/S or Up/Down:** move. **A/D:** strafe. **Left/Right:** turn.
-- **Space:** jump. **P:** pause. **Enter:** restart after death.
-- **Automatic Riveter:** hits a visible threat in the forward cone; close attackers get priority. Aim by turning. Hold **F** to narrow the targeting cone.
-- **Automatic Pulse:** damages nearby enemies in all directions, respecting walls. Unlock it through an upgrade or automatically at wave 3.
-- **1 / 2 / 3** (or **R / T / Y**): pick a level-up upgrade. Gamepad A/B/X also choose upgrades.
+- Accueil : **JOUER**, Entrée, Espace ou bouton A de la manette.
+- Avancer/reculer : Z/W, S ou haut/bas. Déplacement latéral : Q/A, D. Tourner : gauche/droite.
+- Saut : Espace ou B de la manette. Les armes tirent automatiquement sur les cibles visibles devant vous.
+- Améliorations : toucher une ligne, 1/2/3, ou haut/bas puis Entrée/A.
+- Pause : P, Échap, Select ou bouton **PAUSE** à l’écran. Reprendre par le bouton, Entrée/A ou P. Recommencer par le bouton ou R/X depuis la pause.
+- Mort/victoire : **RECOMMENCER / REJOUER**, Entrée, Espace, A ou Start ; aucun rechargement de page.
+- Mobile : joystick pour avancer/tourner, SAUT, PAUSE, OK et boutons directement dans le jeu. Le paysage est conseillé. Les taps fonctionnent aussi dans les améliorations et les écrans de fin.
 
-There is no ammunition management in this MVP. Enemy deaths drop cyan XP crystals; every ninth kill drops healing. Crystals drift toward you within pickup range. XP offers three different upgrades: damage, fire rate, pickup range, health, or Pulse. Survive indefinitely and improve your time / wave / kill count.
+La flèche indique la prochaine porte du parcours. Avancez, ramassez les cristaux d’XP et les soins, puis éliminez la vague de la salle finale. Détruisez les trois orbes du boss ; le cadre vert et le message du cœur annoncent sa vulnérabilité pendant six secondes. Évitez les zones rouges annoncées au sol. Après sa mort, approchez du coffre doré pour gagner.
 
-## The loop
+## Progression
 
-Waves spend a growing spawn budget in batches. Spawn positions vary by seed, stay away from the player and reject solid geometry. Runners are fast and fragile, guardians are balanced, and brutes appear from wave 3 with high health. Every fourth wave favors brutes. A wave lasts at most 26 active seconds, followed by a four-second breather and +10 health; surviving enemies carry over. A cleared wave ends early.
+| Niveau | Arme principale |
+|---|---|
+| 1 | Colt .45 |
+| 4 | Double Colt |
+| 8 | MP44 |
+| 12 | Double MP44 |
+| 16 | BAR |
+| 20 | Gatling |
+| 24 | Double Gatling |
 
-At most 48 enemies and 80 pickups are active. Spawn attempts, simulation substeps and retained visual effects are bounded. The arena seed changes on a normal restart; demo/tests use a fixed seed. The small RNG stays within signed 32-bit integer arithmetic for PHP WebAssembly.
+Le rythme reste à 116 BPM au départ, puis +2 BPM par niveau. Le double MP44 double les dégâts d’une même séquence de rafale. Les améliorations de puissance et les bonus d’arme ne font plus augmenter les PV ennemis.
 
-The original decorative wedges have been replaced with an original open arena, columns and four 0.18-unit steps leading onto the dais. A 0.23-unit player step-up plus resolved floor contact makes it walkable without jumping. Enemies use the same stair heights, so the dais is not a permanently safe perch.
+PV de base : runner 24, guardian 48, enforcer 72, brute 144. Un seul coefficient de progression est appliqué à l’apparition : `1 + min(20, vague - 1) × 0,025`. Les vagues attendent leur élimination complète, avec quatre secondes de répit et dix PV rendus. Leur budget est plafonné à 34 ennemis ; les apparitions restent bornées à deux par lot et 48 ennemis actifs. La vitalité est plafonnée à 180 PV ; elle fournit ensuite des soins.
 
-## Architecture audit and implementation
+Le coût XP commence à 6 et augmente de `floor((niveau - 1) × 0,7)` ; la portée de collecte initiale est 3,2 unités. Les noms internes des améliorations restent stables ; les textes affichés sont français. La police bitmap JumPHP transforme les accents en lettres simples à l’affichage.
 
-| Area | Starting point | MVP |
-|---|---|---|
-| `Run` | One guardian, manual hitscan, death/clear | Wave director, multiple enemies, threat selection, two auto weapons, XP, upgrades, damage grace period |
-| `PlayScene` | Input + fixed step + guardian HP | Input + 60 Hz fixed step, queued jump, upgrade/death/pause screens, survival HUD |
-| `World` | World + one guardian buffer | Shared per-type enemy/pickup buffers, hit flashes, tracers and expanding Pulse; reuse resources on restart |
-| `BrushMap` | Convex brush triangulation, AABB collision | Importer retained; original axis-aligned arena makes collision match visible geometry |
-| `config/input.yaml` | Movement, jump, fire, restart | Upgrade choices and pause; corrected camera-relative strafe/turn directions |
-| `assets` | Mixed test geometry and replacement PNGs | Original arena, original pixel texture, original procedural meshes; provenance in `assets/ASSETS.md` |
-| Packaging | Two manually maintained copies | Sync tool and CI equality check |
+## Vérifier
 
-Line of sight uses exact segment/AABB slab intersections. This prevents automatic weapons shooting through thin walls. Enemy pursuit tries tangents around blockers and uses spacing to reduce stacking; this is lightweight local steering, not a navigation mesh.
-
-## Checks
-
-Pure PHP checks need no engine or Composer:
+Les tests de simulation n’ont besoin ni de JumPHP ni de Composer :
 
 ```sh
 php tools/simulation-test.php
 php tools/sync-package.php --check
+php tools/balance-sim.php 10 360 both > balance-report.json
 ```
 
-They exercise map reconstruction, jump/landing, stair climbing, enemy stair pursuit, wall collision, normalized movement, target selection, thin-wall obstruction, Pulse, XP, upgrade freeze, deterministic runs, all enemy types and a 200-second survival simulation.
+Le simulateur produit les résultats par seed et profil, les vagues de décès, les PV, le niveau/l’arme à la vague 7, l’accès à la salle finale, au boss et à la victoire. `route` teste le véritable niveau procédural ; `survival` isole la courbe dans une arène ouverte. Les profils font des erreurs de visée, hésitent, réagissent avec retard et collectent différemment. Ils ne changent jamais les PV, l’XP ou les dégâts du jeu. Leurs taux de succès ne prédisent pas ceux de joueurs humains.
 
-`.github/workflows/checks.yml` runs those on PHP 8.2 and 8.5. A separate job pins JumPHP to `28ea932981fb0b6d8dc41f2c9739f941cb4befea`, builds its official SDL/OpenGL Docker runtime, runs integration tests and the 600-frame software smoke, then a 900-frame OpenGL demo with a screenshot artifact.
+Avec PHPUnit 11 (PHP 8.3+, ou PHPUnit 10 sur PHP 8.2) :
 
-In an existing JumPHP checkout, copy `games/slave-rift/` into its games directory, configure Composer's local engine repository as in the official sample games, then run:
+```sh
+phpunit -c phpunit.pure.xml
+```
+
+La CI exécute ces contrôles sur PHP 8.2 et 8.5. Elle utilise JumPHP au commit `28ea932981fb0b6d8dc41f2c9739f941cb4befea` pour les tests d’intégration et les captures OpenGL. Le workflow WASM ajoute des clics desktop, des taps mobile, des reprises après mort/victoire et des captures des différentes étapes du boss. La publication `gh-pages` conserve son historique et utilise un push normal.
+
+Dans un checkout JumPHP disposant de son runtime Docker, copier le package dans `games/slave-rift`, configurer le dépôt Composer local du moteur comme dans `.github/workflows/checks.yml`, puis :
 
 ```sh
 bin/jumphp install slave-rift
 bin/jumphp test slave-rift
-JUMPHP_SCENE='App\Scene\PlayScene' JUMPHP_SCENE_PARAMS='{"demo":true}' bin/jumphp shot slave-rift 900
-bin/jumphp run slave-rift
+JUMPHP_SCENE='App\Scene\PlayScene' bin/jumphp shot slave-rift 2
+bin/jumphp build slave-rift
+bin/jumphp webshot slave-rift 6 '[[1,"Enter"]]'
 ```
 
-The current Windows authoring environment has no PHP, Docker or WSL runtime. Native checks are therefore delegated to CI; see the workflow result for the published commit. The actual playground import, browser performance, gamepad mappings and human difficulty/fun assessment still require an interactive playtest. The software fallback is diagnostic top-down; the normal GL/WebGL game is FPS.
+Le moteur logiciel reste un diagnostic vu du dessus ; le rendu normal est OpenGL/WebGL. Le travail local valide la simulation et les collisions. La qualification visuelle et tactile reste à confirmer avec le runtime et un playtest humain : voir [l’audit RC](docs/release-candidate.md).
 
-## License
+## Licence
 
-Code, original map, meshes and preview: **GPL-3.0-or-later**. Original `rift-stone.png`: **CC0-1.0**. JumPHP is a separate MIT-licensed engine. See `LICENSE` and `assets/ASSETS.md`.
-
-No proprietary game data or ripped sprites are included. VG Resource / Spriters Resource downloads were not used because a download listing does not establish permission to reuse the original game's artwork.
+Code, carte originale, maillages et aperçu : GPL-3.0-or-later. Assets CC0 et autres provenances : [assets/ASSETS.md](assets/ASSETS.md). JumPHP est un moteur indépendant sous licence MIT. Aucun nouveau sprite propriétaire n’a été ajouté.

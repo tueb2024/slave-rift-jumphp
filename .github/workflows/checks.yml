@@ -19,10 +19,19 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
+          tools: phpunit:${{ matrix.php == '8.2' && '10' || '11' }}
       - name: Lint PHP
         run: find src tools tests games/slave-rift/src -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Simulation regressions
         run: php tools/simulation-test.php
+      - name: Pure PHPUnit regressions
+        run: phpunit -c phpunit.pure.xml
+      - name: Deterministic balance report
+        run: php tools/balance-sim.php 5 360 both > balance-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: balance-php-${{ matrix.php }}
+          path: balance-report.json
       - name: Verify playground package
         run: php tools/sync-package.php --check
 
