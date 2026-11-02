@@ -7,6 +7,7 @@ require __DIR__ . '/../src/Game/RhythmClock.php';
 require __DIR__ . '/../src/Game/DifficultyDirector.php';
 require __DIR__ . '/../src/Game/TreasureDirector.php';
 require __DIR__ . '/../src/Game/BossController.php';
+require __DIR__ . '/../src/Game/GameMode.php';
 require __DIR__ . '/../src/Game/Run.php';
 require __DIR__ . '/../src/Gfx/Meshes.php';
 require __DIR__ . '/../src/Gfx/EnemyAtlas.php';

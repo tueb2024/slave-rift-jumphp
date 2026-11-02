@@ -26,6 +26,8 @@ final class Run
     public int $health = 100;
     public int $maxHealth = 100;
     public int $shots = 0;
+    public int $spawned = 0;
+    public readonly GameMode $mode;
     public int $hits = 0;
     public int $kills = 0;
     public int $score = 0;
@@ -94,8 +96,10 @@ final class Run
     private int $magnetRank = 0;
     private int $pulseRank = 0;
 
-    public function __construct(public readonly BrushMap $map, int $seed = 1337)
+    public function __construct(public readonly BrushMap $map, int $seed = 1337, ?GameMode $mode = null)
     {
+        $this->mode = $mode ?? GameMode::fixed($seed);
+        $this->remaining = $this->mode->waveBudget(1);
         // Quake deathmatch maps often use info_player_start as an intermission
         // camera. DM1's is above empty space, so use a real deathmatch spawn.
         [$this->x, $this->y, $this->z] = $map->spawnPoints[0] ?? $map->playerStart;
@@ -190,7 +194,7 @@ final class Run
         $nx = $dx / $length; $nz = $dz / $length;
         $this->bossPosition = ['x' => $anchor['x'] + $nx * 8.5,
             'y' => $anchor['y'] + 0.5, 'z' => $anchor['z'] + $nz * 8.5];
-        $this->boss = new BossController(BossController::WALL, 1200, 6.0);
+        $this->boss = new BossController(BossController::WALL, $this->mode->bossHealth, 6.0);
         $positions = [];
         foreach ([-2.5, 0.0, 2.5] as $offset) {
             $positions[] = ['x' => $this->bossPosition['x'] + $nz * $offset - $nx * 0.8,
@@ -487,7 +491,7 @@ final class Run
             if ($this->intermission <= 0) {
                 $this->wave++;
                 $this->waveTime = 0.0;
-                $this->remaining = min(34, 10 + $this->wave * 2);
+                $this->remaining = $this->mode->waveBudget($this->wave);
                 $this->spawnClock = 0.0;
                 $this->message = 'VAGUE ' . $this->wave . ($this->wave % 4 === 0 ? ' - BRUTES' : '');
                 $this->messageTime = 2.5;
@@ -504,12 +508,12 @@ final class Run
             return;
         }
         $this->spawnClock -= $dt;
-        if ($this->remaining <= 0 || $this->spawnClock > 0 || count($this->enemies) >= self::MAX_ENEMIES) return;
-        $batch = min($this->remaining, min(2, 1 + intdiv($this->wave, 4)));
-        for ($i = 0; $i < $batch && count($this->enemies) < self::MAX_ENEMIES; $i++) {
+        if ($this->remaining <= 0 || $this->spawnClock > 0 || count($this->enemies) >= $this->mode->enemyLimit($this->wave)) return;
+        $batch = min($this->remaining, $this->mode->spawnBatch($this->wave));
+        for ($i = 0; $i < $batch && count($this->enemies) < $this->mode->enemyLimit($this->wave); $i++) {
             if ($this->spawnEnemy()) $this->remaining--;
         }
-        $this->spawnClock = max(0.85, 1.4 - $this->wave * 0.04);
+        $this->spawnClock = $this->mode->spawnInterval($this->wave);
     }
 
     private function spawnEnemy(): bool
@@ -664,11 +668,12 @@ final class Run
     {
         if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) return false;
         $profile = DifficultyDirector::enemyBaseProfile($type);
-        $hp = (int)round($profile['health'] * DifficultyDirector::healthScaleFor(1.0, $this->wave));
+        $hp = (int)round($profile['health'] * $this->mode->enemyHealthScale($this->wave));
         $speed = $profile['speed'] * DifficultyDirector::speedScaleFor($this->wave, $this->level);
         $damage = (int)round($profile['damage'] * DifficultyDirector::damageScaleFor(1.0, $this->wave, $this->level));
         $radius = $profile['radius'];
         if ($this->objective !== null && !$this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.15, $z])) return false;
+        $this->spawned++;
         $id = $this->nextId++;
         $yaw = atan2($this->x - $x, $this->z - $z);
         $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
