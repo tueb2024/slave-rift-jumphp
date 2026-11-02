@@ -28,6 +28,9 @@ final class Run
     public int $shots = 0;
     public int $spawned = 0;
     public readonly GameMode $mode;
+    public readonly XpCurve $xpCurve;
+    public int $collectedXp = 0;
+    public int $droppedXp = 0;
     public int $hits = 0;
     public int $kills = 0;
     public int $score = 0;
@@ -96,8 +99,9 @@ final class Run
     private int $magnetRank = 0;
     private int $pulseRank = 0;
 
-    public function __construct(public readonly BrushMap $map, int $seed = 1337, ?GameMode $mode = null)
+    public function __construct(public readonly BrushMap $map, int $seed = 1337, ?GameMode $mode = null, ?XpCurve $xpCurve = null)
     {
+        $this->xpCurve = $xpCurve ?? new XpCurve();
         $this->mode = $mode ?? GameMode::fixed($seed);
         $this->remaining = $this->mode->waveBudget(1);
         // Quake deathmatch maps often use info_player_start as an intermission
@@ -172,6 +176,26 @@ final class Run
         }
 
         $this->stepPickups($dt);
+    }
+
+    public function progressionSnapshot(): array
+    {
+        return ['level'=>$this->level,'xp'=>$this->xp,'collectedXp'=>$this->collectedXp,'maxHealth'=>$this->maxHealth,
+            'health'=>$this->health,'damageRank'=>$this->damageRank,'hasteRank'=>$this->hasteRank,'magnetRank'=>$this->magnetRank,
+            'pulseRank'=>$this->pulseRank,'pulseUnlocked'=>$this->pulseUnlocked,'flameRank'=>$this->flameRank,'rocketRank'=>$this->rocketRank,
+            'pulseClock'=>$this->pulseClock,'flameCooldownClock'=>$this->flameCooldownClock,'rocketClock'=>$this->rocketClock,
+            'score'=>$this->score,'kills'=>$this->kills];
+    }
+
+    public function restoreProgression(array $saved, float $healMissing = 0.35): void
+    {
+        foreach (['level','xp','collectedXp','maxHealth','health','damageRank','hasteRank','magnetRank','pulseRank',
+            'pulseUnlocked','flameRank','rocketRank','pulseClock','flameCooldownClock','rocketClock','score','kills'] as $field) {
+            if (array_key_exists($field,$saved)) $this->$field=$saved[$field];
+        }
+        $this->health=min($this->maxHealth,$this->health+(int)round(($this->maxHealth-$this->health)*max(0,min(1,$healMissing))));
+        $this->nextXp=XpCurve::threshold($this->level);
+        $this->syncPrimaryStage();
     }
 
     public function setObjective(AssembledLevel $level, int $finalWaveSize = 12): void
@@ -1020,7 +1044,8 @@ final class Run
         };
         $this->score += (int)round(($baseScore + $this->wave * 25) * $this->multiplier);
         $kind = $this->kills % 9 === 0 ? 'health' : 'xp';
-        $value = $kind === 'health' ? 18 : ($enemy['type'] === 'brute' ? 5 : 2);
+        $value = $kind === 'health' ? 18 : $this->xpCurve->reward($enemy['type']);
+        if ($kind === 'xp') $this->droppedXp += $value;
         if (count($this->pickups) >= self::MAX_PICKUPS) {
             $key = array_key_first($this->pickups);
             if ($kind === 'xp' && $this->pickups[$key]['kind'] === 'xp') $this->pickups[$key]['value'] += $value;
@@ -1040,7 +1065,7 @@ final class Run
             $d = hypot($dx, $dz);
             if ($d < 3.2 + $this->magnetRank * 1.0 && $this->lineClear([$pickup['x'], $pickup['y'], $pickup['z']], [$this->x, $this->y, $this->z])) {
                 if ($d < 0.6) {
-                    if ($pickup['kind'] === 'xp') $this->xp += $pickup['value'];
+                    if ($pickup['kind'] === 'xp') { $this->xp += $pickup['value']; $this->collectedXp += $pickup['value']; }
                     else $this->health = min($this->maxHealth, $this->health + $pickup['value']);
                     unset($this->pickups[$id]);
                 } else {
@@ -1059,7 +1084,7 @@ final class Run
         if ($this->xp < $this->nextXp || $this->state !== 'play') return;
         $this->xp -= $this->nextXp;
         $this->level++;
-        $this->nextXp = 6 + (int)floor(($this->level - 1) * 0.7);
+        $this->nextXp = XpCurve::threshold($this->level);
         $this->syncPrimaryStage();
 
         $weaponPool = $this->weaponUpgradePool();

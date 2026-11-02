@@ -1,0 +1,953 @@
+{
+    "current": {
+        "assumption": "All wave budgets killed; heal positions counted exactly; class independent of kill order. Levels from mean XP, not a simulated population average.",
+        "waves": [
+            {
+                "wave": 1,
+                "composition": {
+                    "runner": 0.68,
+                    "guardian": 0.32,
+                    "enforcer": 0,
+                    "brute": 0
+                },
+                "enemies": 12,
+                "heals": 1,
+                "meanXp": 2,
+                "expectedXp": 22,
+                "cumulativeXp": 22,
+                "levelsAtCollection": {
+                    "1": 4,
+                    "0.8": 3,
+                    "0.6": 3
+                }
+            },
+            {
+                "wave": 2,
+                "composition": {
+                    "runner": 0.54,
+                    "guardian": 0.34,
+                    "enforcer": 0.12,
+                    "brute": 0
+                },
+                "enemies": 14,
+                "heals": 1,
+                "meanXp": 2,
+                "expectedXp": 26,
+                "cumulativeXp": 48,
+                "levelsAtCollection": {
+                    "1": 7,
+                    "0.8": 6,
+                    "0.6": 5
+                }
+            },
+            {
+                "wave": 3,
+                "composition": {
+                    "runner": 0.54,
+                    "guardian": 0.34,
+                    "enforcer": 0.12,
+                    "brute": 0
+                },
+                "enemies": 16,
+                "heals": 2,
+                "meanXp": 2,
+                "expectedXp": 28,
+                "cumulativeXp": 76,
+                "levelsAtCollection": {
+                    "1": 10,
+                    "0.8": 8,
+                    "0.6": 7
+                }
+            },
+            {
+                "wave": 4,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 18,
+                "heals": 2,
+                "meanXp": 2.1799999999999997,
+                "expectedXp": 34.879999999999995,
+                "cumulativeXp": 110.88,
+                "levelsAtCollection": {
+                    "1": 12,
+                    "0.8": 11,
+                    "0.6": 9
+                }
+            },
+            {
+                "wave": 5,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 20,
+                "heals": 2,
+                "meanXp": 2.1799999999999997,
+                "expectedXp": 39.239999999999995,
+                "cumulativeXp": 150.12,
+                "levelsAtCollection": {
+                    "1": 15,
+                    "0.8": 13,
+                    "0.6": 11
+                }
+            },
+            {
+                "wave": 6,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 22,
+                "heals": 3,
+                "meanXp": 2.1799999999999997,
+                "expectedXp": 41.419999999999995,
+                "cumulativeXp": 191.54,
+                "levelsAtCollection": {
+                    "1": 18,
+                    "0.8": 15,
+                    "0.6": 13
+                }
+            },
+            {
+                "wave": 7,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 24,
+                "heals": 3,
+                "meanXp": 2.36,
+                "expectedXp": 49.559999999999995,
+                "cumulativeXp": 241.1,
+                "levelsAtCollection": {
+                    "1": 20,
+                    "0.8": 18,
+                    "0.6": 15
+                }
+            },
+            {
+                "wave": 8,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 26,
+                "heals": 2,
+                "meanXp": 2.36,
+                "expectedXp": 56.64,
+                "cumulativeXp": 297.74,
+                "levelsAtCollection": {
+                    "1": 23,
+                    "0.8": 20,
+                    "0.6": 17
+                }
+            },
+            {
+                "wave": 9,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 28,
+                "heals": 4,
+                "meanXp": 2.36,
+                "expectedXp": 56.64,
+                "cumulativeXp": 354.38,
+                "levelsAtCollection": {
+                    "1": 26,
+                    "0.8": 22,
+                    "0.6": 19
+                }
+            },
+            {
+                "wave": 10,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 30,
+                "heals": 3,
+                "meanXp": 2.36,
+                "expectedXp": 63.72,
+                "cumulativeXp": 418.1,
+                "levelsAtCollection": {
+                    "1": 28,
+                    "0.8": 25,
+                    "0.6": 21
+                }
+            },
+            {
+                "wave": 11,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 32,
+                "heals": 3,
+                "meanXp": 2.6,
+                "expectedXp": 75.4,
+                "cumulativeXp": 493.5,
+                "levelsAtCollection": {
+                    "1": 31,
+                    "0.8": 27,
+                    "0.6": 23
+                }
+            },
+            {
+                "wave": 12,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.6,
+                "expectedXp": 78,
+                "cumulativeXp": 571.5,
+                "levelsAtCollection": {
+                    "1": 34,
+                    "0.8": 30,
+                    "0.6": 25
+                }
+            },
+            {
+                "wave": 13,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.6,
+                "expectedXp": 78,
+                "cumulativeXp": 649.5,
+                "levelsAtCollection": {
+                    "1": 37,
+                    "0.8": 32,
+                    "0.6": 27
+                }
+            },
+            {
+                "wave": 14,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.6,
+                "expectedXp": 78,
+                "cumulativeXp": 727.5,
+                "levelsAtCollection": {
+                    "1": 39,
+                    "0.8": 35,
+                    "0.6": 29
+                }
+            },
+            {
+                "wave": 15,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.6,
+                "expectedXp": 78,
+                "cumulativeXp": 805.5,
+                "levelsAtCollection": {
+                    "1": 42,
+                    "0.8": 37,
+                    "0.6": 31
+                }
+            },
+            {
+                "wave": 16,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 3,
+                "meanXp": 2.6,
+                "expectedXp": 80.60000000000001,
+                "cumulativeXp": 886.1,
+                "levelsAtCollection": {
+                    "1": 44,
+                    "0.8": 39,
+                    "0.6": 33
+                }
+            }
+        ],
+        "milestoneWaveAt80Percent": {
+            "4": 1.067,
+            "8": 2.696,
+            "12": 4.36,
+            "16": 6.095,
+            "20": 7.709,
+            "24": 9.422
+        }
+    },
+    "1-2-3-6": {
+        "assumption": "All wave budgets killed; heal positions counted exactly; class independent of kill order. Levels from mean XP, not a simulated population average.",
+        "waves": [
+            {
+                "wave": 1,
+                "composition": {
+                    "runner": 0.68,
+                    "guardian": 0.32,
+                    "enforcer": 0,
+                    "brute": 0
+                },
+                "enemies": 12,
+                "heals": 1,
+                "meanXp": 1.32,
+                "expectedXp": 14.520000000000001,
+                "cumulativeXp": 14.520000000000001,
+                "levelsAtCollection": {
+                    "1": 3,
+                    "0.8": 2,
+                    "0.6": 2
+                }
+            },
+            {
+                "wave": 2,
+                "composition": {
+                    "runner": 0.54,
+                    "guardian": 0.34,
+                    "enforcer": 0.12,
+                    "brute": 0
+                },
+                "enemies": 14,
+                "heals": 1,
+                "meanXp": 1.58,
+                "expectedXp": 20.54,
+                "cumulativeXp": 35.06,
+                "levelsAtCollection": {
+                    "1": 6,
+                    "0.8": 5,
+                    "0.6": 4
+                }
+            },
+            {
+                "wave": 3,
+                "composition": {
+                    "runner": 0.54,
+                    "guardian": 0.34,
+                    "enforcer": 0.12,
+                    "brute": 0
+                },
+                "enemies": 16,
+                "heals": 2,
+                "meanXp": 1.58,
+                "expectedXp": 22.12,
+                "cumulativeXp": 57.18000000000001,
+                "levelsAtCollection": {
+                    "1": 8,
+                    "0.8": 7,
+                    "0.6": 5
+                }
+            },
+            {
+                "wave": 4,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 18,
+                "heals": 2,
+                "meanXp": 2,
+                "expectedXp": 32,
+                "cumulativeXp": 89.18,
+                "levelsAtCollection": {
+                    "1": 11,
+                    "0.8": 9,
+                    "0.6": 7
+                }
+            },
+            {
+                "wave": 5,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 20,
+                "heals": 2,
+                "meanXp": 2,
+                "expectedXp": 36,
+                "cumulativeXp": 125.18,
+                "levelsAtCollection": {
+                    "1": 13,
+                    "0.8": 12,
+                    "0.6": 10
+                }
+            },
+            {
+                "wave": 6,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 22,
+                "heals": 3,
+                "meanXp": 2,
+                "expectedXp": 38,
+                "cumulativeXp": 163.18,
+                "levelsAtCollection": {
+                    "1": 16,
+                    "0.8": 14,
+                    "0.6": 11
+                }
+            },
+            {
+                "wave": 7,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 24,
+                "heals": 3,
+                "meanXp": 2.3899999999999997,
+                "expectedXp": 50.18999999999999,
+                "cumulativeXp": 213.37,
+                "levelsAtCollection": {
+                    "1": 19,
+                    "0.8": 16,
+                    "0.6": 14
+                }
+            },
+            {
+                "wave": 8,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 26,
+                "heals": 2,
+                "meanXp": 2.3899999999999997,
+                "expectedXp": 57.35999999999999,
+                "cumulativeXp": 270.73,
+                "levelsAtCollection": {
+                    "1": 22,
+                    "0.8": 19,
+                    "0.6": 16
+                }
+            },
+            {
+                "wave": 9,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 28,
+                "heals": 4,
+                "meanXp": 2.3899999999999997,
+                "expectedXp": 57.35999999999999,
+                "cumulativeXp": 328.09000000000003,
+                "levelsAtCollection": {
+                    "1": 25,
+                    "0.8": 21,
+                    "0.6": 18
+                }
+            },
+            {
+                "wave": 10,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 30,
+                "heals": 3,
+                "meanXp": 2.3899999999999997,
+                "expectedXp": 64.52999999999999,
+                "cumulativeXp": 392.62,
+                "levelsAtCollection": {
+                    "1": 27,
+                    "0.8": 24,
+                    "0.6": 20
+                }
+            },
+            {
+                "wave": 11,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 32,
+                "heals": 3,
+                "meanXp": 2.8600000000000003,
+                "expectedXp": 82.94000000000001,
+                "cumulativeXp": 475.56,
+                "levelsAtCollection": {
+                    "1": 31,
+                    "0.8": 27,
+                    "0.6": 23
+                }
+            },
+            {
+                "wave": 12,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.8600000000000003,
+                "expectedXp": 85.80000000000001,
+                "cumulativeXp": 561.36,
+                "levelsAtCollection": {
+                    "1": 34,
+                    "0.8": 30,
+                    "0.6": 25
+                }
+            },
+            {
+                "wave": 13,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.8600000000000003,
+                "expectedXp": 85.80000000000001,
+                "cumulativeXp": 647.1600000000001,
+                "levelsAtCollection": {
+                    "1": 37,
+                    "0.8": 32,
+                    "0.6": 27
+                }
+            },
+            {
+                "wave": 14,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.8600000000000003,
+                "expectedXp": 85.80000000000001,
+                "cumulativeXp": 732.96,
+                "levelsAtCollection": {
+                    "1": 39,
+                    "0.8": 35,
+                    "0.6": 29
+                }
+            },
+            {
+                "wave": 15,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 2.8600000000000003,
+                "expectedXp": 85.80000000000001,
+                "cumulativeXp": 818.76,
+                "levelsAtCollection": {
+                    "1": 42,
+                    "0.8": 37,
+                    "0.6": 31
+                }
+            },
+            {
+                "wave": 16,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 3,
+                "meanXp": 2.8600000000000003,
+                "expectedXp": 88.66000000000001,
+                "cumulativeXp": 907.42,
+                "levelsAtCollection": {
+                    "1": 45,
+                    "0.8": 39,
+                    "0.6": 33
+                }
+            }
+        ],
+        "milestoneWaveAt80Percent": {
+            "4": 1.449,
+            "8": 3.323,
+            "12": 4.995,
+            "16": 6.659,
+            "20": 8.183,
+            "24": 9.824
+        }
+    },
+    "2-3-4-6": {
+        "assumption": "All wave budgets killed; heal positions counted exactly; class independent of kill order. Levels from mean XP, not a simulated population average.",
+        "waves": [
+            {
+                "wave": 1,
+                "composition": {
+                    "runner": 0.68,
+                    "guardian": 0.32,
+                    "enforcer": 0,
+                    "brute": 0
+                },
+                "enemies": 12,
+                "heals": 1,
+                "meanXp": 2.3200000000000003,
+                "expectedXp": 25.520000000000003,
+                "cumulativeXp": 25.520000000000003,
+                "levelsAtCollection": {
+                    "1": 4,
+                    "0.8": 4,
+                    "0.6": 3
+                }
+            },
+            {
+                "wave": 2,
+                "composition": {
+                    "runner": 0.54,
+                    "guardian": 0.34,
+                    "enforcer": 0.12,
+                    "brute": 0
+                },
+                "enemies": 14,
+                "heals": 1,
+                "meanXp": 2.58,
+                "expectedXp": 33.54,
+                "cumulativeXp": 59.06,
+                "levelsAtCollection": {
+                    "1": 8,
+                    "0.8": 7,
+                    "0.6": 6
+                }
+            },
+            {
+                "wave": 3,
+                "composition": {
+                    "runner": 0.54,
+                    "guardian": 0.34,
+                    "enforcer": 0.12,
+                    "brute": 0
+                },
+                "enemies": 16,
+                "heals": 2,
+                "meanXp": 2.58,
+                "expectedXp": 36.120000000000005,
+                "cumulativeXp": 95.18,
+                "levelsAtCollection": {
+                    "1": 11,
+                    "0.8": 10,
+                    "0.6": 8
+                }
+            },
+            {
+                "wave": 4,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 18,
+                "heals": 2,
+                "meanXp": 2.94,
+                "expectedXp": 47.04,
+                "cumulativeXp": 142.22,
+                "levelsAtCollection": {
+                    "1": 15,
+                    "0.8": 13,
+                    "0.6": 10
+                }
+            },
+            {
+                "wave": 5,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 20,
+                "heals": 2,
+                "meanXp": 2.94,
+                "expectedXp": 52.92,
+                "cumulativeXp": 195.14,
+                "levelsAtCollection": {
+                    "1": 18,
+                    "0.8": 15,
+                    "0.6": 13
+                }
+            },
+            {
+                "wave": 6,
+                "composition": {
+                    "runner": 0.42,
+                    "guardian": 0.34,
+                    "enforcer": 0.18,
+                    "brute": 0.06
+                },
+                "enemies": 22,
+                "heals": 3,
+                "meanXp": 2.94,
+                "expectedXp": 55.86,
+                "cumulativeXp": 251,
+                "levelsAtCollection": {
+                    "1": 21,
+                    "0.8": 18,
+                    "0.6": 15
+                }
+            },
+            {
+                "wave": 7,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 24,
+                "heals": 3,
+                "meanXp": 3.2699999999999996,
+                "expectedXp": 68.66999999999999,
+                "cumulativeXp": 319.66999999999996,
+                "levelsAtCollection": {
+                    "1": 24,
+                    "0.8": 21,
+                    "0.6": 18
+                }
+            },
+            {
+                "wave": 8,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 26,
+                "heals": 2,
+                "meanXp": 3.2699999999999996,
+                "expectedXp": 78.47999999999999,
+                "cumulativeXp": 398.15,
+                "levelsAtCollection": {
+                    "1": 28,
+                    "0.8": 24,
+                    "0.6": 20
+                }
+            },
+            {
+                "wave": 9,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 28,
+                "heals": 4,
+                "meanXp": 3.2699999999999996,
+                "expectedXp": 78.47999999999999,
+                "cumulativeXp": 476.63,
+                "levelsAtCollection": {
+                    "1": 31,
+                    "0.8": 27,
+                    "0.6": 23
+                }
+            },
+            {
+                "wave": 10,
+                "composition": {
+                    "runner": 0.32,
+                    "guardian": 0.33,
+                    "enforcer": 0.23,
+                    "brute": 0.12
+                },
+                "enemies": 30,
+                "heals": 3,
+                "meanXp": 3.2699999999999996,
+                "expectedXp": 88.28999999999999,
+                "cumulativeXp": 564.92,
+                "levelsAtCollection": {
+                    "1": 34,
+                    "0.8": 30,
+                    "0.6": 25
+                }
+            },
+            {
+                "wave": 11,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 32,
+                "heals": 3,
+                "meanXp": 3.66,
+                "expectedXp": 106.14,
+                "cumulativeXp": 671.06,
+                "levelsAtCollection": {
+                    "1": 37,
+                    "0.8": 33,
+                    "0.6": 28
+                }
+            },
+            {
+                "wave": 12,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 3.66,
+                "expectedXp": 109.80000000000001,
+                "cumulativeXp": 780.8599999999999,
+                "levelsAtCollection": {
+                    "1": 41,
+                    "0.8": 36,
+                    "0.6": 30
+                }
+            },
+            {
+                "wave": 13,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 3.66,
+                "expectedXp": 109.80000000000001,
+                "cumulativeXp": 890.6599999999999,
+                "levelsAtCollection": {
+                    "1": 44,
+                    "0.8": 39,
+                    "0.6": 33
+                }
+            },
+            {
+                "wave": 14,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 3.66,
+                "expectedXp": 109.80000000000001,
+                "cumulativeXp": 1000.4599999999998,
+                "levelsAtCollection": {
+                    "1": 47,
+                    "0.8": 41,
+                    "0.6": 35
+                }
+            },
+            {
+                "wave": 15,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 4,
+                "meanXp": 3.66,
+                "expectedXp": 109.80000000000001,
+                "cumulativeXp": 1110.2599999999998,
+                "levelsAtCollection": {
+                    "1": 50,
+                    "0.8": 44,
+                    "0.6": 37
+                }
+            },
+            {
+                "wave": 16,
+                "composition": {
+                    "runner": 0.22,
+                    "guardian": 0.3,
+                    "enforcer": 0.28,
+                    "brute": 0.2
+                },
+                "enemies": 34,
+                "heals": 3,
+                "meanXp": 3.66,
+                "expectedXp": 113.46000000000001,
+                "cumulativeXp": 1223.7199999999998,
+                "levelsAtCollection": {
+                    "1": 53,
+                    "0.8": 46,
+                    "0.6": 39
+                }
+            }
+        ],
+        "milestoneWaveAt80Percent": {
+            "4": 0.931,
+            "8": 2.234,
+            "12": 3.634,
+            "16": 5.02,
+            "20": 6.441,
+            "24": 7.785
+        }
+    }
+}

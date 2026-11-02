@@ -11,9 +11,10 @@ use App\Game\LevelAssembler;
 use App\Game\LevelGraph;
 use App\Game\RhythmClock;
 use App\Game\Run;
+use App\Game\XpCurve;
 
 /** An imperfect, deterministic input policy. Never changes health, XP, targets or damage. */
-function simulateProfile(string $profile, int $seed, float $limit = 600.0, string $scenario = 'route', ?GameMode $gameMode = null): array
+function simulateProfile(string $profile, int $seed, float $limit = 600.0, string $scenario = 'route', ?GameMode $gameMode = null, ?XpCurve $xpCurve = null, ?Run $preparedRun = null, ?RhythmClock $transport = null): array
 {
     $level = (new LevelAssembler())->assemble(new LevelGraph($seed, $gameMode?->depth ?? 7));
     $map = $level->map;
@@ -29,18 +30,19 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         foreach ([-9.0, 0.0, 9.0] as $x) foreach ([-9.0, 9.0] as $z) $points[] = [$x, 0.75, $z];
         $map = BrushMapFactory::fromGenerated($arena->solids, $points, [0.0, 0.75, 0.0], 0.0);
     }
-    $run = new Run($map, $seed, $gameMode);
-    if ($scenario === 'route') $run->setObjective($level, $gameMode?->finalWaveSize ?? 12);
-    $rhythm = new RhythmClock();
+    $run = $preparedRun ?? new Run($map, $seed, $gameMode, $xpCurve);
+    if ($preparedRun === null && $scenario === 'route') $run->setObjective($level, $gameMode?->finalWaveSize ?? 12);
+    $rhythm = $transport ?? new RhythmClock();
     [$reaction, $aimError, $collection, $speed] = match ($profile) {
         'faible' => [0.65, 0.65, 3.0, 0.55],
         'bon' => [0.15, 0.08, 7.0, 1.0],
         default => [0.35, 0.3, 5.0, 0.8],
     };
     $dt = 1 / 30; $nextReaction = 0.0; $forward = $strafe = $turn = 0.0;
+    $arsenalTimeline=[['time'=>0.0,'level'=>$run->level,'weapon'=>$run->primaryWeaponLabel()]];
     $wave7 = null; $lowestHealth = 100; $lowestHealthRatio = 1.0;
     $checkpoints = ['finalRoom'=>null,'boss'=>null,'bossDefeated'=>null,'treasure'=>null];
-    $snapshot = static fn () => ['time'=>round($run->time,1),'wave'=>$run->wave,'level'=>$run->level,
+    $snapshot = static fn () => ['time'=>round($run->time,1),'xpTotal'=>$run->collectedXp,'wave'=>$run->wave,'level'=>$run->level,
         'weapon'=>$run->primaryWeaponLabel(),'health'=>$run->health,'maxHealth'=>$run->maxHealth,'healthRatio'=>$run->health/$run->maxHealth];
     for ($frame = 0; $frame < (int)($limit / $dt); $frame++) {
         if ($run->state === 'dead' || $run->state === 'won') break;
@@ -122,6 +124,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         }
         $run->step($dt, $forward, $strafe, $turn, false, false, false, $rhythm->advance($dt, $run->level));
         $rhythm->drain();
+        if ($run->primaryWeaponLabel() !== $arsenalTimeline[array_key_last($arsenalTimeline)]['weapon']) $arsenalTimeline[]=['time'=>round($run->time,1),'level'=>$run->level,'weapon'=>$run->primaryWeaponLabel()];
         $lowestHealth = min($lowestHealth, $run->health);
         $lowestHealthRatio = min($lowestHealthRatio, $run->health/$run->maxHealth);
         foreach (['finalRoom'=>($run->objective?->finalRoomReached ?? false),'boss'=>($run->boss?->active ?? false),
@@ -130,7 +133,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         }
         if ($wave7 === null && $run->wave >= 7) $wave7 = ['level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health];
     }
-    return ['scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
+    return ['arsenalTimeline'=>$arsenalTimeline,'xpModel'=>$run->xpCurve->model,'xpTotal'=>$run->collectedXp,'droppedXp'=>$run->droppedXp,'progression'=>$run->progressionSnapshot(), 'scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
         'wave' => $run->wave, 'level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health,
         'lowestHealth' => $lowestHealth, 'lowestHealthRatio'=>$lowestHealthRatio,'checkpoints'=>$checkpoints,'maxHealth'=>$run->maxHealth, 'kills' => $run->kills, 'wave7' => $wave7,
         'finalRoom' => ($run->objective?->finalRoomReached ?? false), 'bossReached' => ($run->boss?->active ?? false),
