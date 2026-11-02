@@ -361,7 +361,8 @@ final class PlayScene extends AbstractScene
         $mode = $this->mode;
         if (!$sameMap && $mode->kind === GameMode::NORMAL && !$this->demo) $mode = GameMode::normal($mode->seed);
         if (!$sameMap && $mode->kind === GameMode::HORDE) $mode = GameMode::horde();
-        $this->startMode($mode);
+        $this->enter(['demo'=>$this->demo,'debug'=>$this->debug,'playing'=>true,
+            'gameMode'=>$mode,'procedural'=>$this->procedural]);
     }
 
     private function handleMenuAction(?string $action): void

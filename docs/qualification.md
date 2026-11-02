@@ -9,7 +9,7 @@ Au départ de cette qualification, la branche distante n’existait pas et `main
 | b467842 | 8f703d041f54b889eb0724f2867cc8c308e43cb7 |
 | 27c07e3 | 7dab5fca55760e1dfd3f41f286f4f7381c633a55 |
 
-La qualification part donc de **7dab5fca55760e1dfd3f41f286f4f7381c633a55**. Les nouveaux commits sont enregistrés directement sur `release/playable-rc`, avec vérification du SHA distant et mise à jour conditionnelle sans force. Aucun merge vers main.
+La qualification part donc de **7dab5fca55760e1dfd3f41f286f4f7381c633a55**. Le replay conserve aussi la carte explicite des anciennes fixtures de démo/tests (`procedural: false`). Les nouveaux commits sont enregistrés directement sur `release/playable-rc`, avec vérification du SHA distant et mise à jour conditionnelle sans force. Aucun merge vers main.
 
 - `0f5b9a3` : contrats NORMAL/DAILY/HORDE, salle Horde, limites distinctes et benchmark CPU.
 - `0784d25` : menus utilisables sans run actif, replay explicite, nouvelle map, navigation tactile/manette/clavier, garde contre les doubles taps.

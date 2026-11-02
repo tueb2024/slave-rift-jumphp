@@ -150,4 +150,16 @@ final class GameSmokeTest extends GameTestCase
         self::assertNull($this->game->peek('run'));
         self::assertSame(0,$this->game->peek('levelSeed'));
     }
+
+    public function testExplicitLegacyFixtureKeepsItsMapOnReplay(): void
+    {
+        $this->game->start(PlayScene::class,['seed'=>1337,'playing'=>true,'procedural'=>false]);
+        $old = $this->game->peek('run');
+        self::assertNull($old->objective);
+        $old->state='dead'; $this->game->run(1);
+        $this->game->press('upgrade_select',1);
+        self::assertFalse($this->game->peek('procedural'));
+        self::assertNull($this->game->peek('run')->objective);
+        self::assertSame(1337,$this->game->peek('run')->mode->seed);
+    }
 }
