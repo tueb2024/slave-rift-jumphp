@@ -29,6 +29,13 @@ final class World
     public const MAX_IMPACTS = 24;
     public const MAX_DAMAGE_POPUPS = 48;
 
+    public function release(WebGl $gl): void
+    {
+        foreach ($this->ids as $id) $gl->delete($id);
+        $this->ids = []; $this->preparedMapId = null;
+        $this->enemyVisibility = $this->lastEnemyHealth = $this->damagePopups = [];
+    }
+
     public function prepare(WebGl $gl, Run $run): void
     {
         if (!$gl->isAvailable()) return;

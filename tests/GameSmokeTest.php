@@ -53,7 +53,7 @@ final class GameSmokeTest extends GameTestCase
     {
         $this->game->start(PlayScene::class, ['seed' => 1337]);
         $this->game->run(60);
-        self::assertSame(0.0, $this->game->peek('run')->time);
+        self::assertNull($this->game->peek('run'));
         $this->game->press('upgrade_select', 2);
         self::assertFalse($this->game->peek('welcome'));
         $this->game->run(2);
@@ -73,6 +73,7 @@ final class GameSmokeTest extends GameTestCase
             $this->game->scene()->update(1 / 60);
             $input->getMouse()->up(1);
             $input->getMouse()->resetTransientStates();
+            $this->game->run(24);
             $fresh = $this->game->peek('run');
             self::assertNotSame($old, $fresh);
             self::assertSame('play', $fresh->state);
@@ -93,6 +94,7 @@ final class GameSmokeTest extends GameTestCase
             $touch->handle((object)['type' => SDL_FINGERUP, 'tfinger' => (object)['x' => $x, 'y' => $y]]);
             $this->game->scene()->update(1 / 60);
             $touch->resetTransientStates();
+            $this->game->run(24);
             self::assertNotSame($old, $this->game->peek('run'));
             self::assertSame('play', $this->game->peek('run')->state);
         }
@@ -110,6 +112,7 @@ final class GameSmokeTest extends GameTestCase
         $this->game->scene()->update(1 / 60);
         $mouse->up(1); $mouse->resetTransientStates();
         self::assertFalse($this->game->peek('paused'));
+        $this->game->run(24);
         $run = $this->game->peek('run');
         $run->xp = $run->nextXp; $this->game->run(2);
         self::assertSame('upgrade', $run->state);
@@ -117,5 +120,34 @@ final class GameSmokeTest extends GameTestCase
         $this->game->scene()->update(1 / 60);
         $mouse->up(1); $mouse->resetTransientStates();
         self::assertSame('play', $run->state);
+    }
+
+    public function testModeMenuNormalReplayNewMapDailyAndHorde(): void
+    {
+        $this->game->start(PlayScene::class);
+        self::assertNull($this->game->peek('run'));
+        $this->game->press('upgrade_select', 1);
+        $first = $this->game->peek('run');
+        self::assertSame('normal',$first->mode->kind);
+        $first->state = 'dead'; $this->game->run(1);
+        $this->game->press('upgrade_select', 1);
+        self::assertSame($first->mode->seed,$this->game->peek('run')->mode->seed);
+        $this->game->peek('run')->state = 'dead'; $this->game->run(1);
+        $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
+        self::assertNotSame($first->mode->seed,$this->game->peek('run')->mode->seed);
+        $this->game->start(PlayScene::class);
+        $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
+        self::assertSame('daily',$this->game->peek('menu')->screen);
+        $this->game->press('upgrade_select',1);
+        self::assertSame('daily',$this->game->peek('run')->mode->kind);
+        self::assertSame(1,$this->game->peek('run')->mode->difficultyTier);
+        $this->game->start(PlayScene::class);
+        $this->game->press('upgrade_next',1); $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
+        self::assertSame('horde',$this->game->peek('run')->mode->kind);
+        self::assertNull($this->game->peek('run')->objective);
+        $this->game->press('pause_game',1);
+        $this->game->press('upgrade_next',1); $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
+        self::assertNull($this->game->peek('run'));
+        self::assertSame(0,$this->game->peek('levelSeed'));
     }
 }

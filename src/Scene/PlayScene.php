@@ -7,6 +7,9 @@ use App\Audio\RiftSfx;
 use App\Game\AssembledLevel;
 use App\Game\BrushMap;
 use App\Game\DifficultyDirector;
+use App\Game\GameMode;
+use App\Game\HordeArena;
+use App\Game\MenuFlow;
 use App\Game\LevelAssembler;
 use App\Game\LevelGraph;
 use App\Game\RhythmClock;
@@ -21,7 +24,10 @@ use JumPHP\Ui\Hud;
 
 final class PlayScene extends AbstractScene
 {
-    private Run $run;
+    private ?Run $run = null;
+    private ?GameMode $mode = null;
+    private MenuFlow $menu;
+    private array $recentFrames = [];
     private World $world;
     private WeaponRenderer $weaponRenderer;
     private FixedStep $step;
@@ -36,6 +42,7 @@ final class PlayScene extends AbstractScene
     private ?AssembledLevel $assembledLevel = null;
     private ?TreasureDirector $objective = null;
     private float $frameMs = 16.7;
+    private float $pointerCooldown = 0.0;
     private bool $paused = false;
     private bool $welcome = true;
     private bool $jumpPending = false;
@@ -53,19 +60,32 @@ final class PlayScene extends AbstractScene
     {
         $this->demo = (bool)($params['demo'] ?? false);
         $this->debug = (bool)($params['debug'] ?? false);
-        $this->procedural = (bool)($params['procedural'] ?? true);
-        $this->levelSeed = (int)($params['seed'] ?? ($this->demo ? 1337 : random_int(1, 65520)));
-        $this->proceduralDepth = max(5, min(24, (int)($params['depth'] ?? 7)));
+        $this->menu = new MenuFlow();
+        $this->pointerCooldown = 0.0;
+        $this->recentFrames = [];
+        $this->paused = false;
+        $this->welcome = !$this->demo && !($params['playing'] ?? false);
+        if ($this->welcome) {
+            $this->run = null; $this->mode = null; $this->objective = null; $this->assembledLevel = null;
+            $this->levelSeed = 0;
+            return;
+        }
+        $this->mode = $params['gameMode'] ?? GameMode::fixed((int)($params['seed'] ?? ($this->demo ? 1337 : GameMode::normal()->seed)), (int)($params['depth'] ?? 7));
+        $this->menu->mode = $this->mode->kind;
+        $this->menu->open('play');
+        $this->procedural = $this->mode->kind !== GameMode::HORDE && (bool)($params['procedural'] ?? true);
+        $this->levelSeed = $this->mode->seed;
+        $this->proceduralDepth = $this->mode->depth;
         if ($this->procedural) {
             $graph = new LevelGraph($this->levelSeed, $this->proceduralDepth);
             $this->assembledLevel = (new LevelAssembler())->assemble($graph);
             $map = $this->assembledLevel->map;
         } else {
             $this->assembledLevel = null;
-            $map = BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
+            $map = $this->mode->kind === GameMode::HORDE ? HordeArena::build() : BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
         }
-        $this->run = new Run($map, $this->levelSeed);
-        if ($this->assembledLevel !== null) $this->run->setObjective($this->assembledLevel);
+        $this->run = new Run($map, $this->levelSeed, $this->mode);
+        if ($this->assembledLevel !== null) $this->run->setObjective($this->assembledLevel, $this->mode->finalWaveSize);
         $this->objective = $this->run->objective;
         $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();
@@ -108,23 +128,33 @@ final class PlayScene extends AbstractScene
     public function update(float $dt): void
     {
         $this->frameMs = $this->frameMs * 0.9 + $dt * 1000.0 * 0.1;
-        $tap = $this->pointerPress();
-        $confirm = $this->actions()->isPressed('upgrade_select') || $this->actions()->isPressed('restart');
-        if ($this->welcome) {
-            if ($confirm || $this->buttonHit($tap, 78)) $this->welcome = false;
-            return;
-        }
-        if (in_array($this->run->state, ['dead', 'won'], true)) {
+        $this->recentFrames[] = max(0.0, $dt * 1000.0);
+        if (count($this->recentFrames) > 120) array_shift($this->recentFrames);
+        $this->pointerCooldown = max(0.0, $this->pointerCooldown - $dt);
+        $tap = $this->pointerCooldown > 0 ? null : $this->pointerPress();
+        if ($this->run !== null && in_array($this->run->state, ['dead','won'], true)) {
+            if ($this->menu->screen !== $this->run->state) $this->menu->open($this->run->state);
             $this->restartDelay += $dt;
-            if (($this->demo && $this->restartDelay > 1.0) || $confirm || $this->buttonHit($tap, 105)) $this->restartRun();
+            if ($this->demo && $this->restartDelay > 1.0) { $this->restartRun(true); return; }
+        }
+        if ($this->run !== null && $this->menu->screen === 'play' && ($this->actions()->isPressed('pause_game')
+            || ($tap !== null && $tap[0] >= $this->width()-45 && $tap[1] >= 0 && $tap[1] < 24))) {
+            $this->paused = true; $this->menu->open('pause'); $tap = null; $this->pointerCooldown = 0.35;
+        } elseif ($this->menu->screen === 'pause' && $this->actions()->isPressed('pause_game')) {
+            $this->paused = false; $this->menu->open('play'); return;
+        }
+        if ($this->menu->screen !== 'play') {
+            if ($this->actions()->isPressed('upgrade_prev')) $this->menu->move(-1);
+            if ($this->actions()->isPressed('upgrade_next')) $this->menu->move(1);
+            if ($this->menu->screen === 'pause' && $this->actions()->isPressed('menu_restart')) { $this->restartRun(false); return; }
+            $index = $tap === null ? null : $this->menu->hit($tap[0], $tap[1], $this->width());
+            if ($index !== null || $this->actions()->isPressed('upgrade_select') || $this->actions()->isPressed('restart')) {
+                $this->handleMenuAction($this->menu->activate($index));
+                $this->pointerCooldown = 0.35;
+            }
             return;
         }
-        if ($this->actions()->isPressed('pause_game') || ($tap !== null && $tap[0] >= $this->width() - 45 && $tap[1] < 24)) $this->paused = !$this->paused;
-        if ($this->paused) {
-            if ($confirm || $this->buttonHit($tap, 65)) $this->paused = false;
-            elseif ($this->actions()->isPressed('menu_restart') || $this->buttonHit($tap, 105)) $this->restartRun();
-            return;
-        }
+        if ($this->run === null) return;
 
         if ($this->run->state === 'upgrade') {
             if ($this->demo) {
@@ -211,6 +241,7 @@ final class PlayScene extends AbstractScene
     public function render(Renderer $r): void
     {
         $run = $this->run;
+        if ($run === null) { $r->clear([8,7,14]); $this->renderMenu($r); return; }
         $this->world->render($this->engine, $r, $run, $this->pitch);
         $font = $this->font();
         $w = $this->width(); $h = $this->height(); $cx = intdiv($w, 2); $cy = intdiv($h, 2);
@@ -246,7 +277,7 @@ final class PlayScene extends AbstractScene
             Hud::bar($r, 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
             if ($run->bossWarning !== null) $font->draw($r, 'DANGER AU SOL : BOUGEZ !', $cx, 61, 1, [255,100,65], 'center');
         }
-        $messageY = $run->boss?->active && !$run->boss->defeated ? 72 : 38;
+        $messageY = $run->boss?->active && !$run->boss->defeated ? 84 : 38;
         if ($this->procedural && $this->assembledLevel !== null && $this->assembledLevel->treasureAnchor !== null && $run->state === 'play') {
             if ($this->objective !== null && $this->objective->state !== TreasureDirector::EXPLORING) {
                 $objectiveText = $this->objective->objectiveLabel();
@@ -270,10 +301,10 @@ final class PlayScene extends AbstractScene
 
         }
         if ($run->messageTime > 0 && $run->state === 'play') $font->draw($r, $run->message, $cx, $messageY, 1, $cream, 'center', [8,5,12]);
-        if ($run->time < 6 && !$this->demo && $run->state === 'play') {
-            $font->draw($r, 'NETTOIE LE NIVEAU / TROUVE LE OBJECTIF / AMELIORE TON SCORE', $cx, $cy - 42, 1, $cream, 'center', [8,5,12]);
+        if ($run->time < 6 && !$this->demo && $run->state === 'play' && !($run->boss?->active ?? false)) {
+            $font->draw($r, 'SUIVEZ LA FLÈCHE / RAMASSEZ L\'XP', $cx, $cy - 42, 1, $cream, 'center', [8,5,12]);
         }
-        if ($run->time < 8 && !$this->demo) $font->draw($r, 'Z/S : AVANCER / FLÈCHES : TOURNER / ESPACE : SAUT', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
+        if ($run->time < 8 && !$this->demo && !($run->boss?->active ?? false)) $font->draw($r, 'Z/S : AVANCER / FLÈCHES : TOURNER / ESPACE : SAUT', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
         if ($run->state === 'upgrade') {
@@ -287,28 +318,14 @@ final class PlayScene extends AbstractScene
             }
             $font->draw($r, 'FLÈCHES : CHOIX / ENTRÉE : VALIDER', $cx, 135, 1, $cream, 'center');
         }
-        if ($this->welcome || $this->paused || in_array($run->state, ['dead', 'won'], true)) {
-            $r->fillRect(12, 35, $w - 24, 117, [8,5,12,245]);
-            $title = $this->welcome ? 'SLAVE RIFT' : ($this->paused ? 'PAUSE' : ($run->state === 'won' ? 'VICTOIRE !' : 'VOUS ETES MORT'));
-            $font->draw($r, $title, $cx, 43, 2, $cyan, 'center');
-            if ($this->welcome) {
-                $this->drawButton($r, 'JOUER', 78);
-                $font->draw($r, 'AVANCEZ / VISEZ / TIRS AUTOMATIQUES', $cx, 121, 1, $cream, 'center');
-            } elseif ($this->paused) {
-                $this->drawButton($r, 'REPRENDRE', 65);
-                $this->drawButton($r, 'RECOMMENCER', 105);
-            } else {
-                $font->draw($r, 'VAGUE ' . $run->wave . ' / ' . $run->kills . ' ELIM. / ' . $this->clock($run->time), $cx, 69, 1, $cream, 'center');
-                $font->draw($r, 'SCORE ' . $run->score, $cx, 83, 1, $cream, 'center');
-                $this->drawButton($r, $run->state === 'won' ? 'REJOUER' : 'RECOMMENCER', 105);
-            }
-            $font->draw($r, ($this->paused ? 'ENTRÉE : REPRENDRE / R OU X : REPARTIR' : 'TOUCHER / ENTRÉE / A'), $cx, 140, 1, $cream, 'center');
-        } else {
+        if ($this->menu->screen !== 'play') $this->renderMenu($r);
+        else {
             $r->fillRect($w - 44, 0, 44, 23, [8,5,12,235]);
             $font->draw($r, 'PAUSE', $w - 22, 7, 1, $cyan, 'center');
+            if ($this->mode?->kind !== GameMode::NORMAL) $font->draw($r, $this->mode->label(), $cx, $h-31, 1, $cyan, 'center', [8,5,12]);
         }
         if ($this->demo) $font->draw($r, 'DEMO', $w - 4, 27, 1, $cream, 'right');
-        if ($this->debug) {
+        if ($this->debug && $this->menu->screen === 'play') {
             $balance = $this->difficulty->snapshot($run);
             $font->draw($r, sprintf('FPS %.0f  %.1f MS  E %d/%d  RLOS %d  SLOS %d  MAP %d  NEI %d',
                 1000.0 / max(1.0, $this->frameMs), $this->frameMs, $this->world->visibleEnemies,
@@ -319,6 +336,12 @@ final class PlayScene extends AbstractScene
             $font->draw($r, sprintf('INPUT KEYBOARD  TURN %.2f RAD/S  %s  BPM %.0f  WPN %s', Run::TURN_SPEED, $arsenal, $this->rhythm->bpm($run->level), $this->weaponRenderer->state()), 4, 48, 1, $cyan);
             $font->draw($r, sprintf('BAL PWR x%.2f  DPS %.0f  ENEMY PV x%.2f  DMG x%.2f',
                 $balance['powerIndex'], $balance['primaryDps'], $balance['healthScale'], $balance['damageScale']), 4, 58, 1, $cyan);
+            if ($this->mode?->kind === GameMode::HORDE) {
+                $avg = array_sum($this->recentFrames) / max(1, count($this->recentFrames));
+                $font->draw($r, sprintf('HORDE V%d / ACTIFS %d / GÉN. %d / ÉLIM. %d', $run->wave, count($run->enemies), $run->spawned, $run->kills), 4, 78, 1, $cyan);
+                $font->draw($r, sprintf('MOY %.1f MS / MAX %.1f MS / %.0f FPS', $avg, max($this->recentFrames ?: [0]), 1000/max(0.1,$avg)), 4, 88, 1, $cyan);
+                $font->draw($r, sprintf('OBJETS %d / PHP %.1f MO', count($run->pickups), memory_get_usage(true)/1048576), 4, 98, 1, $cyan);
+            }
             if ($this->procedural && $this->assembledLevel !== null) {
                 $objectiveState = $this->objective?->state ?? 'none';
                 $font->draw($r, sprintf('PROC SEED %d  ROOMS %d  DEPTH %d  OBJ %s', $this->levelSeed, count($this->assembledLevel->rooms), $this->proceduralDepth, $objectiveState), 4, 68, 1, $cyan);
@@ -326,11 +349,60 @@ final class PlayScene extends AbstractScene
         }
     }
 
-    private function restartRun(): void
+    private function startMode(GameMode $mode): void
     {
-        $this->enter(['demo' => $this->demo, 'debug' => $this->debug,
-            'procedural' => $this->procedural, 'seed' => $this->levelSeed,
-            'depth' => $this->proceduralDepth, 'playing' => true]);
+        $this->enter(['demo'=>$this->demo, 'debug'=>$this->debug, 'playing'=>true, 'gameMode'=>$mode]);
+    }
+
+    private function restartRun(bool $sameMap = false): void
+    {
+        if ($this->mode === null) return;
+        $mode = $this->mode;
+        if (!$sameMap && $mode->kind === GameMode::NORMAL && !$this->demo) $mode = GameMode::normal($mode->seed);
+        if (!$sameMap && $mode->kind === GameMode::HORDE) $mode = GameMode::horde();
+        $this->startMode($mode);
+    }
+
+    private function handleMenuAction(?string $action): void
+    {
+        switch ($action) {
+            case 'normal': case 'new': $this->startMode(GameMode::normal($this->mode?->seed)); break;
+            case 'horde': $this->startMode(GameMode::horde()); break;
+            case 'replay': case 'retry': $this->restartRun(true); break;
+            case 'restart': $this->restartRun(false); break;
+            case 'resume': $this->paused = false; break;
+            case 'daily1': case 'daily2': case 'daily3': case 'daily4':
+                $this->startMode(GameMode::daily(GameMode::today(), (int)substr($action,-1))); break;
+            case 'menu': case 'back': case 'daily': case 'controls':
+                if ($this->run !== null && isset($this->world)) $this->world->release($this->engine->gl());
+                $this->run = null; $this->mode = null; $this->objective = null; $this->assembledLevel = null;
+                $this->levelSeed = 0; $this->paused = false; $this->welcome = true;
+                break;
+        }
+    }
+
+    private function renderMenu(Renderer $r): void
+    {
+        $font = $this->font(); $w = $this->width(); $cx = intdiv($w,2);
+        $r->fillRect(8, 4, $w-16, $this->height()-8, [8,7,14,255]);
+        $title = match ($this->menu->screen) {
+            'daily'=>'DÉFI DU JOUR', 'controls'=>'COMMANDES', 'pause'=>'PAUSE', 'dead'=>'VOUS ÊTES MORT', 'won'=>'VICTOIRE !', default=>'SLAVE RIFT',
+        };
+        $font->draw($r, $title, $cx, 12, 2, [90,235,225], 'center');
+        if ($this->menu->screen === 'daily') $font->draw($r, GameMode::today() . ' / HEURE DE PARIS', $cx, 32, 1, [240,215,170], 'center');
+        if (in_array($this->menu->screen,['dead','won'],true) && $this->run !== null) {
+            $font->draw($r, 'SCORE '.$this->run->score.' / '.$this->clock($this->run->time), $cx, 40, 1, [240,215,170], 'center');
+            $font->draw($r, 'VAGUE '.$this->run->wave.' / '.$this->run->kills.' ÉLIMINATIONS', $cx, 54, 1, [240,215,170], 'center');
+        }
+        if ($this->menu->screen === 'controls') {
+            foreach (['Z/W, S : AVANCER / RECULER','Q/A, D : DÉPLACEMENT LATÉRAL','FLÈCHES : TOURNER / ESPACE : SAUT','TIRS AUTOMATIQUES : VISEZ DEVANT','TACTILE : JOYSTICK / SAUT / PAUSE','MANETTE : CROIX / A : VALIDER','MENUS : TOUCHER OU FLÈCHES + ENTRÉE'] as $i=>$line) $font->draw($r,$line,$cx,40+$i*12,1,[240,215,170],'center');
+        }
+        foreach (array_values($this->menu->items()) as $i=>$label) {
+            [$x,$y,$bw,$bh] = $this->menu->rect($i,$w);
+            $r->fillRect($x,$y,$bw,$bh,$i===$this->menu->cursor ? [45,85,95,255] : [25,42,55,255]);
+            $font->draw($r,($i===$this->menu->cursor ? '> ' : '').$label,$cx,$y+intdiv($bh-7,2),1,[110,255,235],'center');
+        }
+        $font->draw($r,'TOUCHER / FLÈCHES / ENTRÉE / A',$cx,$this->height()-10,1,[240,215,170],'center');
     }
 
     /** Mouse coordinates are already converted by InputManager, including letterboxing. */
@@ -346,18 +418,6 @@ final class PlayScene extends AbstractScene
         if ($lw <= 0 || $lh <= 0) return null;
         return [($touch->x * $ow - $lx) * $this->width() / $lw,
             ($touch->y * $oh - $ly) * $this->height() / $lh];
-    }
-
-    private function buttonHit(?array $point, int $y): bool
-    {
-        return $point !== null && $point[0] >= 60 && $point[0] <= $this->width() - 60
-            && $point[1] >= $y && $point[1] < $y + 28;
-    }
-
-    private function drawButton(Renderer $r, string $label, int $y): void
-    {
-        $r->fillRect(60, $y, $this->width() - 120, 28, [35,65,75,255]);
-        $this->font()->draw($r, $label, intdiv($this->width(), 2), $y + 10, 1, [100,255,235], 'center');
     }
 
     private function clock(float $time): string
