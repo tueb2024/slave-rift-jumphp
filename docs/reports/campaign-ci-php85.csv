@@ -1,0 +1,110 @@
+model,milestones,heal,profile,rootSeed,stage,mapSeed,surfaceRatio,mainRooms,horizontalScale,startLevel,endLevel,startXpTotal,endXpTotal,startWeapon,endWeapon,startSecondaries,endSecondaries,startHealth,startMaxHealth,endHealth,endMaxHealth,lowestHealthRatio,duration,kills,bossReached,bossDefeated,treasure,result
+2-3-4-6,3/5/8/11/14/17,0.35,faible,1,1,1,1,12,1,1,6,0,43,COLT .45,MP44,,rockets:2,100,100,66,140,0.4714285714285714,139.7,22,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,1,2,7920,2,18,1.077,6,16,43,162,MP44,GATLING,rockets:2,flame:2;rockets:4;pulse:1,92,140,145,160,0.6,238.7,59,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,1,3,15839,4,24,1.39,16,22,162,269,GATLING,DOUBLE GATLING,flame:2;rockets:4;pulse:1,flame:3;rockets:4;pulse:1,150,160,160,160,0.80625,383.5,50,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,1,4,23758,8,32,1.361,22,24,269,318,DOUBLE GATLING,DOUBLE GATLING,flame:3;rockets:4;pulse:1,flame:3;rockets:4;pulse:1,160,160,0,180,0,112.7,16,False,False,False,dead
+2-3-4-6,3/5/8/11/14/17,0.35,faible,2,1,2,1,12,1,1,8,0,54,COLT .45,DOUBLE MP44,,flame:1;rockets:2;pulse:2,100,100,62,120,0.5166666666666667,161.6,35,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,2,2,7921,2,18,1.042,8,13,54,122,DOUBLE MP44,BAR,flame:1;rockets:2;pulse:2,flame:2;rockets:2;pulse:2,82,120,113,140,0.6833333333333333,246.4,43,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,2,3,15840,4,24,1.405,13,18,122,199,BAR,DOUBLE GATLING,flame:2;rockets:2;pulse:2,flame:3;rockets:4;pulse:3,122,140,99,140,0.6285714285714286,435,50,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,2,4,23759,8,32,1.618,18,25,199,341,DOUBLE GATLING,DOUBLE GATLING,flame:3;rockets:4;pulse:3,flame:3;rockets:4;pulse:3,113,140,88,160,0.3357142857142857,710.1,79,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,3,1,3,1,12,1,1,7,0,51,COLT .45,MP44,,flame:1;rockets:2,100,100,0,120,0,61,24,False,False,False,dead
+2-3-4-6,3/5/8/11/14/17,0.35,faible,4,1,4,1,12,1,1,7,0,51,COLT .45,MP44,,flame:1;rockets:1,100,100,0,140,0,152.9,23,True,False,False,dead
+2-3-4-6,3/5/8/11/14/17,0.35,faible,5,1,5,1,12,1,1,6,0,39,COLT .45,MP44,,rockets:1;pulse:2,100,100,78,100,0.78,150.8,23,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,5,2,7924,2,18,1.065,6,13,39,123,MP44,BAR,rockets:1;pulse:2,flame:1;rockets:3;pulse:2,86,100,110,140,0.7857142857142857,277.4,41,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,5,3,15843,4,24,1.543,13,18,123,194,BAR,DOUBLE GATLING,flame:1;rockets:3;pulse:2,flame:2;rockets:4;pulse:3,121,140,150,180,0.4642857142857143,454.1,49,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,5,4,23762,8,32,1.686,18,22,194,272,DOUBLE GATLING,DOUBLE GATLING,flame:2;rockets:4;pulse:3,flame:3;rockets:4;pulse:3,161,180,134,180,0.29444444444444445,735.4,57,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,6,1,6,1,12,1,1,3,0,12,COLT .45,DOUBLE COLT,,rockets:1,100,100,0,100,0,22.3,9,False,False,False,dead
+2-3-4-6,3/5/8/11/14/17,0.35,faible,7,1,7,1,12,1,1,11,0,93,COLT .45,BAR,,flame:2;rockets:2;pulse:1,100,100,113,140,0.4166666666666667,192.9,50,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,7,2,7926,2,18,1.109,11,16,93,164,BAR,GATLING,flame:2;rockets:2;pulse:1,flame:2;rockets:4;pulse:3,122,140,78,140,0.5571428571428572,266.8,44,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,7,3,15845,4,24,1.367,16,20,164,235,GATLING,DOUBLE GATLING,flame:2;rockets:4;pulse:3,flame:3;rockets:4;pulse:3,100,140,75,160,0.46875,410.2,49,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,7,4,23764,8,32,1.628,20,22,235,283,DOUBLE GATLING,DOUBLE GATLING,flame:3;rockets:4;pulse:3,flame:3;rockets:4;pulse:3,105,160,96,160,0.6,697.4,38,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,8,1,8,1,12,1,1,10,0,75,COLT .45,DOUBLE MP44,,flame:1;rockets:2;pulse:1,100,100,86,120,0.42,160.5,37,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,8,2,7927,2,18,1.361,10,19,75,207,DOUBLE MP44,DOUBLE GATLING,flame:1;rockets:2;pulse:1,flame:2;rockets:4;pulse:2,98,120,112,140,0.75,285.7,60,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,8,3,15846,4,24,1.416,19,24,207,326,DOUBLE GATLING,DOUBLE GATLING,flame:2;rockets:4;pulse:2,flame:3;rockets:4;pulse:3,122,140,140,140,0.85,452.7,50,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,8,4,23765,8,32,1.777,24,28,326,419,DOUBLE GATLING,DOUBLE GATLING,flame:3;rockets:4;pulse:3,flame:3;rockets:4;pulse:3,140,140,149,180,0.8277777777777777,761.7,38,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,9,1,9,1,12,1,1,10,0,75,COLT .45,DOUBLE MP44,,flame:1;rockets:2;pulse:2,100,100,106,120,0.79,188.2,51,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,9,2,7928,2,18,1.406,10,11,75,94,DOUBLE MP44,BAR,flame:1;rockets:2;pulse:2,flame:2;rockets:2;pulse:2,111,120,0,120,0,58.1,13,False,False,False,dead
+2-3-4-6,3/5/8/11/14/17,0.35,faible,10,1,10,1,12,1,1,7,0,52,COLT .45,MP44,,flame:1;rockets:1;pulse:1,100,100,48,120,0.4,168.9,30,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,10,2,7929,2,18,1.191,7,11,52,99,MP44,BAR,flame:1;rockets:1;pulse:1,flame:1;rockets:2;pulse:1,73,120,84,180,0.375,283.5,40,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,10,3,15848,4,24,1.606,11,16,99,159,BAR,GATLING,flame:1;rockets:2;pulse:1,flame:1;rockets:4;pulse:1,118,180,120,180,0.5,530.7,47,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,faible,10,4,23767,8,32,1.878,16,17,159,183,GATLING,DOUBLE GATLING,flame:1;rockets:4;pulse:1,flame:2;rockets:4;pulse:1,141,180,0,180,0,50.8,16,False,False,False,dead
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,1,1,1,1,12,1,1,6,0,39,COLT .45,MP44,,flame:1;rockets:3,100,100,100,100,0.79,70.6,18,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,1,2,7920,2,18,1.077,6,9,39,68,MP44,DOUBLE MP44,flame:1;rockets:3,flame:2;rockets:4;pulse:1,100,100,96,100,0.78,95.4,20,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,1,3,15839,4,24,1.39,9,11,68,94,DOUBLE MP44,BAR,flame:2;rockets:4;pulse:1,flame:3;rockets:4;pulse:2,97,100,90,100,0.72,155.7,25,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,1,4,23758,8,32,1.361,11,16,94,163,BAR,GATLING,flame:3;rockets:4;pulse:2,flame:3;rockets:4;pulse:3,94,100,112,120,0.54,228.1,36,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,2,1,2,1,12,1,1,5,0,31,COLT .45,MP44,,rockets:1;pulse:1,100,100,93,100,0.86,73.5,16,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,2,2,7921,2,18,1.042,5,9,31,69,MP44,DOUBLE MP44,rockets:1;pulse:1,flame:1;rockets:1;pulse:3,95,100,120,120,0.86,111.3,22,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,2,3,15840,4,24,1.405,9,12,69,105,DOUBLE MP44,BAR,flame:1;rockets:1;pulse:3,flame:2;rockets:1;pulse:3,120,120,91,120,0.7583333333333333,170.6,26,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,2,4,23759,8,32,1.618,12,14,105,137,BAR,GATLING,flame:2;rockets:1;pulse:3,flame:3;rockets:1;pulse:3,101,120,74,140,0.375,252.5,29,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,3,1,3,1,12,1,1,5,0,31,COLT .45,MP44,,flame:1,100,100,106,120,0.8833333333333333,77.9,19,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,3,2,7922,2,18,1.015,5,10,31,84,MP44,DOUBLE MP44,flame:1,flame:1;rockets:2,111,120,124,140,0.875,108.8,23,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,3,3,15841,4,24,1.358,10,13,84,118,DOUBLE MP44,BAR,flame:1;rockets:2,flame:1;rockets:4,130,140,140,140,0.9,165.3,25,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,3,4,23760,8,32,1.852,13,14,118,132,BAR,GATLING,flame:1;rockets:4,flame:1;rockets:4,140,140,140,140,0.9428571428571428,268,28,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,4,1,4,1,12,1,1,6,0,35,COLT .45,MP44,,flame:2;pulse:1,100,100,102,120,0.85,70,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,4,2,7923,2,18,1.139,6,10,35,79,MP44,DOUBLE MP44,flame:2;pulse:1,flame:3;pulse:1,108,120,160,160,0.65,117.1,23,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,4,3,15842,4,24,1.303,10,13,79,126,DOUBLE MP44,BAR,flame:3;pulse:1,flame:3;rockets:1;pulse:1,160,160,160,160,0.9125,167.7,27,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,4,4,23761,8,32,1.705,13,15,126,142,BAR,GATLING,flame:3;rockets:1;pulse:1,flame:3;rockets:2;pulse:1,160,160,178,180,0.85,256.4,29,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,5,1,5,1,12,1,1,5,0,29,COLT .45,MP44,,flame:1,100,100,100,100,0.93,79.2,18,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,5,2,7924,2,18,1.065,5,10,29,79,MP44,DOUBLE MP44,flame:1,flame:3;rockets:1;pulse:1,100,100,120,120,0.84,123.4,23,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,5,3,15843,4,24,1.543,10,12,79,100,DOUBLE MP44,BAR,flame:3;rockets:1;pulse:1,flame:3;rockets:2;pulse:1,120,120,102,120,0.7,178.7,25,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,5,4,23762,8,32,1.686,12,14,100,129,BAR,GATLING,flame:3;rockets:2;pulse:1,flame:3;rockets:3;pulse:1,108,120,73,140,0.275,271.5,30,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,6,1,6,1,12,1,1,6,0,36,COLT .45,MP44,,flame:1;rockets:2,100,100,90,100,0.72,70.6,18,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,6,2,7925,2,18,1.084,6,10,36,76,MP44,DOUBLE MP44,flame:1;rockets:2,flame:2;rockets:3;pulse:1,94,100,73,100,0.37,102.4,20,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,6,3,15844,4,24,1.319,10,12,76,111,DOUBLE MP44,BAR,flame:2;rockets:3;pulse:1,flame:2;rockets:4;pulse:1,82,100,54,100,0.54,156.5,25,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,6,4,23763,8,32,1.606,12,15,111,148,BAR,GATLING,flame:2;rockets:4;pulse:1,flame:2;rockets:4;pulse:1,70,100,59,140,0.42142857142857143,248.7,31,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,7,1,7,1,12,1,1,5,0,28,COLT .45,MP44,,rockets:1;pulse:2,100,100,60,100,0.6,71,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,7,2,7926,2,18,1.109,5,8,28,56,MP44,DOUBLE MP44,rockets:1;pulse:2,rockets:2;pulse:3,74,100,96,100,0.74,108,22,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,7,3,15845,4,24,1.367,8,12,56,106,DOUBLE MP44,BAR,rockets:2;pulse:3,rockets:4;pulse:3,97,100,78,120,0.65,161.4,26,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,7,4,23764,8,32,1.628,12,15,106,150,BAR,GATLING,rockets:4;pulse:3,flame:1;rockets:4;pulse:3,93,120,139,140,0.6416666666666667,265.6,35,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,8,1,8,1,12,1,1,5,0,30,COLT .45,MP44,,flame:1,100,100,140,140,0.825,73,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,8,2,7927,2,18,1.361,5,8,30,61,MP44,DOUBLE MP44,flame:1,flame:1;rockets:2,140,140,74,160,0.4625,119.9,21,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,8,3,15846,4,24,1.416,8,12,61,107,DOUBLE MP44,BAR,flame:1;rockets:2,flame:2;rockets:3,104,160,153,180,0.325,179,24,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,8,4,23765,8,32,1.777,12,15,107,146,BAR,GATLING,flame:2;rockets:3,flame:3;rockets:3,162,180,180,180,0.8555555555555555,268.1,31,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,9,1,9,1,12,1,1,5,0,33,COLT .45,MP44,,flame:1;rockets:1;pulse:1,100,100,73,100,0.55,86.3,18,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,9,2,7928,2,18,1.406,5,8,33,60,MP44,DOUBLE MP44,flame:1;rockets:1;pulse:1,flame:2;rockets:1;pulse:1,82,100,76,100,0.58,129.8,20,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,9,3,15847,4,24,1.598,8,11,60,88,DOUBLE MP44,BAR,flame:2;rockets:1;pulse:1,flame:2;rockets:2;pulse:1,84,100,114,120,0.56,197,24,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,9,4,23766,8,32,1.951,11,13,88,114,BAR,BAR,flame:2;rockets:2;pulse:1,flame:2;rockets:3;pulse:1,116,120,29,120,0.24166666666666667,313.9,31,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,10,1,10,1,12,1,1,6,0,36,COLT .45,MP44,,,100,100,129,140,0.5916666666666667,79.4,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,10,2,7929,2,18,1.191,6,9,36,69,MP44,DOUBLE MP44,,rockets:1,133,140,134,140,0.8285714285714286,115.9,22,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,10,3,15848,4,24,1.606,9,12,69,109,DOUBLE MP44,BAR,rockets:1,rockets:2,136,140,115,140,0.8142857142857143,202.6,27,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,moyen,10,4,23767,8,32,1.878,12,14,109,131,BAR,GATLING,rockets:2,rockets:3,124,140,52,140,0.37142857142857144,292.6,32,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,1,1,1,1,12,1,1,6,0,36,COLT .45,MP44,,flame:1,100,100,98,120,0.58,58.6,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,1,2,7920,2,18,1.077,6,10,36,80,MP44,DOUBLE MP44,flame:1,flame:1;rockets:1,106,120,110,140,0.6571428571428571,77.8,19,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,1,3,15839,4,24,1.39,10,14,80,138,DOUBLE MP44,GATLING,flame:1;rockets:1,flame:2;rockets:1,121,140,162,180,0.8444444444444444,119.7,23,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,1,4,23758,8,32,1.361,14,19,138,212,GATLING,DOUBLE GATLING,flame:2;rockets:1,flame:3;rockets:2,168,180,172,180,0.9111111111111111,172.9,28,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,2,1,2,1,12,1,1,5,0,31,COLT .45,MP44,,rockets:1,100,100,59,100,0.55,59.7,15,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,2,2,7921,2,18,1.042,5,9,31,67,MP44,DOUBLE MP44,rockets:1,flame:1;rockets:1,73,100,59,120,0.35,85.3,19,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,2,3,15840,4,24,1.405,9,14,67,138,DOUBLE MP44,GATLING,flame:1;rockets:1,flame:2;rockets:1;pulse:1,80,120,95,120,0.6666666666666666,132.1,26,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,2,4,23759,8,32,1.618,14,19,138,222,GATLING,DOUBLE GATLING,flame:2;rockets:1;pulse:1,flame:3;rockets:2;pulse:2,104,120,140,140,0.6,193.3,30,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,3,1,3,1,12,1,1,5,0,34,COLT .45,MP44,,flame:2;pulse:1,100,100,90,100,0.79,58.5,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,3,2,7922,2,18,1.015,5,10,34,78,MP44,DOUBLE MP44,flame:2;pulse:1,flame:3;rockets:1;pulse:1,94,100,140,140,0.9,79.7,20,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,3,3,15841,4,24,1.358,10,14,78,131,DOUBLE MP44,GATLING,flame:3;rockets:1;pulse:1,flame:3;rockets:3;pulse:2,140,140,133,140,0.9,123.9,23,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,3,4,23760,8,32,1.852,14,17,131,189,GATLING,DOUBLE GATLING,flame:3;rockets:3;pulse:2,flame:3;rockets:4;pulse:2,135,140,160,160,0.8285714285714286,207.1,29,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,4,1,4,1,12,1,1,6,0,42,COLT .45,MP44,,flame:2,100,100,120,120,0.9416666666666667,57.4,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,4,2,7923,2,18,1.139,6,10,42,86,MP44,DOUBLE MP44,flame:2,flame:2;rockets:1;pulse:1,120,120,120,120,0.8833333333333333,87,21,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,4,3,15842,4,24,1.303,10,14,86,136,DOUBLE MP44,GATLING,flame:2;rockets:1;pulse:1,flame:3;rockets:2;pulse:1,120,120,99,120,0.825,121.1,24,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,4,4,23761,8,32,1.705,14,17,136,174,GATLING,DOUBLE GATLING,flame:3;rockets:2;pulse:1,flame:3;rockets:3;pulse:2,106,120,112,120,0.7333333333333333,189.8,27,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,5,1,5,1,12,1,1,5,0,32,COLT .45,MP44,,flame:2;pulse:1,100,100,120,120,1,59.7,16,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,5,2,7924,2,18,1.065,5,9,32,71,MP44,DOUBLE MP44,flame:2;pulse:1,flame:3;rockets:1;pulse:1,120,120,120,120,0.8833333333333333,88.7,18,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,5,3,15843,4,24,1.543,9,13,71,117,DOUBLE MP44,BAR,flame:3;rockets:1;pulse:1,flame:3;rockets:2;pulse:1,120,120,85,120,0.7083333333333334,136.8,26,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,5,4,23762,8,32,1.686,13,18,117,196,BAR,DOUBLE GATLING,flame:3;rockets:2;pulse:1,flame:3;rockets:3;pulse:2,97,120,120,120,0.6916666666666667,206.6,30,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,6,1,6,1,12,1,1,6,0,38,COLT .45,MP44,,rockets:2;pulse:1,100,100,100,100,1,55.4,16,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,6,2,7925,2,18,1.084,6,10,38,85,MP44,DOUBLE MP44,rockets:2;pulse:1,flame:1;rockets:3;pulse:2,100,100,92,100,0.86,81,22,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,6,3,15844,4,24,1.319,10,15,85,156,DOUBLE MP44,GATLING,flame:1;rockets:3;pulse:2,flame:2;rockets:4;pulse:2,95,100,120,120,0.57,126,25,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,6,4,23763,8,32,1.606,15,19,156,209,GATLING,DOUBLE GATLING,flame:2;rockets:4;pulse:2,flame:3;rockets:4;pulse:2,120,120,136,160,0.5571428571428572,188.6,29,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,7,1,7,1,12,1,1,5,0,34,COLT .45,MP44,,flame:2,100,100,112,140,0.8,59.7,16,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,7,2,7926,2,18,1.109,5,10,34,80,MP44,DOUBLE MP44,flame:2,flame:3;rockets:1,122,140,121,140,0.7357142857142858,87.7,21,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,7,3,15845,4,24,1.367,10,13,80,125,DOUBLE MP44,BAR,flame:3;rockets:1,flame:3;rockets:2,128,140,132,160,0.825,125.3,22,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,7,4,23764,8,32,1.628,13,16,125,172,BAR,GATLING,flame:3;rockets:2,flame:3;rockets:3,142,160,130,160,0.7875,194.5,28,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,8,1,8,1,12,1,1,5,0,31,COLT .45,MP44,,flame:1;rockets:1;pulse:1,100,100,100,100,0.86,60.4,16,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,8,2,7927,2,18,1.361,5,8,31,63,MP44,DOUBLE MP44,flame:1;rockets:1;pulse:1,flame:1;rockets:2;pulse:1,100,100,120,120,0.93,89.7,20,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,8,3,15846,4,24,1.416,8,13,63,119,DOUBLE MP44,BAR,flame:1;rockets:2;pulse:1,flame:1;rockets:4;pulse:2,120,120,114,140,0.31666666666666665,134.2,23,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,8,4,23765,8,32,1.777,13,15,119,153,BAR,GATLING,flame:1;rockets:4;pulse:2,flame:1;rockets:4;pulse:2,123,140,124,140,0.8214285714285714,203.6,30,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,9,1,9,1,12,1,1,5,0,27,COLT .45,MP44,,flame:1,100,100,62,100,0.58,64.2,13,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,9,2,7928,2,18,1.406,5,7,27,51,MP44,MP44,flame:1,flame:2;rockets:1,75,100,63,100,0.53,102.2,18,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,9,3,15847,4,24,1.598,7,13,51,113,MP44,BAR,flame:2;rockets:1,flame:3;rockets:3,76,100,117,120,0.69,149.2,26,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,9,4,23766,8,32,1.951,13,14,113,127,BAR,GATLING,flame:3;rockets:3,flame:3;rockets:3,118,120,94,120,0.7833333333333333,227.1,29,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,10,1,10,1,12,1,1,6,0,38,COLT .45,MP44,,flame:1;pulse:1,100,100,90,100,0.9,63.7,17,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,10,2,7929,2,18,1.191,6,10,38,80,MP44,DOUBLE MP44,flame:1;pulse:1,flame:2;pulse:1,94,100,100,100,0.86,91.9,18,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,10,3,15848,4,24,1.606,10,14,80,133,DOUBLE MP44,GATLING,flame:2;pulse:1,flame:3;pulse:1,100,100,93,100,0.93,148.9,24,True,True,True,won
+2-3-4-6,3/5/8/11/14/17,0.35,bon,10,4,23767,8,32,1.878,14,19,133,208,GATLING,DOUBLE GATLING,flame:3;pulse:1,flame:3;rockets:1;pulse:1,95,100,108,140,0.7333333333333333,223,29,True,True,True,won

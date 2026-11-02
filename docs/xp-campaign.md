@@ -179,3 +179,21 @@ Le dernier argument JSONL est facultatif, ajouté en append : utiliser un fichie
 - La CI produit désormais un artifact de 30 campagnes sur PHP 8.5. Les builds WASM obsolètes d'une même branche sont remplacés par le plus récent.
 
 À jouer humainement : lisibilité des trois petits sprites et flashes pendant une vraie mêlée, cadence des secondaires en montée de BPM, différence double MP44/BAR/Gatling, pression et esquive des boss L3/L4, soins/vitalité, visibilité et temps de traversée des cartes agrandies. Les taux de bots ne sont pas des probabilités de victoire humaines.
+
+## Réplication finale en CI PHP 8.5
+
+Le code `e87c3041f2f412c4a85f3bceb27aa63f2f5274f5` a passé tous les jobs : [PHP 8.2/8.5 et natif](https://github.com/tueb2024/slave-rift-jumphp/actions/runs/41445180215), [WASM desktop/mobile](https://github.com/tueb2024/slave-rift-jumphp/actions/runs/41445180091). 64 tests purs, 71 tests natifs, 85 vérifications de simulation, captures OpenGL et contrôle de parité. Les captures finales montrent les trois sprites pendant le combat, y compris au boss.
+
+La CI a rejoué 30 campagnes avec les paliers rapprochés et 35 % de récupération. [Données par étage](reports/campaign-ci-php85.csv), [synthèse CI](reports/campaign-ci-php85-summary.json). Ces 30 runs répliquent l'expérience locale ; ils ne sont pas 30 nouvelles seeds.
+
+| Profil | Accès L2 / L3 / L4 en CI | Victoire locale PHP 8.3 | Victoire CI PHP 8.5 |
+|---|---|---:|---:|
+| faible | 70 / 60 / 60 % | 50 % | 40 % |
+| moyen | 100 / 100 / 100 % | 100 % | 100 % |
+| bon | 100 / 100 / 100 % | 100 % | 100 % |
+
+Les valeurs terminales (état, niveau, PV, arme et kills par étage) des vingt runs moyens/bons correspondent à la série locale. Huit runs faibles divergent dans au moins une de ces valeurs ; une victoire de différence au total. Une répétition de contrôle du faible seed 2 sur le PHP 8.3 local reproduit exactement les niveaux/PV/temps locaux des quatre étages, et non la trajectoire CI. Les tests de déterminisme sur un même runtime passent. **La reproductibilité bit à bit entre environnements PHP 8.3 local et PHP 8.5 CI n'est pas établie** ; la cause précise de cet écart n'a pas été isolée. Les mouvements/angles et les décisions de collecte utilisent des flottants : leur sensibilité est une piste, pas une cause démontrée.
+
+Cette réplication renforce la réserve sur les paliers de campagne : le faible obtient la double Gatling dans six runs CI, dont un dès L2 (quatre en L3, un en L4), alors que les sept bons qui l'obtiennent le font toujours en L4. Les paliers rapprochés ne garantissent donc pas une acquisition tardive à tous les rythmes de déplacement. Ils restent une variante expérimentale, sans promotion au menu ni changement des paliers du mode court. Un profil lent peut accumuler beaucoup plus de kills avant de changer d'étage ; aucun multiplicateur d'XP adaptatif n'intervient.
+
+Le barème 2/3/4/6 et le HUD/scheduler restent les changements intégrés au jeu. Les deux points encore ouverts pour la campagne sont une pression finale humaine convaincante et une distribution d'XP entre étages qui respecte les différents rythmes de progression. Il faut les traiter ensemble, sans calibrer la courbe uniquement sur un profil de bot.

@@ -1,0 +1,1141 @@
+{
+  "2-3-4-6 / 3,5,8,11,14,17 / heal=0.35 / faible": {
+    "runs": 10,
+    "victoryPercent": 40.0,
+    "timeoutCount": 0,
+    "winnerMeanEndHealthRatio": 0.681,
+    "meanDuration": 878.99,
+    "stages": {
+      "1": {
+        "accessPercent": 100.0,
+        "bossReached": 8,
+        "bossDefeated": 7,
+        "meanStartLevel": 1,
+        "meanEndLevel": 7.5,
+        "meanStartHealth": 100,
+        "meanEndHealth": 55.9,
+        "meanDuration": 139.877,
+        "meanKills": 30.4,
+        "bossWeapons": {
+          "MP44": 4,
+          "NOT REACHED": 2,
+          "DOUBLE COLT": 1,
+          "BAR": 1,
+          "DOUBLE MP44": 2
+        }
+      },
+      "2": {
+        "accessPercent": 70.0,
+        "bossReached": 6,
+        "bossDefeated": 6,
+        "meanStartLevel": 8.286,
+        "meanEndLevel": 14.143,
+        "meanStartHealth": 94.857,
+        "meanEndHealth": 91.714,
+        "meanDuration": 236.676,
+        "meanKills": 42.857,
+        "bossWeapons": {
+          "GATLING": 2,
+          "BAR": 3,
+          "DOUBLE GATLING": 1,
+          "NOT REACHED": 1
+        }
+      },
+      "3": {
+        "accessPercent": 60.0,
+        "bossReached": 6,
+        "bossDefeated": 6,
+        "meanStartLevel": 14.667,
+        "meanEndLevel": 19.667,
+        "meanStartHealth": 122.167,
+        "meanEndHealth": 124,
+        "meanDuration": 444.372,
+        "meanKills": 49.167,
+        "bossWeapons": {
+          "DOUBLE GATLING": 5,
+          "GATLING": 1
+        }
+      },
+      "4": {
+        "accessPercent": 60.0,
+        "bossReached": 4,
+        "bossDefeated": 4,
+        "meanStartLevel": 19.667,
+        "meanEndLevel": 23,
+        "meanStartHealth": 136.667,
+        "meanEndHealth": 77.833,
+        "meanDuration": 511.361,
+        "meanKills": 40.667,
+        "bossWeapons": {
+          "NOT REACHED": 2,
+          "DOUBLE GATLING": 4
+        }
+      }
+    },
+    "firstUnlocks": {
+      "DOUBLE COLT": {
+        "runs": 10,
+        "stageCounts": {
+          "1": 10
+        },
+        "meanTime": 15.26,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 1,
+            "time": 16
+          },
+          {
+            "seed": 2,
+            "stage": 1,
+            "time": 18.7
+          },
+          {
+            "seed": 3,
+            "stage": 1,
+            "time": 8.4
+          },
+          {
+            "seed": 4,
+            "stage": 1,
+            "time": 18.8
+          },
+          {
+            "seed": 5,
+            "stage": 1,
+            "time": 15.3
+          },
+          {
+            "seed": 6,
+            "stage": 1,
+            "time": 20.8
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 11.4
+          },
+          {
+            "seed": 8,
+            "stage": 1,
+            "time": 12.8
+          },
+          {
+            "seed": 9,
+            "stage": 1,
+            "time": 17.3
+          },
+          {
+            "seed": 10,
+            "stage": 1,
+            "time": 13.1
+          }
+        ]
+      },
+      "MP44": {
+        "runs": 9,
+        "stageCounts": {
+          "1": 9
+        },
+        "meanTime": 68.167,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 1,
+            "time": 114.8
+          },
+          {
+            "seed": 2,
+            "stage": 1,
+            "time": 38.6
+          },
+          {
+            "seed": 3,
+            "stage": 1,
+            "time": 42.3
+          },
+          {
+            "seed": 4,
+            "stage": 1,
+            "time": 127.5
+          },
+          {
+            "seed": 5,
+            "stage": 1,
+            "time": 136
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 27.2
+          },
+          {
+            "seed": 8,
+            "stage": 1,
+            "time": 29.9
+          },
+          {
+            "seed": 9,
+            "stage": 1,
+            "time": 38.4
+          },
+          {
+            "seed": 10,
+            "stage": 1,
+            "time": 58.8
+          }
+        ]
+      },
+      "DOUBLE MP44": {
+        "runs": 7,
+        "stageCounts": {
+          "2": 3,
+          "1": 4
+        },
+        "meanTime": 146.214,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 2,
+            "time": 151.6
+          },
+          {
+            "seed": 2,
+            "stage": 1,
+            "time": 157.2
+          },
+          {
+            "seed": 5,
+            "stage": 2,
+            "time": 176.3
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 49.7
+          },
+          {
+            "seed": 8,
+            "stage": 1,
+            "time": 136.2
+          },
+          {
+            "seed": 9,
+            "stage": 1,
+            "time": 169
+          },
+          {
+            "seed": 10,
+            "stage": 2,
+            "time": 183.5
+          }
+        ]
+      },
+      "BAR": {
+        "runs": 7,
+        "stageCounts": {
+          "2": 6,
+          "1": 1
+        },
+        "meanTime": 230.8,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 2,
+            "time": 187.0
+          },
+          {
+            "seed": 2,
+            "stage": 2,
+            "time": 213.8
+          },
+          {
+            "seed": 5,
+            "stage": 2,
+            "time": 225.8
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 187.1
+          },
+          {
+            "seed": 8,
+            "stage": 2,
+            "time": 168.1
+          },
+          {
+            "seed": 9,
+            "stage": 2,
+            "time": 203.8
+          },
+          {
+            "seed": 10,
+            "stage": 2,
+            "time": 430.0
+          }
+        ]
+      },
+      "GATLING": {
+        "runs": 6,
+        "stageCounts": {
+          "2": 3,
+          "3": 3
+        },
+        "meanTime": 363.65,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 2,
+            "time": 357.3
+          },
+          {
+            "seed": 2,
+            "stage": 3,
+            "time": 416.1
+          },
+          {
+            "seed": 5,
+            "stage": 3,
+            "time": 439.3
+          },
+          {
+            "seed": 7,
+            "stage": 2,
+            "time": 231.7
+          },
+          {
+            "seed": 8,
+            "stage": 2,
+            "time": 209.3
+          },
+          {
+            "seed": 10,
+            "stage": 3,
+            "time": 528.2
+          }
+        ]
+      },
+      "DOUBLE GATLING": {
+        "runs": 6,
+        "stageCounts": {
+          "3": 4,
+          "2": 1,
+          "4": 1
+        },
+        "meanTime": 540.467,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 3,
+            "time": 395.7
+          },
+          {
+            "seed": 2,
+            "stage": 3,
+            "time": 462.4
+          },
+          {
+            "seed": 5,
+            "stage": 3,
+            "time": 485.2
+          },
+          {
+            "seed": 7,
+            "stage": 3,
+            "time": 469.6
+          },
+          {
+            "seed": 8,
+            "stage": 2,
+            "time": 424.5
+          },
+          {
+            "seed": 10,
+            "stage": 4,
+            "time": 1005.4
+          }
+        ]
+      }
+    }
+  },
+  "2-3-4-6 / 3,5,8,11,14,17 / heal=0.35 / moyen": {
+    "runs": 10,
+    "victoryPercent": 100.0,
+    "timeoutCount": 0,
+    "winnerMeanEndHealthRatio": 0.7,
+    "meanDuration": 628.343,
+    "stages": {
+      "1": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 1,
+        "meanEndLevel": 5.4,
+        "meanStartHealth": 100,
+        "meanEndHealth": 99.3,
+        "meanDuration": 75.153,
+        "meanKills": 17.5,
+        "bossWeapons": {
+          "MP44": 5,
+          "DOUBLE COLT": 5
+        }
+      },
+      "2": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 5.4,
+        "meanEndLevel": 9.1,
+        "meanStartHealth": 103.7,
+        "meanEndHealth": 107.3,
+        "meanDuration": 113.2,
+        "meanKills": 21.6,
+        "bossWeapons": {
+          "DOUBLE MP44": 8,
+          "MP44": 2
+        }
+      },
+      "3": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 9.1,
+        "meanEndLevel": 12,
+        "meanStartHealth": 113,
+        "meanEndHealth": 109.7,
+        "meanDuration": 173.447,
+        "meanKills": 25.4,
+        "bossWeapons": {
+          "BAR": 8,
+          "DOUBLE MP44": 2
+        }
+      },
+      "4": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 12,
+        "meanEndLevel": 14.5,
+        "meanStartHealth": 116.8,
+        "meanEndHealth": 103.6,
+        "meanDuration": 266.543,
+        "meanKills": 31.2,
+        "bossWeapons": {
+          "GATLING": 7,
+          "BAR": 3
+        }
+      }
+    },
+    "firstUnlocks": {
+      "DOUBLE COLT": {
+        "runs": 10,
+        "stageCounts": {
+          "1": 10
+        },
+        "meanTime": 29.38,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 1,
+            "time": 19.6
+          },
+          {
+            "seed": 2,
+            "stage": 1,
+            "time": 53.6
+          },
+          {
+            "seed": 3,
+            "stage": 1,
+            "time": 19.3
+          },
+          {
+            "seed": 4,
+            "stage": 1,
+            "time": 19
+          },
+          {
+            "seed": 5,
+            "stage": 1,
+            "time": 18.1
+          },
+          {
+            "seed": 6,
+            "stage": 1,
+            "time": 20.8
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 19.9
+          },
+          {
+            "seed": 8,
+            "stage": 1,
+            "time": 51.2
+          },
+          {
+            "seed": 9,
+            "stage": 1,
+            "time": 58.9
+          },
+          {
+            "seed": 10,
+            "stage": 1,
+            "time": 13.4
+          }
+        ]
+      },
+      "MP44": {
+        "runs": 10,
+        "stageCounts": {
+          "1": 10
+        },
+        "meanTime": 63.08,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 1,
+            "time": 54.7
+          },
+          {
+            "seed": 2,
+            "stage": 1,
+            "time": 63.8
+          },
+          {
+            "seed": 3,
+            "stage": 1,
+            "time": 57.2
+          },
+          {
+            "seed": 4,
+            "stage": 1,
+            "time": 54.8
+          },
+          {
+            "seed": 5,
+            "stage": 1,
+            "time": 77.4
+          },
+          {
+            "seed": 6,
+            "stage": 1,
+            "time": 59.8
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 60
+          },
+          {
+            "seed": 8,
+            "stage": 1,
+            "time": 64.4
+          },
+          {
+            "seed": 9,
+            "stage": 1,
+            "time": 73.4
+          },
+          {
+            "seed": 10,
+            "stage": 1,
+            "time": 65.3
+          }
+        ]
+      },
+      "DOUBLE MP44": {
+        "runs": 10,
+        "stageCounts": {
+          "2": 10
+        },
+        "meanTime": 174.32,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 2,
+            "time": 157.3
+          },
+          {
+            "seed": 2,
+            "stage": 2,
+            "time": 173.7
+          },
+          {
+            "seed": 3,
+            "stage": 2,
+            "time": 162.5
+          },
+          {
+            "seed": 4,
+            "stage": 2,
+            "time": 169.1
+          },
+          {
+            "seed": 5,
+            "stage": 2,
+            "time": 178.2
+          },
+          {
+            "seed": 6,
+            "stage": 2,
+            "time": 161.1
+          },
+          {
+            "seed": 7,
+            "stage": 2,
+            "time": 171.0
+          },
+          {
+            "seed": 8,
+            "stage": 2,
+            "time": 184.9
+          },
+          {
+            "seed": 9,
+            "stage": 2,
+            "time": 206.1
+          },
+          {
+            "seed": 10,
+            "stage": 2,
+            "time": 179.3
+          }
+        ]
+      },
+      "BAR": {
+        "runs": 10,
+        "stageCounts": {
+          "3": 10
+        },
+        "meanTime": 273.66,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 3,
+            "time": 301.2
+          },
+          {
+            "seed": 2,
+            "stage": 3,
+            "time": 203.4
+          },
+          {
+            "seed": 3,
+            "stage": 3,
+            "time": 190.8
+          },
+          {
+            "seed": 4,
+            "stage": 3,
+            "time": 197.1
+          },
+          {
+            "seed": 5,
+            "stage": 3,
+            "time": 357.4
+          },
+          {
+            "seed": 6,
+            "stage": 3,
+            "time": 185.6
+          },
+          {
+            "seed": 7,
+            "stage": 3,
+            "time": 318.0
+          },
+          {
+            "seed": 8,
+            "stage": 3,
+            "time": 365.5
+          },
+          {
+            "seed": 9,
+            "stage": 3,
+            "time": 404.8
+          },
+          {
+            "seed": 10,
+            "stage": 3,
+            "time": 212.8
+          }
+        ]
+      },
+      "GATLING": {
+        "runs": 9,
+        "stageCounts": {
+          "4": 9
+        },
+        "meanTime": 472.522,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 4,
+            "time": 538.7
+          },
+          {
+            "seed": 2,
+            "stage": 4,
+            "time": 599.3
+          },
+          {
+            "seed": 3,
+            "stage": 4,
+            "time": 600.5
+          },
+          {
+            "seed": 4,
+            "stage": 4,
+            "time": 362.2
+          },
+          {
+            "seed": 5,
+            "stage": 4,
+            "time": 651.6
+          },
+          {
+            "seed": 6,
+            "stage": 4,
+            "time": 340.6
+          },
+          {
+            "seed": 7,
+            "stage": 4,
+            "time": 358.1
+          },
+          {
+            "seed": 8,
+            "stage": 4,
+            "time": 386.8
+          },
+          {
+            "seed": 10,
+            "stage": 4,
+            "time": 414.9
+          }
+        ]
+      },
+      "DOUBLE GATLING": {
+        "runs": 0,
+        "stageCounts": {},
+        "meanTime": null,
+        "events": []
+      }
+    }
+  },
+  "2-3-4-6 / 3,5,8,11,14,17 / heal=0.35 / bon": {
+    "runs": 10,
+    "victoryPercent": 100.0,
+    "timeoutCount": 0,
+    "winnerMeanEndHealthRatio": 0.899,
+    "meanDuration": 479.22,
+    "stages": {
+      "1": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 1,
+        "meanEndLevel": 5.4,
+        "meanStartHealth": 100,
+        "meanEndHealth": 95.1,
+        "meanDuration": 59.733,
+        "meanKills": 16,
+        "bossWeapons": {
+          "MP44": 8,
+          "DOUBLE COLT": 2
+        }
+      },
+      "2": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 5.4,
+        "meanEndLevel": 9.3,
+        "meanStartHealth": 100.4,
+        "meanEndHealth": 104.5,
+        "meanDuration": 87.1,
+        "meanKills": 19.6,
+        "bossWeapons": {
+          "DOUBLE MP44": 9,
+          "MP44": 1
+        }
+      },
+      "3": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 9.3,
+        "meanEndLevel": 13.7,
+        "meanStartHealth": 110,
+        "meanEndHealth": 115,
+        "meanDuration": 131.737,
+        "meanKills": 24.2,
+        "bossWeapons": {
+          "GATLING": 4,
+          "BAR": 6
+        }
+      },
+      "4": {
+        "accessPercent": 100.0,
+        "bossReached": 10,
+        "bossDefeated": 10,
+        "meanStartLevel": 13.7,
+        "meanEndLevel": 17.3,
+        "meanStartHealth": 120.8,
+        "meanEndHealth": 129.6,
+        "meanDuration": 200.65,
+        "meanKills": 28.9,
+        "bossWeapons": {
+          "DOUBLE GATLING": 6,
+          "GATLING": 4
+        }
+      }
+    },
+    "firstUnlocks": {
+      "DOUBLE COLT": {
+        "runs": 10,
+        "stageCounts": {
+          "1": 10
+        },
+        "meanTime": 32.21,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 1,
+            "time": 30
+          },
+          {
+            "seed": 2,
+            "stage": 1,
+            "time": 37.9
+          },
+          {
+            "seed": 3,
+            "stage": 1,
+            "time": 32.5
+          },
+          {
+            "seed": 4,
+            "stage": 1,
+            "time": 13.2
+          },
+          {
+            "seed": 5,
+            "stage": 1,
+            "time": 34.2
+          },
+          {
+            "seed": 6,
+            "stage": 1,
+            "time": 32.5
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 37.6
+          },
+          {
+            "seed": 8,
+            "stage": 1,
+            "time": 40.6
+          },
+          {
+            "seed": 9,
+            "stage": 1,
+            "time": 47.3
+          },
+          {
+            "seed": 10,
+            "stage": 1,
+            "time": 16.3
+          }
+        ]
+      },
+      "MP44": {
+        "runs": 10,
+        "stageCounts": {
+          "1": 10
+        },
+        "meanTime": 47.45,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 1,
+            "time": 44.6
+          },
+          {
+            "seed": 2,
+            "stage": 1,
+            "time": 50.3
+          },
+          {
+            "seed": 3,
+            "stage": 1,
+            "time": 45.6
+          },
+          {
+            "seed": 4,
+            "stage": 1,
+            "time": 41.5
+          },
+          {
+            "seed": 5,
+            "stage": 1,
+            "time": 45.1
+          },
+          {
+            "seed": 6,
+            "stage": 1,
+            "time": 44.2
+          },
+          {
+            "seed": 7,
+            "stage": 1,
+            "time": 48.6
+          },
+          {
+            "seed": 8,
+            "stage": 1,
+            "time": 48.7
+          },
+          {
+            "seed": 9,
+            "stage": 1,
+            "time": 56.2
+          },
+          {
+            "seed": 10,
+            "stage": 1,
+            "time": 49.7
+          }
+        ]
+      },
+      "DOUBLE MP44": {
+        "runs": 10,
+        "stageCounts": {
+          "2": 9,
+          "3": 1
+        },
+        "meanTime": 126.58,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 2,
+            "time": 118.8
+          },
+          {
+            "seed": 2,
+            "stage": 2,
+            "time": 128.4
+          },
+          {
+            "seed": 3,
+            "stage": 2,
+            "time": 117.2
+          },
+          {
+            "seed": 4,
+            "stage": 2,
+            "time": 119.5
+          },
+          {
+            "seed": 5,
+            "stage": 2,
+            "time": 132.1
+          },
+          {
+            "seed": 6,
+            "stage": 2,
+            "time": 76.4
+          },
+          {
+            "seed": 7,
+            "stage": 2,
+            "time": 127.7
+          },
+          {
+            "seed": 8,
+            "stage": 2,
+            "time": 139.3
+          },
+          {
+            "seed": 9,
+            "stage": 3,
+            "time": 168.8
+          },
+          {
+            "seed": 10,
+            "stage": 2,
+            "time": 137.6
+          }
+        ]
+      },
+      "BAR": {
+        "runs": 10,
+        "stageCounts": {
+          "3": 10
+        },
+        "meanTime": 179.95,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 3,
+            "time": 148.8
+          },
+          {
+            "seed": 2,
+            "stage": 3,
+            "time": 165.3
+          },
+          {
+            "seed": 3,
+            "stage": 3,
+            "time": 154.8
+          },
+          {
+            "seed": 4,
+            "stage": 3,
+            "time": 147.8
+          },
+          {
+            "seed": 5,
+            "stage": 3,
+            "time": 167.8
+          },
+          {
+            "seed": 6,
+            "stage": 3,
+            "time": 139.4
+          },
+          {
+            "seed": 7,
+            "stage": 3,
+            "time": 154.3
+          },
+          {
+            "seed": 8,
+            "stage": 3,
+            "time": 262.3
+          },
+          {
+            "seed": 9,
+            "stage": 3,
+            "time": 294.9
+          },
+          {
+            "seed": 10,
+            "stage": 3,
+            "time": 164.1
+          }
+        ]
+      },
+      "GATLING": {
+        "runs": 10,
+        "stageCounts": {
+          "3": 6,
+          "4": 4
+        },
+        "meanTime": 276.29,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 3,
+            "time": 242.8
+          },
+          {
+            "seed": 2,
+            "stage": 3,
+            "time": 266.5
+          },
+          {
+            "seed": 3,
+            "stage": 3,
+            "time": 255.4
+          },
+          {
+            "seed": 4,
+            "stage": 3,
+            "time": 259.3
+          },
+          {
+            "seed": 5,
+            "stage": 4,
+            "time": 291.1
+          },
+          {
+            "seed": 6,
+            "stage": 3,
+            "time": 243.2
+          },
+          {
+            "seed": 7,
+            "stage": 4,
+            "time": 275.3
+          },
+          {
+            "seed": 8,
+            "stage": 4,
+            "time": 291.3
+          },
+          {
+            "seed": 9,
+            "stage": 4,
+            "time": 337.2
+          },
+          {
+            "seed": 10,
+            "stage": 3,
+            "time": 300.8
+          }
+        ]
+      },
+      "DOUBLE GATLING": {
+        "runs": 7,
+        "stageCounts": {
+          "4": 7
+        },
+        "meanTime": 433.171,
+        "events": [
+          {
+            "seed": 1,
+            "stage": 4,
+            "time": 404.5
+          },
+          {
+            "seed": 2,
+            "stage": 4,
+            "time": 449.3
+          },
+          {
+            "seed": 3,
+            "stage": 4,
+            "time": 463.6
+          },
+          {
+            "seed": 4,
+            "stage": 4,
+            "time": 449.8
+          },
+          {
+            "seed": 5,
+            "stage": 4,
+            "time": 477.5
+          },
+          {
+            "seed": 6,
+            "stage": 4,
+            "time": 275.7
+          },
+          {
+            "seed": 10,
+            "stage": 4,
+            "time": 511.8
+          }
+        ]
+      }
+    }
+  }
+}
