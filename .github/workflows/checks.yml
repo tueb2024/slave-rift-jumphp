@@ -60,6 +60,7 @@ jobs:
           import json
           p = 'runtime/games/slave-rift/composer.json'
           with open(p) as f: c = json.load(f)
+          c.setdefault('config', {})['github-protocols'] = ['https']
           c['repositories'] = [
               {'type': 'path', 'url': '../../engine'},
               {'type': 'vcs', 'url': 'https://github.com/davidnurdin/php-wasm-network'}

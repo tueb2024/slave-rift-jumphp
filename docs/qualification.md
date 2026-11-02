@@ -109,6 +109,10 @@ Tester paysage puis un changement d’orientation. Toucher COMMANDES, les quatre
 
 Manquer quelques cristaux, hésiter, subir des coups et choisir des améliorations non optimales. Noter la vague du premier vrai danger et du décès éventuel. Le joueur doit avancer assez loin sans victoire automatique ; relever les soins disponibles et les ratios de PV aux moments difficiles. Si la partie moyenne ne met jamais en danger, ajuster ensuite un paramètre à la fois, avec un nouveau rapport.
 
+## Reproductibilité CI
+
+Une exécution a échoué avant les tests parce que Composer essayait de cloner `php-wasm-network` via SSH, absent de l’image Docker. Le staging des workflows impose désormais HTTPS pour cette dépendance publique. Les tests du jeu ne sont pas désactivés et aucune clé SSH n’est ajoutée.
+
 ## Verdict
 
 **RC prête à qualifier**, sous réserve du dernier résultat CI et du playtest humain. Les contrôles automatiques ne constituent pas une validation de plaisir ou de difficulté. Aucun leaderboard, backend, stockage persistant de seed ou merge vers main n’a été ajouté.
