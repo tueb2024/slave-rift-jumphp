@@ -209,6 +209,7 @@ final class World
     private function drawEnemyHealthBar(Renderer $r, array $enemy, int $x, int $y, int $spriteW): void
     {
         $max = max(1, (int)($enemy['maxHealth'] ?? 1));
+        if((int)$enemy['health'] >= $max)return; // Full-health bars obscure class colours in crowds.
         $ratio = max(0.0, min(1.0, (int)$enemy['health'] / $max));
         $barW = max(12, min(38, $spriteW));
         $barH = 3;
@@ -557,7 +558,7 @@ final class World
         $px = (int)round($cx + $run->x * $scale); $py = (int)round($cy + $run->z * $scale);
         $r->fillCircle($px, $py, 3, [235,220,160]);
         foreach ($run->enemies as $enemy) {
-            $r->fillCircle((int)round($cx + $enemy['x'] * $scale), (int)round($cy + $enemy['z'] * $scale), $enemy['type'] === 'brute' ? 4 : 2, $enemy['type'] === 'runner' ? [80,210,140] : [210,70,80]);
+            $r->fillCircle((int)round($cx + $enemy['x'] * $scale), (int)round($cy + $enemy['z'] * $scale), $enemy['type'] === 'brute' ? 4 : 2, match($enemy['type']){'runner'=>[255,181,35],'guardian'=>[35,185,244],'enforcer'=>[230,48,74],default=>[187,65,227]});
         }
         foreach ($run->pickups as $pickup) {
             $r->fillCircle((int)round($cx + $pickup['x'] * $scale), (int)round($cy + $pickup['z'] * $scale), 1, $pickup['kind'] === 'health' ? [250,70,80] : [80,235,235]);
