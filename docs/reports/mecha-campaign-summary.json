@@ -1,0 +1,76 @@
+{
+  "scope": "Final game code 19adfaf; PHP 8.3 CPU simulation, 30 deterministic campaign trials. Policies are imperfect inputs, not human skill estimates.",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "profiles": {
+    "faible": {
+      "runs": 10,
+      "won": 0,
+      "winPercent": 0,
+      "successfulDurationSeconds": null,
+      "successfulFinalHealthRatio": null,
+      "successfulFinalLevel": null,
+      "successfulFinalXp": null
+    },
+    "moyen": {
+      "runs": 10,
+      "won": 8,
+      "winPercent": 80,
+      "successfulDurationSeconds": {
+        "min": 525.4000000001795,
+        "mean": 566.7958333334752,
+        "max": 601.9333333334432
+      },
+      "successfulFinalHealthRatio": {
+        "min": 0.07,
+        "mean": 0.5522157190635452,
+        "max": 1.0
+      },
+      "successfulFinalLevel": {
+        "min": 18,
+        "mean": 19.375,
+        "max": 20
+      },
+      "successfulFinalXp": {
+        "min": 203,
+        "mean": 226.125,
+        "max": 243
+      }
+    },
+    "bon": {
+      "runs": 10,
+      "won": 6,
+      "winPercent": 60,
+      "successfulDurationSeconds": {
+        "min": 395.63333333343246,
+        "mean": 419.10000000011786,
+        "max": 444.90000000013833
+      },
+      "successfulFinalHealthRatio": {
+        "min": 0.6689655172413793,
+        "mean": 0.9174362818590706,
+        "max": 1.0
+      },
+      "successfulFinalLevel": {
+        "min": 18,
+        "mean": 18.5,
+        "max": 19
+      },
+      "successfulFinalXp": {
+        "min": 200,
+        "mean": 209.33333333333334,
+        "max": 218
+      }
+    }
+  }
+}
