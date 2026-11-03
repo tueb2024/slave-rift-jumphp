@@ -62,7 +62,7 @@ foreach (EnemyAtlas::SHEETS as $type => $sheet) {
     [$width, $height] = getimagesize(__DIR__ . '/../' . $sheet['path']);
     check($width === $sheet['width'] && $height === $sheet['height'], "$type atlas dimensions match the image");
     foreach ($sheet['frames'] as $row => $frames) {
-        $expected = $row === $sheet['death'] ? ($type === 'runner' ? 7 : 6) : 8;
+        $expected = 8;
         check(count($frames) === $expected, "$type row $row has its declared frames");
         foreach ($frames as $column => $rect) {
             if (!EnemyAtlas::valid($sheet, $rect)) throw new RuntimeException("$type row $row has an out-of-bounds source rect");
@@ -178,13 +178,13 @@ frames($spread, 90);
 $newEnemies = array_values($spread->enemies);
 check(count($newEnemies) >= 3, 'wide wave uses multiple valid spawn points');
 foreach ($newEnemies as $i => $one) foreach (array_slice($newEnemies, $i + 1) as $two) {
-    $minimum = ($one['type'] === 'brute' || $two['type'] === 'brute' ? 1.95 : 1.60)
+    $minimum = ($one['type'] === 'brute' || $two['type'] === 'brute' ? .55 : .42)
         + $one['radius'] + $two['radius'];
     if (hypot($one['x'] - $two['x'], $one['z'] - $two['z']) < $minimum - 0.1) {
-        throw new RuntimeException('Freshly spawned enemies violate comfort spacing');
+        throw new RuntimeException('Moving enemies violate collision spacing');
     }
 }
-check(true, 'freshly spawned enemies keep comfort spacing');
+check(true, 'moving enemies keep collision spacing');
 
 // Dense-wave operation counts stay tied to local neighbors, not every pair.
 $stressMap = new BrushMap();

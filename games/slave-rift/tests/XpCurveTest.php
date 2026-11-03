@@ -7,19 +7,19 @@ use PHPUnit\Framework\TestCase;
 
 final class XpCurveTest extends TestCase
 {
-    public function testClassRewardsAndEveryNinthHealingDropArePreserved(): void
+    public function testClassRewardsAndEveryFourteenthHealingDropArePreserved(): void
     {
         self::assertSame(XpCurve::ACCESSIBLE,(new XpCurve())->model);
         foreach([XpCurve::CURRENT=>[2,2,2,5],XpCurve::WEIGHTED=>[1,2,3,6],XpCurve::ACCESSIBLE=>[2,3,4,6]]as$model=>$values){
             $curve=new XpCurve($model);$run=new Run(HordeArena::build(),42,null,$curve);
-            for($i=1;$i<=18;$i++){
+            for($i=1;$i<=28;$i++){
                 $type=['runner','guardian','enforcer','brute'][($i-1)%4];
                 self::assertSame($values[($i-1)%4],$curve->reward($type));
                 (new \ReflectionMethod($run,'spawnEnemyAt'))->invoke($run,0,.55,2,$type);
                 (new \ReflectionMethod($run,'damage'))->invoke($run,array_key_first($run->enemies),100000);
                 $p=$run->pickups[array_key_last($run->pickups)];
-                self::assertSame($i%9===0?'health':'xp',$p['kind']);
-                self::assertSame($i%9===0?18:$curve->reward($type),$p['value']);
+                self::assertSame($i%14===0?'health':'xp',$p['kind']);
+                self::assertSame($i%14===0?14:$curve->reward($type),$p['value']);
             }
         }
     }

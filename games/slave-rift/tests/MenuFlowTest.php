@@ -17,13 +17,11 @@ final class MenuFlowTest extends TestCase
             self::assertSame($expected,$menu->activate($menu->hit($x+$w/2,$y+$h/2)));
             self::assertSame(match ($expected) {'daily'=>'daily','controls'=>'controls',default=>'play'},$menu->screen);
         }
-        foreach (range(1,4) as $tier) {
-            $menu = new MenuFlow(); $menu->activate(1);
-            for ($i=1;$i<$tier;$i++) $menu->move(1);
-            self::assertSame('daily'.$tier,$menu->activate());
-            self::assertSame(GameMode::DAILY,$menu->mode);
-            self::assertSame('play',$menu->screen);
-        }
+        $menu=new MenuFlow();$menu->activate(1);
+        self::assertSame(['daily_start','back'],array_keys($menu->items()));
+        self::assertSame('daily_start',$menu->activate());
+        self::assertSame(GameMode::DAILY,$menu->mode);self::assertSame('play',$menu->screen);
+
     }
 
     public function testPauseAndTerminalMenusReturnWithoutStartingAnotherRun(): void

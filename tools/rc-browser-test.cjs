@@ -5,7 +5,7 @@ const [url = 'http://127.0.0.1:18999/', out = '/out'] = process.argv.slice(2);
 const prefix = "$rcScene=\\JumPHP\\Kernel\\Engine::get()->scenes->current(); $rcRun=(new \\ReflectionProperty($rcScene,'run'))->getValue($rcScene); $rcMenu=(new \\ReflectionProperty($rcScene,'menu'))->getValue($rcScene); ";
 const delay = ms => new Promise(r => setTimeout(r,ms));
 (async () => {
- const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--use-gl=swiftshader','--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+ const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--use-gl=swiftshader','--enable-unsafe-swiftshader','--autoplay-policy=user-gesture-required']});
  const errors=[];
  try {
   for (const mobile of [false,true]) {
@@ -46,15 +46,19 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await page.screenshot({path:`${out}/${name}-won.png`});
     await tap(160,146); await expect('screen','main'); await expect('state',null);
     assert.deepEqual(await page.evaluate(()=>({local:JSON.stringify(localStorage),session:JSON.stringify(sessionStorage),cookies:document.cookie})),seedStorageBefore,'normal runs must not persist seeds in browser storage');
-    for(let tier=1;tier<=4;tier++){
-     await tap(160,88); await expect('screen','daily');
-     await tap(160,58+(tier-1)*22); await expect('mode','daily'); await expect('tier',tier);
-     const seed=(await state()).seed;
-     await php("$rcRun->state='dead';"); await delay(100);
-     await tap(160,90); await expect('seed',seed);
-     await php("$rcRun->state='won';"); await delay(100);
-     await tap(160,146); await expect('screen','main');
+    await tap(160,88); await expect('screen','daily');
+    await tap(160,58); await expect('mode','daily'); await expect('tier',1);
+    const dailySeed=(await state()).seed;
+    await php("$rcRun->state='dead';");await delay(100);
+    await tap(160,90);await expect('seed',dailySeed);await expect('tier',1);
+    for(let stage=1;stage<=4;stage++){
+     await expect('tier',stage);
+     await php("$rcRun->state='won';");await delay(100);
+     await expect('screen',stage===4?'won':'level_complete');
+     await page.screenshot({path:`${out}/${name}-daily-map-${stage}.png`});
+     if(stage<4){await tap(160,90);await expect('state','play');}
     }
+    await tap(160,118);await expect('screen','main');
     await tap(160,116); await expect('mode','horde'); await expect('objective',null);
     await page.screenshot({path:`${out}/${name}-horde.png`});
     await php("$rcRun->state='dead';"); await delay(100);
@@ -84,6 +88,6 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
    await page.close();
   }
   assert.deepEqual(errors,[],errors.join('\n'));
-  console.log('PASS: desktop + mobile/HiDPI menus, normal replay/new seed, daily 1..4, horde, controls, upgrades, pause, boss/treasure/victory fixtures.');
+  console.log('PASS: desktop + mobile/HiDPI menus, normal replay/new seed, one daily campaign, maps 1..4, horde, controls, upgrades, pause, boss/treasure/victory fixtures.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1);});

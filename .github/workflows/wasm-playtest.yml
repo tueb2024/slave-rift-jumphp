@@ -2,7 +2,7 @@ name: WASM playtest
 
 on:
   push:
-    branches: [main, release/playable-rc]
+    branches: [main, release/playable-rc, feature/mecha-combat-overhaul]
   workflow_dispatch:
 
 concurrency:

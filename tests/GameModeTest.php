@@ -28,11 +28,12 @@ final class GameModeTest extends TestCase
             $mode = GameMode::daily('2026-11-02', $tier);
             self::assertEquals($mode, GameMode::daily('2026-11-02', $tier));
             self::assertNotSame($mode->seed, GameMode::daily('2026-11-03', $tier)->seed);
-            self::assertSame('2026-11-02/' . $tier, $mode->dailyId);
+            self::assertSame('2026-11-02', $mode->dailyId);
             $seeds[] = $mode->seed;
             if ($previous !== null) {
                 self::assertGreaterThan($previous->depth, $mode->depth);
-                self::assertGreaterThan($previous->enemyHealthScale(7), $mode->enemyHealthScale(7));
+                self::assertSame($previous->enemyHealthScale(7), $mode->enemyHealthScale(7));
+                self::assertGreaterThan($previous->damageScale(7),$mode->damageScale(7));
                 self::assertGreaterThan($previous->waveBudget(7), $mode->waveBudget(7));
                 self::assertGreaterThan($previous->bossHealth, $mode->bossHealth);
             }
