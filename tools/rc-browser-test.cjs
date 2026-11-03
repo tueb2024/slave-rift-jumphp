@@ -1,6 +1,7 @@
 // Real SDL/WASM UI inputs. Death/victory/room fixtures isolate navigation from combat difficulty.
 const puppeteer = require('puppeteer');
 const assert = require('node:assert/strict');
+const fs=require('node:fs');
 const [url = 'http://127.0.0.1:18999/', out = '/out'] = process.argv.slice(2);
 const prefix = "$rcScene=\\JumPHP\\Kernel\\Engine::get()->scenes->current(); $rcRun=(new \\ReflectionProperty($rcScene,'run'))->getValue($rcScene); $rcMenu=(new \\ReflectionProperty($rcScene,'menu'))->getValue($rcScene); ";
 const delay = ms => new Promise(r => setTimeout(r,ms));
@@ -61,6 +62,21 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await tap(160,118);await expect('screen','main');
     await tap(160,116); await expect('mode','horde'); await expect('objective',null);
     await page.screenshot({path:`${out}/${name}-horde.png`});
+    const performance=[];
+    for(const population of [25,50,100,200]){
+     await php(`$rcRun->enemies=[];$rcRun->boss=null;$rcRun->remaining=0;$rcRun->intermission=3600;$rcRun->health=100000;$rcRun->x=0;$rcRun->z=-18;$rcRun->y=.75;$rcRun->yaw=0;
+      $spawn=new \\ReflectionMethod($rcRun,'spawnEnemyAt');for($i=0;$i<${population};$i++)$spawn->invoke($rcRun,-15.+($i%15)*2,.55,-12.+intdiv($i,15)*2,['runner','guardian','enforcer','brute'][$i%4]);
+      foreach($rcRun->enemies as &$e)$e['speed']=0.;unset($e);
+      (new \\ReflectionProperty($rcScene,'recentFrames'))->setValue($rcScene,[]);(new \\ReflectionProperty($rcScene,'simulationTimes'))->setValue($rcScene,[]);`);
+     await delay(2500);
+     await php(`$frames=(new \\ReflectionProperty($rcScene,'recentFrames'))->getValue($rcScene);$cpu=(new \\ReflectionProperty($rcScene,'simulationTimes'))->getValue($rcScene);sort($frames);$world=(new \\ReflectionProperty($rcScene,'world'))->getValue($rcScene);
+      file_put_contents('/tmp/mecha-perf.json',json_encode(['population'=>count($rcRun->enemies),'visible'=>$world->visibleEnemies,'webgl'=>\\JumPHP\\Kernel\\Engine::get()->gl()->isAvailable(),'samples'=>count($frames),'meanFrameMs'=>array_sum($frames)/max(1,count($frames)),'p95FrameMs'=>$frames[(int)floor((count($frames)-1)*.95)]??null,'meanSimulationPerRenderFrameMs'=>array_sum($cpu)/max(1,count($cpu))]));`);
+     const metrics=await page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/mecha-perf.json',{encoding:'utf8'})));
+     assert.equal(metrics.population,population);assert.equal(metrics.webgl,true);performance.push(metrics);
+     await page.screenshot({path:`${out}/${name}-mechas-${population}.png`});
+    }
+    fs.writeFileSync(`${out}/${name}-webgl-performance.json`,JSON.stringify({scope:'Headless Chromium SwiftShader; rendered frame time includes CPU, browser and software GPU. Not physical phone performance.',results:performance},null,2));
+    await php("$rcRun->enemies=[];$rcRun->health=100;$rcRun->intermission=0;");
     await php("$rcRun->state='dead';"); await delay(100);
     await tap(160,90); await expect('mode','horde'); await expect('state','play');
     await php("$rcRun->state='dead';"); await delay(100);

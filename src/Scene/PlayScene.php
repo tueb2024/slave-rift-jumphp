@@ -46,6 +46,7 @@ final class PlayScene extends AbstractScene
     private ?AssembledLevel $assembledLevel = null;
     private ?TreasureDirector $objective = null;
     private float $frameMs = 16.7;
+    private array $simulationTimes = [];
     private float $pointerCooldown = 0.0;
     private bool $paused = false;
     private bool $welcome = true;
@@ -68,6 +69,7 @@ final class PlayScene extends AbstractScene
         $this->menu = new MenuFlow();
         $this->pointerCooldown = 0.0;
         $this->recentFrames = [];
+        $this->simulationTimes=[];
         $this->lastFrameAt = null;
         $this->paused = false;
         $this->welcome = !$this->demo && !($params['playing'] ?? false);
@@ -224,6 +226,7 @@ final class PlayScene extends AbstractScene
 
         $beforeState = $this->run->state;
         $beforeXp = $this->run->xp;
+        $simulationStarted=microtime(true);
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
             if ($this->run->state !== 'play') return;
             $this->difficulty->beforeStep($this->run);
@@ -233,6 +236,8 @@ final class PlayScene extends AbstractScene
             $this->jumpPending = false;
         });
 
+        $this->simulationTimes[]=(microtime(true)-$simulationStarted)*1000;
+        if(count($this->simulationTimes)>120)array_shift($this->simulationTimes);
         $this->playAudioEvents($beforeState, $beforeXp, $dt);
         $this->music->playSteps($this->rhythm->drain(), $this->run->level, $this->run->boss?->active && !$this->run->boss->defeated, count($this->run->enemies));
         if(($this->campaign?->state()??$this->run->state)==='won')$this->music->resolve();
@@ -296,7 +301,7 @@ final class PlayScene extends AbstractScene
         if ($run->boss !== null && $run->boss->active && !$run->boss->defeated) {
             $boss = $run->boss;
             $liveOrbs = count(array_filter($boss->orbs, static fn(array $orb): bool => $orb['alive']));
-            $label = $boss->vulnerable ? 'COEUR OUVERT '.(int)ceil($boss->vulnerableTimer).' S : TIREZ !' : 'ORBES RESTANTES : '.$liveOrbs.'/3';
+            $label = $boss->vulnerable ? 'COEUR OUVERT '.(int)ceil($boss->vulnerableTimer).' S : TIREZ !' : 'MODULES RESTANTS : '.$liveOrbs.'/3';
             $font->draw($r, $label . ' / PHASE ' . $boss->phase, $objectiveCx, 40, 1, $boss->vulnerable ? [100,255,130] : [255,160,90], 'center');
             Hud::bar($r, $hasSecondaries ? 30 : 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
             if ($run->bossWarning !== null) $font->draw($r, 'DANGER AU SOL : BOUGEZ !', $objectiveCx, 61, 1, [255,100,65], 'center');

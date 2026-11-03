@@ -272,13 +272,14 @@ final class Run
         if ($objective->state === TreasureDirector::BOSS_READY && $this->boss !== null) {
             $objective->startBoss();
             $this->boss->activate();
-            $this->message = 'DETRUISEZ LES 3 ORBES, PUIS VISEZ LE COEUR';
+            $this->message = 'DETRUISEZ LES 3 MODULES, PUIS VISEZ LE COEUR';
             $this->messageTime = 6.0;
         }
         if ($objective->state === TreasureDirector::BOSS && $this->boss !== null) {
             $this->updateBossCombat($dt);
             if ($this->boss->defeated) {
                 $objective->notifyBossDefeated();$this->bossWarning=null;
+                if($this->bossPosition!==null)$this->explode([$this->bossPosition['x'],$this->bossPosition['y'],$this->bossPosition['z']],0,3.0);
                 $this->message='SIEGE DÉTRUIT : RECUPEREZ LE TRESOR';$this->messageTime=6;
             }
         }

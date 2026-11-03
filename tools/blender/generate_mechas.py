@@ -1,5 +1,5 @@
 """Blender-only builders for original coloured chassis."""
-import bpy
+import bpy,math
 from art_spec import mecha
 MATERIALS={}
 def material(rgb):
@@ -18,7 +18,10 @@ def construct(parts):
             mesh=obj.data;bpy.data.objects.remove(obj,do_unlink=True)
             if mesh.users==0:bpy.data.meshes.remove(mesh)
     for part in parts:
-        bpy.ops.mesh.primitive_cube_add(size=1,location=part['p']);obj=bpy.context.object;obj.name='SR_'+part['name'];obj['sr_generated']=True
+        if part['name'] in ('hinge','barrel','cannon','scope'):
+            bpy.ops.mesh.primitive_cylinder_add(vertices=8,radius=.5,depth=1,location=part['p'],rotation=(math.pi/2,0,0))
+        else:bpy.ops.mesh.primitive_cube_add(size=1,location=part['p'])
+        obj=bpy.context.object;obj.name='SR_'+part['name'];obj['sr_generated']=True
         obj.dimensions=part['s'];bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
         obj.data.materials.append(material(part['c']))
         bevel=obj.modifiers.new('Plate edges','BEVEL');bevel.width=.018;bevel.segments=1
