@@ -4,7 +4,7 @@
 // the page and version.json (an update is seen at once when online; offline, the cached build starts).
 // A new build has a new BUILD below: it installs next to the old one and waits; the page shows "update ready"
 // (JumPHP\Device\Pwa::updateReady()) and applyUpdate() switches to it.
-const BUILD = '2010b1d58cea';
+const BUILD = '4aee3f7d193c';
 const GAME = 'slave-rift';
 const CACHE = `jumphp-pwa-${GAME}-${BUILD}`;
 const STATIC = ['./', 'index.html', 'game.json', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
