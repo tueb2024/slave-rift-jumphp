@@ -57,7 +57,7 @@ final class TreasureDirector
             $this->state = self::FINAL_WAVE;
             return true;
         }
-        if ($this->state === self::TREASURE_READY && $this->distanceToTreasure($x, $z) <= $this->treasureRadius) {
+        if ($this->state === self::TREASURE_READY && $this->distanceToTreasure($x, $z) <= $this->treasureRadius && abs($y - $this->treasureAnchor['y']) < 1.8) {
             $this->state = self::COMPLETE;
         }
         return false;
@@ -94,12 +94,12 @@ final class TreasureDirector
     public function objectiveLabel(): string
     {
         return match ($this->state) {
-            self::EXPLORING => 'TROUVE LE TRESOR',
-            self::FINAL_WAVE => 'NETTOIE LA SALLE FINALE',
+            self::EXPLORING => 'TROUVEZ LA SALLE FINALE',
+            self::FINAL_WAVE => 'ÉLIMINEZ LA VAGUE FINALE',
             self::BOSS_READY => 'LE BOSS ARRIVE',
-            self::BOSS => 'DETRUIS LE BOSS',
-            self::TREASURE_READY => 'RECUPERE LE TRESOR',
-            self::COMPLETE => 'NIVEAU NETTOYE',
+            self::BOSS => 'DÉTRUISEZ LE BOSS',
+            self::TREASURE_READY => 'RÉCUPÉREZ LE TRÉSOR',
+            self::COMPLETE => 'TRÉSOR RÉCUPÉRÉ',
             default => '',
         };
     }

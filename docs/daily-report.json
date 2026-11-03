@@ -1,0 +1,295 @@
+{
+  "date": "2026-11-02",
+  "profile": "bon",
+  "scope": "Deterministic input policy, not a human playtest",
+  "tiers": [
+    {
+      "tier": 1,
+      "dailyId": "2026-11-02/1",
+      "depth": 5,
+      "intensity": 0.85,
+      "result": {
+        "scenario": "route",
+        "profile": "bon",
+        "seed": 65502,
+        "result": "won",
+        "time": 57,
+        "wave": 1,
+        "level": 4,
+        "weapon": "DOUBLE COLT",
+        "health": 63,
+        "lowestHealth": 63,
+        "lowestHealthRatio": 0.63,
+        "checkpoints": {
+          "finalRoom": {
+            "time": 28.9,
+            "wave": 1,
+            "level": 2,
+            "weapon": "COLT .45",
+            "health": 100,
+            "maxHealth": 100,
+            "healthRatio": 1
+          },
+          "boss": {
+            "time": 48.6,
+            "wave": 1,
+            "level": 4,
+            "weapon": "DOUBLE COLT",
+            "health": 63,
+            "maxHealth": 100,
+            "healthRatio": 0.63
+          },
+          "bossDefeated": {
+            "time": 56.2,
+            "wave": 1,
+            "level": 4,
+            "weapon": "DOUBLE COLT",
+            "health": 63,
+            "maxHealth": 100,
+            "healthRatio": 0.63
+          },
+          "treasure": {
+            "time": 57,
+            "wave": 1,
+            "level": 4,
+            "weapon": "DOUBLE COLT",
+            "health": 63,
+            "maxHealth": 100,
+            "healthRatio": 0.63
+          }
+        },
+        "maxHealth": 100,
+        "kills": 14,
+        "wave7": null,
+        "finalRoom": true,
+        "bossReached": true,
+        "bossDefeated": true,
+        "objective": "complete",
+        "remaining": 0,
+        "liveEnemies": 0,
+        "player": [
+          46.11596765446742,
+          0.6990007324218762,
+          78.20734976389825
+        ],
+        "stalledEnemies": []
+      }
+    },
+    {
+      "tier": 2,
+      "dailyId": "2026-11-02/2",
+      "depth": 7,
+      "intensity": 1,
+      "result": {
+        "scenario": "route",
+        "profile": "bon",
+        "seed": 65503,
+        "result": "won",
+        "time": 74.1,
+        "wave": 1,
+        "level": 5,
+        "weapon": "DOUBLE COLT",
+        "health": 110,
+        "lowestHealth": 90,
+        "lowestHealthRatio": 0.9,
+        "checkpoints": {
+          "finalRoom": {
+            "time": 40.4,
+            "wave": 1,
+            "level": 2,
+            "weapon": "COLT .45",
+            "health": 100,
+            "maxHealth": 100,
+            "healthRatio": 1
+          },
+          "boss": {
+            "time": 61.8,
+            "wave": 1,
+            "level": 4,
+            "weapon": "DOUBLE COLT",
+            "health": 110,
+            "maxHealth": 120,
+            "healthRatio": 0.9166666666666666
+          },
+          "bossDefeated": {
+            "time": 73.2,
+            "wave": 1,
+            "level": 5,
+            "weapon": "DOUBLE COLT",
+            "health": 110,
+            "maxHealth": 120,
+            "healthRatio": 0.9166666666666666
+          },
+          "treasure": {
+            "time": 74.1,
+            "wave": 1,
+            "level": 5,
+            "weapon": "DOUBLE COLT",
+            "health": 110,
+            "maxHealth": 120,
+            "healthRatio": 0.9166666666666666
+          }
+        },
+        "maxHealth": 120,
+        "kills": 15,
+        "wave7": null,
+        "finalRoom": true,
+        "bossReached": true,
+        "bossDefeated": true,
+        "objective": "complete",
+        "remaining": 0,
+        "liveEnemies": 0,
+        "player": [
+          32.2329350137261,
+          0.6990007324218762,
+          136.2337465684714
+        ],
+        "stalledEnemies": []
+      }
+    },
+    {
+      "tier": 3,
+      "dailyId": "2026-11-02/3",
+      "depth": 9,
+      "intensity": 1.15,
+      "result": {
+        "scenario": "route",
+        "profile": "bon",
+        "seed": 65504,
+        "result": "won",
+        "time": 87.9,
+        "wave": 1,
+        "level": 5,
+        "weapon": "DOUBLE COLT",
+        "health": 98,
+        "lowestHealth": 80,
+        "lowestHealthRatio": 0.8,
+        "checkpoints": {
+          "finalRoom": {
+            "time": 50.6,
+            "wave": 1,
+            "level": 2,
+            "weapon": "COLT .45",
+            "health": 100,
+            "maxHealth": 100,
+            "healthRatio": 1
+          },
+          "boss": {
+            "time": 75.6,
+            "wave": 1,
+            "level": 5,
+            "weapon": "DOUBLE COLT",
+            "health": 98,
+            "maxHealth": 100,
+            "healthRatio": 0.98
+          },
+          "bossDefeated": {
+            "time": 85.4,
+            "wave": 1,
+            "level": 5,
+            "weapon": "DOUBLE COLT",
+            "health": 98,
+            "maxHealth": 100,
+            "healthRatio": 0.98
+          },
+          "treasure": {
+            "time": 87.9,
+            "wave": 1,
+            "level": 5,
+            "weapon": "DOUBLE COLT",
+            "health": 98,
+            "maxHealth": 100,
+            "healthRatio": 0.98
+          }
+        },
+        "maxHealth": 100,
+        "kills": 19,
+        "wave7": null,
+        "finalRoom": true,
+        "bossReached": true,
+        "bossDefeated": true,
+        "objective": "complete",
+        "remaining": 0,
+        "liveEnemies": 0,
+        "player": [
+          39.82112390621292,
+          0.6990007324218762,
+          166.3186270746008
+        ],
+        "stalledEnemies": []
+      }
+    },
+    {
+      "tier": 4,
+      "dailyId": "2026-11-02/4",
+      "depth": 11,
+      "intensity": 1.3,
+      "result": {
+        "scenario": "route",
+        "profile": "bon",
+        "seed": 65505,
+        "result": "won",
+        "time": 106.3,
+        "wave": 1,
+        "level": 7,
+        "weapon": "DOUBLE COLT",
+        "health": 100,
+        "lowestHealth": 100,
+        "lowestHealthRatio": 1,
+        "checkpoints": {
+          "finalRoom": {
+            "time": 61.9,
+            "wave": 1,
+            "level": 2,
+            "weapon": "COLT .45",
+            "health": 100,
+            "maxHealth": 100,
+            "healthRatio": 1
+          },
+          "boss": {
+            "time": 89.2,
+            "wave": 1,
+            "level": 6,
+            "weapon": "DOUBLE COLT",
+            "health": 100,
+            "maxHealth": 100,
+            "healthRatio": 1
+          },
+          "bossDefeated": {
+            "time": 103.9,
+            "wave": 1,
+            "level": 6,
+            "weapon": "DOUBLE COLT",
+            "health": 100,
+            "maxHealth": 100,
+            "healthRatio": 1
+          },
+          "treasure": {
+            "time": 106.3,
+            "wave": 1,
+            "level": 7,
+            "weapon": "DOUBLE COLT",
+            "health": 100,
+            "maxHealth": 100,
+            "healthRatio": 1
+          }
+        },
+        "maxHealth": 100,
+        "kills": 25,
+        "wave7": null,
+        "finalRoom": true,
+        "bossReached": true,
+        "bossDefeated": true,
+        "objective": "complete",
+        "remaining": 0,
+        "liveEnemies": 0,
+        "player": [
+          118.40504146785817,
+          0.6990007324218762,
+          134.288024133198
+        ],
+        "stalledEnemies": []
+      }
+    }
+  ]
+}

@@ -16,7 +16,7 @@ final class EnemyCompositionTest extends TestCase
             DifficultyDirector::enemyBaseProfile('enforcer')['health'],
             DifficultyDirector::enemyBaseProfile('brute')['health'],
         ];
-        self::assertSame([24, 52, 74, 180], $health);
+        self::assertSame([24, 48, 72, 144], $health);
         self::assertLessThan($health[1], $health[0]);
         self::assertLessThan($health[2], $health[1]);
         self::assertLessThan($health[3], $health[2]);

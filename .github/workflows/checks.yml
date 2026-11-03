@@ -19,10 +19,33 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
+          tools: phpunit:${{ matrix.php == '8.2' && '10' || '11' }}
       - name: Lint PHP
         run: find src tools tests games/slave-rift/src -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Simulation regressions
         run: php tools/simulation-test.php
+      - name: Pure PHPUnit regressions
+        run: phpunit -c phpunit.pure.xml
+      - name: Deterministic balance report
+        run: php tools/balance-sim.php 5 360 both > balance-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: balance-php-${{ matrix.php }}
+          path: balance-report.json
+      - name: Four-level campaign guardrail (30 deterministic runs)
+        if: matrix.php == '8.5'
+        run: php tools/campaign-sim.php 10 2-3-4-6 .35 compact > campaign-report.json
+      - uses: actions/upload-artifact@v4
+        if: matrix.php == '8.5'
+        with:
+          name: campaign-php-${{ matrix.php }}
+          path: campaign-report.json
+      - name: Horde CPU robustness report
+        run: php tools/horde-stress.php > horde-stress-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: horde-php-${{ matrix.php }}
+          path: horde-stress-report.json
       - name: Verify playground package
         run: php tools/sync-package.php --check
 
@@ -33,11 +56,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: game
+          persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: davidnurdin/jumPhp
           ref: 28ea932981fb0b6d8dc41f2c9739f941cb4befea
           path: runtime
+          persist-credentials: false
       - name: Stage game with local engine
         run: |
           cp -a game/games/slave-rift runtime/games/slave-rift
@@ -45,6 +70,7 @@ jobs:
           import json
           p = 'runtime/games/slave-rift/composer.json'
           with open(p) as f: c = json.load(f)
+          c.setdefault('config', {})['github-protocols'] = ['https']
           c['repositories'] = [
               {'type': 'path', 'url': '../../engine'},
               {'type': 'vcs', 'url': 'https://github.com/davidnurdin/php-wasm-network'}
@@ -56,9 +82,13 @@ jobs:
         run: docker build -t jumphp/desktop:dev --build-context ext=docker/ext docker/desktop
       - name: Install engine tests and game
         working-directory: runtime
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
         run: |
-          docker run --rm -v "$PWD:/workspace" -w /workspace/engine jumphp/desktop:dev composer install --no-interaction --no-progress
-          bin/jumphp install slave-rift
+          for package_dir in engine games/slave-rift; do
+            docker run --rm -e COMPOSER_AUTH -v "$PWD:/workspace" -w "/workspace/$package_dir" \
+              jumphp/desktop:dev sh -ec 'git config --global --add safe.directory /workspace; composer install --no-interaction --no-progress'
+          done
       - name: JumPHP integration tests and 600-frame software smoke
         working-directory: runtime
         env:

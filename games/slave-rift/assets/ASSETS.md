@@ -98,3 +98,7 @@ All seven sheets are by Nmn (Pawel Zarczynski), CC0. The local files are compact
 
 - `VENDORED.sha256` records hashes of the vendored Quake map and CC0 sprite sheets.
 - No VG Resource / Spriters Resource / Duke or other proprietary ripped artwork is included in the repository.
+
+## Secondary arsenal HUD (2026-11)
+
+`assets/sprites/secondaries/{flame,rockets,pulse}.png` and their `-dim.png` recharge variants are original 32×16 pixel pictograms drawn from geometric primitives by `tools/build_secondary_icons.py`. Artwork: **CC0-1.0**. No external images, proprietary sprites or traced weapon designs were used. The icons represent the three existing mechanics (flamethrower sweep, mini-rocket salvo, radial pulse); no new gameplay weapon was added. Source-generation script follows the repository code licence.

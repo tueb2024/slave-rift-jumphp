@@ -29,11 +29,20 @@ final class World
     public const MAX_IMPACTS = 24;
     public const MAX_DAMAGE_POPUPS = 48;
 
+    public function release(WebGl $gl): void
+    {
+        foreach ($this->ids as $id) $gl->delete($id);
+        $this->ids = []; $this->preparedMapId = null;
+        $this->enemyVisibility = $this->lastEnemyHealth = $this->damagePopups = [];
+    }
+
     public function prepare(WebGl $gl, Run $run): void
     {
         if (!$gl->isAvailable()) return;
         $mapId = spl_object_id($run->map);
         if ($this->ids === [] || $this->preparedMapId !== $mapId) {
+            foreach ($this->ids as $id) $gl->delete($id);
+            $this->enemyVisibility = $this->lastEnemyHealth = $this->damagePopups = [];
             $materialMap = function (string $material) use ($run): BrushMap {
                 $m = new BrushMap();
                 $m->solids = array_values(array_filter($run->map->solids, static function (array $solid) use ($material): bool {
@@ -100,6 +109,7 @@ final class World
             $this->drawEnemySprites($engine, $r, $run, $pitch);
             $this->drawDeathSprites($engine, $r, $run, $pitch);
             $this->drawImpactSprites($engine, $r, $run, $pitch);
+            $this->drawObjective($engine, $r, $run, $pitch);
             $this->drawDamagePopups($r, $run, $pitch);
             return;
         }
@@ -293,6 +303,61 @@ final class World
         return $t > 0.001 && $t < 0.999;
     }
 
+    private function drawObjective(Engine $engine, Renderer $r, Run $run, float $pitch): void
+    {
+        if ($run->objective === null) return;
+        $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
+        $project = function (array $p) use ($vp, $r, $run): ?array {
+            $world = [$p['x'], $p['y'], $p['z']];
+            if (!$run->lineClear(self::eye($run), $world)) return null;
+            $point = Mat4::project($vp, $world, $r->getWidth(), $r->getHeight());
+            return $point !== null && $point[2] >= 0 && $point[2] <= 1 ? $point : null;
+        };
+        $boss = $run->boss;
+        if ($boss !== null && $boss->active && !$boss->defeated && $run->bossPosition !== null) {
+            $p = $run->bossPosition;
+            $point = $project($p);
+            if ($point !== null) {
+                // Reuse the vendored CC0 heavy monster atlas as the wall guardian.
+                $sheet = EnemyAtlas::SHEETS['brute'];
+                $source = EnemyAtlas::frame('brute', $boss->vulnerable ? 'pain' : 'idle', (int)($boss->time * 5), 0);
+                if ($source !== null) {
+                    $tex = $engine->sdl->getTexture($sheet['texture']);
+                    $size = (int)min(120, max(20, 1000 / max(1, hypot($p['x'] - $run->x, $p['z'] - $run->z))));
+                    $width = (int)round($size * $source[2] / $source[3]);
+                    $r->copy($tex['texture'], $source, (int)$point[0] - intdiv($width, 2), (int)$point[1] - intdiv($size, 2), $width, $size);
+                    $r->drawRect((int)$point[0] - intdiv($width, 2), (int)$point[1] - intdiv($size, 2), $width, $size,
+                        $boss->vulnerable ? [100,255,130] : [245,70,85], 2);
+                }
+            }
+            foreach ($boss->orbs as $orb) {
+                if (!$orb['alive'] || ($point = $project($orb)) === null) continue;
+                $radius = (int)max(3, min(12, 65 / max(1, hypot($orb['x'] - $run->x, $orb['z'] - $run->z))));
+                $r->fillCircle((int)$point[0], (int)$point[1], $radius, [255,100,50]);
+                $r->fillCircle((int)$point[0], (int)$point[1], max(1, $radius - 2), [255,235,120]);
+            }
+        }
+        if ($run->bossWarning !== null) {
+            $warning = $run->bossWarning;
+            $previous = null;
+            for ($i = 0; $i <= 32; $i++) {
+                $a = $i * 2 * M_PI / 32;
+                $point = $project(['x' => $warning['x'] + sin($a) * 1.8, 'y' => $warning['y'], 'z' => $warning['z'] + cos($a) * 1.8]);
+                if ($point !== null && $previous !== null) $r->drawLine((int)$previous[0], (int)$previous[1], (int)$point[0], (int)$point[1], [255,75,40]);
+                $previous = $point;
+            }
+        }
+        if ($run->objective->state === \App\Game\TreasureDirector::TREASURE_READY) {
+            $p = $run->objective->treasureAnchor;
+            $p['y'] += 0.4;
+            if (($point = $project($p)) !== null) {
+                $size = (int)max(5, min(30, 100 / max(1, $run->objective->distanceToTreasure($run->x, $run->z))));
+                $r->fillRect((int)$point[0] - $size, (int)$point[1] - $size, $size * 2, $size, [240,175,35]);
+                $r->fillRect((int)$point[0] - 2, (int)$point[1] - $size, 4, $size, [255,245,150]);
+            }
+        }
+    }
+
     private function drawPickupSprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
     {
         if ($run->pickups === []) return;
@@ -445,7 +510,7 @@ final class World
     private function drawFallback(Renderer $r, Run $run): void
     {
         $r->clear([18, 14, 22]);
-        $scale = 5.6; $cx = $r->getWidth() / 2; $cy = $r->getHeight() / 2;
+        $scale = 5.6; $cx = $r->getWidth() / 2 - $run->x * $scale; $cy = $r->getHeight() / 2 - $run->z * $scale;
         foreach ($run->map->solids as $solid) {
             [$x0, , $z0] = $solid['min']; [$x1, , $z1] = $solid['max'];
             $r->fillRect((int)round($cx + $x0 * $scale), (int)round($cy + $z0 * $scale), max(1, (int)round(($x1 - $x0) * $scale)), max(1, (int)round(($z1 - $z0) * $scale)), $solid['color']);
@@ -457,6 +522,15 @@ final class World
         }
         foreach ($run->pickups as $pickup) {
             $r->fillCircle((int)round($cx + $pickup['x'] * $scale), (int)round($cy + $pickup['z'] * $scale), 1, $pickup['kind'] === 'health' ? [250,70,80] : [80,235,235]);
+        }
+        if ($run->boss?->active && !$run->boss->defeated) {
+            $p = $run->bossPosition;
+            $r->fillCircle((int)($cx + $p['x'] * $scale), (int)($cy + $p['z'] * $scale), 6, $run->boss->vulnerable ? [90,255,120] : [240,60,70]);
+            foreach ($run->boss->orbs as $orb) if ($orb['alive']) $r->fillCircle((int)($cx + $orb['x'] * $scale), (int)($cy + $orb['z'] * $scale), 3, [255,215,80]);
+        }
+        if ($run->objective?->state === \App\Game\TreasureDirector::TREASURE_READY) {
+            $p = $run->objective->treasureAnchor;
+            $r->fillRect((int)($cx + $p['x'] * $scale) - 4, (int)($cy + $p['z'] * $scale) - 3, 8, 6, [255,210,65]);
         }
         $r->drawLine($px, $py, (int)round($px + sin($run->yaw) * 10), (int)round($py + cos($run->yaw) * 10), [255,240,180]);
     }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tools/test-bootstrap.php" colors="true" cacheResult="false">
+  <testsuites>
+    <testsuite name="Pure game logic">
+      <directory>tests</directory>
+      <directory>tools/tests</directory>
+      <exclude>tests/GameSmokeTest.php</exclude>
+      <exclude>tests/ProceduralSceneSmokeTest.php</exclude>
+    </testsuite>
+  </testsuites>
+</phpunit>

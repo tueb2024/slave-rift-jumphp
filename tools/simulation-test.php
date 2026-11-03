@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 require __DIR__ . '/../src/Game/BrushMap.php';
 require __DIR__ . '/../src/Game/RhythmClock.php';
+require __DIR__ . '/../src/Game/DifficultyDirector.php';
+require __DIR__ . '/../src/Game/TreasureDirector.php';
+require __DIR__ . '/../src/Game/BossController.php';
+require __DIR__ . '/../src/Game/GameMode.php';
+require __DIR__ . '/../src/Game/XpCurve.php';
+require __DIR__ . '/../src/Game/SecondaryScheduler.php';
 require __DIR__ . '/../src/Game/Run.php';
 require __DIR__ . '/../src/Gfx/Meshes.php';
 require __DIR__ . '/../src/Gfx/EnemyAtlas.php';
@@ -168,7 +174,7 @@ foreach (range(-2, 2) as $gx) foreach ([-1, 1] as $gz) $spreadMap->spawnPoints[]
 $spread = new Run($spreadMap, 7);
 $spread->wave = 9;
 $spread->remaining = 40;
-frames($spread, 25);
+frames($spread, 90);
 $newEnemies = array_values($spread->enemies);
 check(count($newEnemies) >= 3, 'wide wave uses multiple valid spawn points');
 foreach ($newEnemies as $i => $one) foreach (array_slice($newEnemies, $i + 1) as $two) {

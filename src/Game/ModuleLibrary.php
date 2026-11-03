@@ -102,6 +102,15 @@ final class ModuleLibrary
         $m->addBox(-$halfWidth, $ceilingY, -$halfDepth, $halfWidth, $ceilingY + 0.2, $halfDepth, 'ceil');
 
         $exitY = $up ? $totalRise : -$totalRise;
+        // End shoulders and lintels close the gaps around the narrower adjoining doorways.
+        $entryFrame = new RoomModule('stair_entry');
+        self::doorNorth($entryFrame, $halfWidth, $halfDepth, $h, 'stone');
+        array_push($m->solids, ...$entryFrame->solids);
+        $exitFrame = new RoomModule('stair_exit');
+        self::doorSouth($exitFrame, $halfWidth, $halfDepth, $h, 'stone');
+        $exitFrame = $exitFrame->transform(0, 0.0, $exitY, 0.0);
+        array_push($m->solids, ...$exitFrame->solids);
+
         $m->addConnector('entry', 0.0, 0.0, -$halfDepth, 0.0, 0.0, -1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addConnector('main_exit', 0.0, $exitY, $halfDepth, 0.0, 0.0, 1.0, self::DOOR_WIDTH, self::DOOR_HEIGHT);
         $m->addSpawnAnchor(0.0, ($up ? $stepRise : -$stepRise) + self::SPAWN_Y, -4.0, ['stairs', 'lower']);

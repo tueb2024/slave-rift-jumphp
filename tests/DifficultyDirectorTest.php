@@ -33,12 +33,12 @@ final class DifficultyDirectorTest extends TestCase
         self::assertGreaterThan($guardian['threat'], $enforcer['threat']);
     }
 
-    public function testHealthScalingRewardsPlayerPowerInsteadOfCancellingIt(): void
+    public function testHealthScalingDependsOnlyOnWave(): void
     {
         $baseline = DifficultyDirector::healthScaleFor(1.0, 1);
         $doublePower = DifficultyDirector::healthScaleFor(2.0, 1);
         self::assertSame(1.0, $baseline);
-        self::assertGreaterThan(1.0, $doublePower);
+        self::assertSame($baseline, $doublePower);
         self::assertLessThan(2.0, $doublePower);
     }
 
