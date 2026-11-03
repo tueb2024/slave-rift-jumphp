@@ -66,7 +66,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     for(const population of [25,50,100,200]){
      await php(`$rcRun->enemies=[];$rcRun->boss=null;$rcRun->remaining=0;$rcRun->intermission=3600;$rcRun->health=100000;$rcRun->x=0;$rcRun->z=-18;$rcRun->y=.75;$rcRun->yaw=0;
       $spawn=new \\ReflectionMethod($rcRun,'spawnEnemyAt');for($i=0;$i<${population};$i++)$spawn->invoke($rcRun,-15.+($i%15)*2,.55,-12.+intdiv($i,15)*2,['runner','guardian','enforcer','brute'][$i%4]);
-      foreach($rcRun->enemies as &$e)$e['speed']=0.;unset($e);
+      foreach($rcRun->enemies as &$e){$e['speed']=0.;$e['health']=100000;$e['maxHealth']=100000;}unset($e);
       (new \\ReflectionProperty($rcScene,'recentFrames'))->setValue($rcScene,[]);(new \\ReflectionProperty($rcScene,'simulationTimes'))->setValue($rcScene,[]);`);
      await delay(2500);
      await php(`$frames=(new \\ReflectionProperty($rcScene,'recentFrames'))->getValue($rcScene);$cpu=(new \\ReflectionProperty($rcScene,'simulationTimes'))->getValue($rcScene);sort($frames);$world=(new \\ReflectionProperty($rcScene,'world'))->getValue($rcScene);

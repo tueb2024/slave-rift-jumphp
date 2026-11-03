@@ -86,5 +86,12 @@ final class MechaCombatTest extends TestCase
             if($stage<4){self::assertSame('level_complete',$c->state());self::assertTrue($c->advance());self::assertSame(48,$c->run->health);self::assertSame(2,$c->run->sniperRank);self::assertSame(3,$c->run->artilleryRank);self::assertSame(100.*$stage,$c->run->time);}
             else{self::assertSame('won',$c->state());self::assertFalse($c->advance());}
         }
+    }    public function testLargerSurfaceUsesFixedModulesOnPreviouslyFailingDays(): void
+    {
+        foreach(['2026-02-10','2026-02-27','2026-03-11','2026-03-13']as$date){
+            $c=CampaignRun::daily($date);$area=0;
+            foreach(range(1,4)as$stage){self::assertGreaterThan($area,$c->geometry['footprint']);self::assertEquals(1,$c->geometry['horizontalScale']);$area=$c->geometry['footprint'];$c->run->state='won';if($stage<4)self::assertTrue($c->advance());}
+        }
     }
+
 }

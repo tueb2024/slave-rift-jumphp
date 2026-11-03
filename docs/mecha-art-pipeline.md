@@ -46,3 +46,5 @@ Les PNG de secours contiennent 32 ressources : cinq atlas de méchas/boss, neuf 
 ## Qualification visuelle
 
 À vérifier : transparence, pieds sur le sol, orientation zéro face au joueur, cohérence des huit directions, visibilité à 3/15 mètres, contraste dans la pénombre, silhouette à 25/50/100/200 ennemis et armes doubles sans masquer les menaces. Conserver les PNG de secours tant que les rendus Blender ne sont pas validés. Vérifier les modèles `.blend` avant d’en faire une référence artistique définitive.
+
+La croissance de surface est vérifiée à chaque transition : si le tirage contient trop de couloirs étroits, des modules sont remplacés, dans un ordre déterministe, par des salles standards plus grandes. Les dimensions des modules ne changent jamais. Les quatre seeds restent fixées avant la partie.

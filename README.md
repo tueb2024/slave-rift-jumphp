@@ -69,3 +69,5 @@ Le dépôt d’auteur est à la racine ; **`games/slave-rift/`** est le package 
 La CI teste PHP 8.2/8.5, le runtime natif SDL/OpenGL et WASM, les clics/taps desktop/mobile, la succession des maps et la charge 25/50/100/200. Les mesures CPU sont séparées des mesures de frames Chromium/SwiftShader. Une exécution headless ne valide ni un téléphone physique ni le rendu CUDA sur votre GTX. Voir [qualification et livraison](docs/mecha-overhaul.md).
 
 Code et assets procéduraux originaux : GPL-3.0-or-later. Provenances historiques : [assets/ASSETS.md](assets/ASSETS.md).
+
+La croissance de surface est vérifiée à chaque transition : si le tirage contient trop de couloirs étroits, des modules sont remplacés, dans un ordre déterministe, par des salles standards plus grandes. Les dimensions des modules ne changent jamais. Les quatre seeds restent fixées avant la partie.
