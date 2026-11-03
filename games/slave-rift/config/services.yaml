@@ -6,7 +6,7 @@ services:
 
   App\:
     resource: '../src/*'
-    exclude: '../src/Game'
+    exclude: ['../src/Game', '../src/Audio']
 
   JumPHP\Input\InputManager:
     class: App\Input\WheelInputManager

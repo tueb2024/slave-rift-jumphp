@@ -108,6 +108,7 @@ final class World
             $this->drawPickupSprites($engine, $r, $run, $pitch);
             $this->drawEnemySprites($engine, $r, $run, $pitch);
             $this->drawDeathSprites($engine, $r, $run, $pitch);
+            $this->drawCombatEffects($r,$run,$pitch);
             $this->drawImpactSprites($engine, $r, $run, $pitch);
             $this->drawObjective($engine, $r, $run, $pitch);
             $this->drawDamagePopups($r, $run, $pitch);
@@ -199,8 +200,9 @@ final class World
             $tex = $sdl->getTexture($sprite['texture']);
             $r->copy($tex['texture'], $source, $x, $y, $spriteW, $spriteH);
             $this->drawEnemyHealthBar($r, $enemy, $x, $y, $spriteW);
+            if($enemy['health']<$enemy['maxHealth']*.25){$smoke=(int)(($run->time*9+$enemy['id'])%4);$r->fillCircle($x+intdiv($spriteW,2),$y-$smoke*2,2,[120,130,135,150]);}
             $this->visibleEnemies++;
-            if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 105, 75, 190], 1);
+            if ($enemy['flash'] > 0) $r->drawRect($x - 1, $y - 1, $spriteW + 2, $spriteH + 2, [255, 245, 190, 210], 1);
         }
     }
 
@@ -221,13 +223,7 @@ final class World
 
     private function spriteRect(string $type, array $sprite, array $source, array $point, float $distance): array
     {
-        $referenceHeight = match ($type) {
-            'runner' => 77.0,
-            'guardian' => 63.0,
-            'brute' => 87.0,
-            'enforcer' => 63.0,
-            default => 63.0,
-        };
+        $referenceHeight = 112.0;
         $standingHeight = max(24.0, min(160.0, (480.0 / max(1.25, $distance)) * $sprite['scale']));
         $pixelScale = $standingHeight / $referenceHeight;
         $spriteW = max(8, (int)round($source[2] * $pixelScale));
@@ -305,7 +301,7 @@ final class World
 
     private function drawObjective(Engine $engine, Renderer $r, Run $run, float $pitch): void
     {
-        if ($run->objective === null) return;
+        if ($run->objective === null && $run->boss === null) return;
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
         $project = function (array $p) use ($vp, $r, $run): ?array {
             $world = [$p['x'], $p['y'], $p['z']];
@@ -318,14 +314,15 @@ final class World
             $p = $run->bossPosition;
             $point = $project($p);
             if ($point !== null) {
-                // Reuse the vendored CC0 heavy monster atlas as the wall guardian.
-                $sheet = EnemyAtlas::SHEETS['brute'];
-                $source = EnemyAtlas::frame('brute', $boss->vulnerable ? 'pain' : 'idle', (int)($boss->time * 5), 0);
+                // The siege chassis keeps its magenta family across all phases.
+                $sheet = EnemyAtlas::SHEETS['siege'];
+                $source = EnemyAtlas::frame('siege', $boss->vulnerable ? 'pain' : ($run->bossWarning!==null?'attack':'idle'), (int)($boss->time * 5), 0);
                 if ($source !== null) {
                     $tex = $engine->sdl->getTexture($sheet['texture']);
                     $size = (int)min(120, max(20, 1000 / max(1, hypot($p['x'] - $run->x, $p['z'] - $run->z))));
                     $width = (int)round($size * $source[2] / $source[3]);
                     $r->copy($tex['texture'], $source, (int)$point[0] - intdiv($width, 2), (int)$point[1] - intdiv($size, 2), $width, $size);
+                    if($boss->vulnerable)$r->fillCircle((int)$point[0],(int)$point[1],max(3,(int)($size*.1)),[145,255,210]);
                     $r->drawRect((int)$point[0] - intdiv($width, 2), (int)$point[1] - intdiv($size, 2), $width, $size,
                         $boss->vulnerable ? [100,255,130] : [245,70,85], 2);
                 }
@@ -333,7 +330,7 @@ final class World
             foreach ($boss->orbs as $orb) {
                 if (!$orb['alive'] || ($point = $project($orb)) === null) continue;
                 $radius = (int)max(3, min(12, 65 / max(1, hypot($orb['x'] - $run->x, $orb['z'] - $run->z))));
-                $r->fillCircle((int)$point[0], (int)$point[1], $radius, [255,100,50]);
+                $r->fillRect((int)$point[0]-$radius, (int)$point[1]-$radius, $radius*2, $radius*2, [70,100,125]);
                 $r->fillCircle((int)$point[0], (int)$point[1], max(1, $radius - 2), [255,235,120]);
             }
         }
@@ -347,7 +344,7 @@ final class World
                 $previous = $point;
             }
         }
-        if ($run->objective->state === \App\Game\TreasureDirector::TREASURE_READY) {
+        if ($run->objective?->state === \App\Game\TreasureDirector::TREASURE_READY) {
             $p = $run->objective->treasureAnchor;
             $p['y'] += 0.4;
             if (($point = $project($p)) !== null) {
@@ -382,6 +379,48 @@ final class World
             $width = (int)max(12, round($height * $sprite['width'] / $sprite['height']));
             $texture = $sdl->getTexture($sprite['name']);
             $r->copy($texture['texture'], [0, 0, $sprite['width'], $sprite['height']], (int)round($point[0] - $width / 2), (int)round($point[1] - $height / 2), $width, $height);
+        }
+    }
+
+    private function drawCombatEffects(Renderer $r,Run $run,float $pitch): void
+    {
+        $vp=self::camera($run,$r->getWidth()/max(1,$r->getHeight()),$pitch);
+        $project=static function(array $p)use($vp,$r):?array{
+            $q=Mat4::project($vp,$p,$r->getWidth(),$r->getHeight());return $q!==null && $q[2]>=0 && $q[2]<=1 ? $q:null;
+        };
+        $line=static function(array $a,array $b,array $color,int $width=1)use($project,$r,$run):void{
+            // Move a muzzle off the near plane along the validated straight shot segment.
+            if(hypot($a[0]-$run->x,$a[2]-$run->z)<.1){$f=.12;$a=[$a[0]+($b[0]-$a[0])*$f,$a[1]+($b[1]-$a[1])*$f,$a[2]+($b[2]-$a[2])*$f];}
+            $p=$project($a);$q=$project($b);if($p===null||$q===null)return;
+            for($i=0;$i<$width;$i++)$r->drawLine((int)$p[0],(int)$p[1]+$i,(int)$q[0],(int)$q[1]+$i,$color);
+        };
+        foreach($run->traces as$t){
+            if(!in_array($t['type'],['pistol','auto','sniper'],true))continue;
+            $line([$t['startX'],$t['startY'],$t['startZ']],[$t['endX'],$t['endY'],$t['endZ']],$t['type']==='sniper'?[130,255,250]:[255,215,95],$t['type']==='sniper'?2:1);
+        }
+        foreach($run->flameSegments as$seg){
+            if(!$run->lineClear(self::eye($run),$seg['b']))continue;
+            $line($seg['a'],$seg['b'],[255,125+(int)(sin($run->time*40+$seg['d'])*40),40],max(1,(int)($seg['d']*.7)));
+        }
+        foreach($run->projectiles as$p){
+            $at=[$p['x'],$p['y'],$p['z']];if(!$run->lineClear(self::eye($run),$at))continue;
+            $q=$project($at);if($q===null)continue;
+            $size=max(2,min(7,(int)(32/max(1,hypot($p['x']-$run->x,$p['z']-$run->z)))));
+            $r->fillCircle((int)$q[0],(int)$q[1],$size,[255,190,65]);$r->fillCircle((int)$q[0],(int)$q[1],max(1,$size-1),[255,246,180]);
+        }
+        foreach($run->explosions as$e){
+            $at=[$e['x'],$e['y'],$e['z']];if(!$run->lineClear(self::eye($run),$at))continue;
+            $q=$project($at);if($q===null)continue;
+            $radius=(int)min(34,180*$e['radius']/max(2,hypot($e['x']-$run->x,$e['z']-$run->z))*(1-$e['life']/.4));
+            for($i=0;$i<12;$i++){$a=$i*M_PI/6;$b=$a+M_PI/6;$r->drawLine((int)($q[0]+cos($a)*$radius),(int)($q[1]+sin($a)*$radius),(int)($q[0]+cos($b)*$radius),(int)($q[1]+sin($b)*$radius),[255,170,55]);}
+        }
+        $count=0;
+        foreach($run->enemies as$e){
+            if(($e['windup']??0)<=0 || $count++>=12)continue;
+            $a=[$e['x'],$e['y']+.28,$e['z']];if(!$run->lineClear(self::eye($run),$a))continue;
+            $q=$project($a);if($q===null)continue;
+            $r->drawRect((int)$q[0]-5,(int)$q[1]-9,10,4,[255,224,95]);
+            if($e['type']==='enforcer'){$b=[$e['aimX'],$run->y+.35,$e['aimZ']];if($run->lineClear($a,$b))$line($a,$b,[225,75,65]);}
         }
     }
 

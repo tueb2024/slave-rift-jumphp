@@ -20,5 +20,7 @@ final class SecondaryScheduler
         return null;
     }
 
+    public function snapshot(): array{return ['queue'=>$this->queue,'gap'=>$this->gap];}
+    public function restore(array $state): void{$this->queue=array_values($state['queue']??[]);$this->gap=max(0,(float)($state['gap']??0));}
     public function pending(): array{return $this->queue;}
 }
