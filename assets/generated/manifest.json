@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "renderer": "portable-faceted-fallback",
+  "enemyFrame": [
+    96,
+    112
+  ],
+  "enemyAtlas": [
+    768,
+    1120
+  ],
+  "weaponFrame": [
+    144,
+    96
+  ],
+  "files": {
+    "bosses/siege.png": "4c118494b937347a6fea2d0f1640dd77743585ab6ecb69b6b01c684846cccc92",
+    "mechas/brute.png": "e6ec9602f51c54f0bc2f77342f50c19bc305ce95343922743f3a310770c62bbb",
+    "mechas/enforcer.png": "25c5c130a75a33430bd31e4d128a1c613300dd328613b549d834135e1a3db3cf",
+    "mechas/guardian.png": "51516b4960a83b49fcb308bc993d6bd73693526c1ce69634948b4715015d7194",
+    "mechas/runner.png": "e834ad0419553bb7dffaab253d36f329e6ba54367b96f41bc9c944416439dad5",
+    "weapons/artillery-hud-dim.png": "337ecd0e86d7f46d798e83eadec4c6da3654f144d31ce50bb7934d21c29a4629",
+    "weapons/artillery-hud.png": "efd8f762a1ad6d00a1b1937699fdfb116e7a0e0998411fbccc62dd3214356572",
+    "weapons/artillery.png": "9310546f2a555b42bdb695a1f4d7a7b2ea1796502bf643bc3d7f1865ea80d6c7",
+    "weapons/assault-hud-dim.png": "44d1cfe8898dd3e926820483be9cb2555ebbd60d81060fc0c58a6d76679e148a",
+    "weapons/assault-hud.png": "c6369a7031fd6a459c370981789deed4fffca750a7ef5c9d6e94dbcf93211518",
+    "weapons/assault.png": "2484e9133ca5e246796b9d059ee82714c7a5612b6861c9a77c5d2b64b8bc2feb",
+    "weapons/bazooka-hud-dim.png": "ed62b50787035dbc1b8b92ee0d211d165186957155468d90f80dd8cbae4601e5",
+    "weapons/bazooka-hud.png": "2fcfd7bac2af36c3a048b7497ea76fa56314e203a6f86ca9e01fcaaafd5fe7bf",
+    "weapons/bazooka.png": "094b5b7e57690086ea3aa3bfe1497d7abe3603dd004f9d7c6fd39d89566dc15c",
+    "weapons/flame-hud-dim.png": "4c34329472db7d72d3bfa048cd1d0e58f72ff9457ea9a33593186da86127b7d3",
+    "weapons/flame-hud.png": "5d70b92247983b12597bf72d95d36fb7d1261047cf4d41ead90b34c1deeb0f6e",
+    "weapons/flame.png": "ed2fed68d2bb1ccd75bcb75a60649ba6cbbb11036ef86d1c4c9dcfaa45fc4579",
+    "weapons/gatling-hud-dim.png": "ea6b935158b03b74ba01a6e9eb178f0b836c378be16e8ca5f167c80009b37535",
+    "weapons/gatling-hud.png": "a9555c67ef02f1dcc47a12541eeab0a6638484ed83b513577426a9334a88ba16",
+    "weapons/gatling.png": "bc95fd20050234be13cdcb2deebb5ec05493bb197655635be3aca107a1d43035",
+    "weapons/pistol-hud-dim.png": "a75010ea5afda59c41c710fccd8ec0358c2f5686bea007a1cc69965382aebbb8",
+    "weapons/pistol-hud.png": "7680a757339f86bdd208014678ac232c68af74a89c8a2ff6e4c0d6b5cf3d333a",
+    "weapons/pistol.png": "d8204503dd9b7c7004367d1182aa87573f8d51d471d2d380a337570804057ce9",
+    "weapons/pulse-hud-dim.png": "72706a61a9e208b8ece753782c1569be8714be0f49e12d704d5453df4643a0da",
+    "weapons/pulse-hud.png": "b3f49344132092ac94777711bedddc20cef590b4b230d5acc03f1c4434902c8b",
+    "weapons/pulse.png": "ddf725287041cb4f926b76170d701ea4b4045a3aa24295285547cc79e73c5365",
+    "weapons/smg-hud-dim.png": "606718b3f791cc6c2c9d09dd3aed4053c9eb0b59232ac3be496dc3421ced27dc",
+    "weapons/smg-hud.png": "189601cf0bb9b7bb90bc1d33d5160960e026c0e7a33e6a6af054bdaed9cdde6a",
+    "weapons/smg.png": "2ea294b684bccfd8681a9fe0f83627db7ed483605e0ee9561cebd51b85494409",
+    "weapons/sniper-hud-dim.png": "035eabe3685dedf32d16f35ded060317a82cbf161b876e5757d6a16e70918529",
+    "weapons/sniper-hud.png": "b7fcfa7e4bf01112e136b5a5bdbcf938078b461775d1434bd8352834b42b8f1a",
+    "weapons/sniper.png": "6497ece398159dbb86117ef6b8d73fa90794af85dff051f3e329ef2a201dede9"
+  }
+}
