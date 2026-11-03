@@ -35,26 +35,36 @@ final class GameMode
         return new self(self::NORMAL, $seed, depth: max(5, min(24, $depth)));
     }
 
-    public static function daily(string $date, int $tier, ?int $serverSeed = null, ?string $dailyId = null): self
+    /** Stage is an internal campaign index, never a choice of independent difficulty. */
+    public static function daily(string $date, int $tier = 1, ?int $serverSeed = null, ?string $dailyId = null): self
     {
-        if ($tier < 1 || $tier > 4) throw new \InvalidArgumentException('Daily tier must be 1..4');
-        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $date, new \DateTimeZone('Europe/Paris'));
-        if ($day === false || $day->format('Y-m-d') !== $date) throw new \InvalidArgumentException('Daily date must be YYYY-MM-DD');
-        // Small integer arithmetic works identically in PHP-WASM (32 bit) and desktop.
-        $ordinal = (int)$day->format('Y') * 366 + (int)$day->format('z');
-        $seed = $serverSeed ?? (($ordinal * 31) % 65517 + $tier);
+        if($tier<1||$tier>4)throw new \InvalidArgumentException('Daily stage must be 1..4');
+        $day=\DateTimeImmutable::createFromFormat('!Y-m-d',$date,new \DateTimeZone('UTC'));
+        if($day===false||$day->format('Y-m-d')!==$date)throw new \InvalidArgumentException('Daily date must be YYYY-MM-DD');
+        $seed=$serverSeed ?? self::seedForId($dailyId??$date,$tier);
         self::validateSeed($seed);
-        return new self(self::DAILY, $seed, $tier, $dailyId ?? $date . '/' . $tier,
-            [5, 7, 9, 11][$tier - 1], [0.85, 1.0, 1.15, 1.30][$tier - 1],
-            [10, 12, 16, 20][$tier - 1], [900, 1200, 1500, 1800][$tier - 1]);
+        return self::stageRules(self::DAILY,$seed,$tier,$dailyId??$date);
+    }
+
+    /** Domain separated, bounded integer hash: same result on 32/64-bit PHP. */
+    public static function seedForId(string $id,int $stage): int
+    {
+        $hash=17;
+        foreach(str_split('slave-rift/daily/v2/map/'.$stage.'/'.$id)as$c)$hash=($hash*131+ord($c))%65520;
+        return $hash+1;
     }
 
     public static function campaignStage(int $seed, int $stage): self
     {
         self::validateSeed($seed);
-        if($stage<1 || $stage>4) throw new \InvalidArgumentException('Campaign stage must be 1..4');
-        return new self(self::NORMAL,$seed,depth:[6,9,12,16][$stage-1],intensity:[1,1.12,1.25,1.4][$stage-1],
-            finalWaveSize:[12,15,18,22][$stage-1],bossHealth:[1200,1800,2700,4000][$stage-1],campaignStage:$stage);
+        if($stage<1||$stage>4)throw new \InvalidArgumentException('Campaign stage must be 1..4');
+        return self::stageRules(self::NORMAL,$seed,$stage,null);
+    }
+
+    private static function stageRules(string $kind,int $seed,int $stage,?string $id): self
+    {
+        return new self($kind,$seed,$stage,$id,depth:[6,10,15,22][$stage-1],intensity:[1,1.1,1.2,1.3][$stage-1],
+            finalWaveSize:[12,15,18,22][$stage-1],bossHealth:[1000,1200,1450,1750][$stage-1],campaignStage:$stage);
     }
 
     public function compositionWave(int $wave): int
@@ -64,17 +74,17 @@ final class GameMode
 
     public function damageScale(int $wave): float
     {
-        return DifficultyDirector::damageScaleFor(1,$wave,1)*(1+max(0,$this->campaignStage-1)*0.1);
+        return DifficultyDirector::damageScaleFor(1,$wave,1)*(1+max(0,$this->campaignStage-1)*0.18);
     }
 
     public function bossPressure(): float
     {
-        return 1+max(0,$this->campaignStage-1)*0.12;
+        return 1+max(0,$this->campaignStage-1)*0.18;
     }
 
     public static function today(): string
     {
-        return (new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris')))->format('Y-m-d');
+        return (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d');
     }
 
     public static function dateLabel(string $date): string
@@ -114,13 +124,13 @@ final class GameMode
 
     public function enemyHealthScale(int $wave): float
     {
-        return $this->intensity * ($this->kind === self::HORDE ? 1.0 + max(0, $wave - 1) * 0.035 : DifficultyDirector::healthScaleFor(1, $wave));
+        return ($this->kind === self::HORDE ? 1.0 + max(0, $wave - 1) * 0.035 : DifficultyDirector::healthScaleFor(1, $wave));
     }
 
     public function label(): string
     {
         return match ($this->kind) {
-            self::DAILY => 'DÉFI DU JOUR / NIVEAU ' . $this->difficultyTier,
+            self::DAILY => 'DÉFI DU JOUR / MAP ' . $this->campaignStage . '/4',
             self::HORDE => 'HORDE', default => 'NORMAL',
         };
     }

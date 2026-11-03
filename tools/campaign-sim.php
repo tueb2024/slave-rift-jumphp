@@ -9,9 +9,10 @@ function simulateCampaign(string $profile,int $seed,string $model=XpCurve::ACCES
     $campaign=new CampaignRun($seed,new XpCurve($model,$compactMilestones?XpCurve::CAMPAIGN_MILESTONES:XpCurve::LEGACY_MILESTONES),$heal);$rows=[];$clock=new RhythmClock();
     for($stage=1;$stage<=4;$stage++){
         $run=$campaign->run;$start=$run->progressionSnapshot();
-        $result=simulateProfile($profile,$run->mode->seed,900,'route',$run->mode,$run->xpCurve,$run,$clock);
+        $startTime=$run->time;
+        $result=simulateProfile($profile,$run->mode->seed,$startTime+900,'route',$run->mode,$run->xpCurve,$run,$clock);
         $rows[]=['stage'=>$stage,'seed'=>$run->mode->seed,'geometry'=>$campaign->geometry,'start'=>$start,
-            'duration'=>$run->time,'kills'=>$run->kills-$start['kills'],'xpEarned'=>$run->collectedXp-$start['collectedXp'],'result'=>$result];
+            'duration'=>$run->time-$startTime,'kills'=>$run->kills-$start['kills'],'xpEarned'=>$run->collectedXp-$start['collectedXp'],'result'=>$result];
         if(!$campaign->advance())break;
     }
     return ['profile'=>$profile,'seed'=>$seed,'xpModel'=>$model,'healMissing'=>$heal,'milestones'=>$campaign->xpCurve->milestones,'state'=>$campaign->state(),'reached'=>count($rows),'levels'=>$rows];
@@ -36,5 +37,5 @@ if(realpath($_SERVER['SCRIPT_FILENAME'])===__FILE__){
         }
         $summary[$model][$profile]=$s;
     }
-    echo json_encode(['scope'=>'Experimental four-stage campaign; geometry doubles footprint, not graph depth. Simulation policy, not a human win-rate prediction.','summary'=>$summary,'runs'=>$rows],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)."\n";
+    echo json_encode(['scope'=>'Four-stage campaign; fixed-size rooms, increasing route length. Simulation policy, not a human win-rate prediction.','summary'=>$summary,'runs'=>$rows],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)."\n";
 }

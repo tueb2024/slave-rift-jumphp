@@ -18,11 +18,12 @@ final class MenuFlow
     {
         return match ($this->screen) {
             'main' => ['normal' => 'JOUER', 'daily' => 'DÉFI DU JOUR', 'horde' => 'HORDE', 'controls' => 'COMMANDES'],
-            'daily' => ['daily1' => 'NIVEAU 1 : ACCESSIBLE', 'daily2' => 'NIVEAU 2 : NORMAL', 'daily3' => 'NIVEAU 3 : DIFFICILE', 'daily4' => 'NIVEAU 4 : BRUTAL', 'back' => 'RETOUR'],
+            'daily' => ['daily_start'=>'COMMENCER LES 4 MAPS','back'=>'RETOUR'],
+            'level_complete'=>['next_map'=>'MAP SUIVANTE','menu'=>'MENU PRINCIPAL'],
             'controls' => ['back' => 'RETOUR'],
             'pause' => ['resume' => 'REPRENDRE', 'restart' => 'RECOMMENCER', 'menu' => 'MENU PRINCIPAL'],
             'dead', 'won' => match ($this->mode) {
-                GameMode::DAILY => ['retry' => 'REJOUER LE DÉFI', 'daily' => 'AUTRE NIVEAU DU DÉFI', 'menu' => 'MENU PRINCIPAL'],
+                GameMode::DAILY => ['retry' => 'REJOUER LE DÉFI', 'menu' => 'MENU PRINCIPAL'],
                 GameMode::HORDE => ['retry' => 'RECOMMENCER', 'menu' => 'MENU PRINCIPAL'],
                 default => ['replay' => 'REJOUER CETTE MAP', 'new' => 'NOUVELLE MAP ALÉATOIRE', 'menu' => 'MENU PRINCIPAL'],
             },
