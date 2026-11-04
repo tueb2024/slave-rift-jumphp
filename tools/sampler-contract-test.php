@@ -17,8 +17,8 @@ namespace {
     function Mix_FadeOutChannel($c,$ms){global $calls;$calls[]=['fade',$c,$ms];}
     function Mix_PlayChannelTimed($c,$chunk,$loop,$ticks){global $calls;$calls[]=['play',$c];}
     function Mix_Volume(...$args){}
-    function Mix_HaltChannel(...$args){}
-    function Mix_FreeChunk(...$args){}
+    function Mix_HaltChannel(...$args){global $calls;$calls[]=['halt'];}
+    function Mix_FreeChunk(...$args){global $calls;$calls[]=['free'];}
     function check($ok,$why){if(!$ok)throw new \RuntimeException($why);}
     $sound=new \JumPHP\Audio\SoundManager();$sampler=new \App\Audio\Sampler($sound);
     $sampler->register();check($loads===0,'Defer until audio enabled');
@@ -41,5 +41,7 @@ namespace {
         check(!in_array('lead',array_column($s->events(0,0,7),0),true),'Lead threshold');
         check(!in_array('counter',array_column($s->events(0,0,15),0),true),'Counter threshold');
     }
-    echo "PASS: deferred loading, 53 PCM hashes, bounded alternating channels, release, 128 seeds / 16 bars, thresholds\n";
+    $sound->enabled=false;$before=count($calls);unset($sampler);
+    check(count($calls)===$before,'No SDL calls after audio shutdown');
+    echo "PASS: deferred loading, 53 PCM hashes, bounded alternating channels, release, 128 seeds / 16 bars, thresholds, shutdown\n";
 }

@@ -49,13 +49,15 @@ final class Sampler
     }
     public function stop(): void
     {
-        if(!$this->ready)return;
+        if(!$this->ready||!$this->sound->isEnabled())return;
         foreach(range(0,5)as$c)\Mix_FadeOutChannel($c,80);
         $this->active=[];
     }
     public function __destruct()
     {
-        if(!$this->ready)return;
+        // Engine shutdown closes SDL before scene objects are collected. Never call
+        // SDL_mixer after SoundManager::close(); the process owns remaining PCM then.
+        if(!$this->ready||!$this->sound->isEnabled())return;
         foreach(range(0,5)as$c)\Mix_HaltChannel($c);
         foreach($this->chunks as$chunk)\Mix_FreeChunk($chunk);
     }
