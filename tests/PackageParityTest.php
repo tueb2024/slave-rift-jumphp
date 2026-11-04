@@ -23,7 +23,7 @@ final class PackageParityTest extends TestCase
                 $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($source . '/' . $folder, \FilesystemIterator::SKIP_DOTS));
                 foreach ($iterator as $file) {
                     if (!$file->isFile()) continue;
-                    $relative = substr($file->getPathname(), strlen($source) + 1);
+                    $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($source) + 1));
                     if (str_starts_with($relative, 'assets/generated/models/')) continue;
                     self::assertFileExists($target . '/' . $relative);
                     self::assertSame(hash_file('sha256', $file->getPathname()), hash_file('sha256', $target . '/' . $relative), $relative);

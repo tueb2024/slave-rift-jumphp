@@ -27,7 +27,7 @@ final class ProceduralMusicTest extends TestCase
     public function testSamplerFrequencyAndArrangementProgression(): void
     {
         self::assertEqualsWithDelta(440,Sampler::frequency(69),.001);self::assertEqualsWithDelta(220,Sampler::frequency(57),.001);
-        $s=new ProceduralScore(1);self::assertSame([['kick',null]],$s->events(0,0,1));
+        $s=new ProceduralScore(1);self::assertSame([['kick',null],['bass',$s->phrase(0)['bass']]],$s->events(0,0,1));
         self::assertGreaterThan(count($s->events(0,0,1)),count($s->events(0,0,16,true,20)));
         self::assertSame('rift_hat',Sampler::key('hat'));
     }

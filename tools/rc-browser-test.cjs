@@ -35,6 +35,10 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await page.screenshot({path:`${out}/${name}-main.png`});
     await tap(160,60); await expect('mode','normal'); await expect('screen','play');
     const first=(await state()).seed;
+    // Verify all packaged PCM paths after the first user gesture, including reserved bass channels.
+    await php("$rcMusic=(new \\ReflectionProperty($rcScene,'music'))->getValue($rcScene); $rcMusic->register(); $rcSampler=(new \\ReflectionProperty($rcMusic,'sampler'))->getValue($rcMusic); $rcSound=\\JumPHP\\Kernel\\Engine::get()->sound; file_put_contents('/tmp/music-state.json',json_encode(['notes'=>count((new \\ReflectionProperty($rcSampler,'chunks'))->getValue($rcSampler)),'files'=>count(glob(JUMPHP_ROOT.'/assets/audio/*.wav'))]));");
+    const musicState=await page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/music-state.json',{encoding:'utf8'})));
+    assert.equal(musicState.files,53); assert.equal(musicState.notes,48);
     const seedStorageBefore=await page.evaluate(()=>({local:JSON.stringify(localStorage),session:JSON.stringify(sessionStorage),cookies:document.cookie}));
     await tap(298,10); await expect('screen','pause');
     await tap(160,71); await expect('screen','play');

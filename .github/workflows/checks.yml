@@ -31,6 +31,17 @@ jobs:
           python tools/blender/verify_assets.py
       - name: Simulation regressions
         run: php tools/simulation-test.php
+      - name: Sampled music contracts
+        run: php tools/sampler-contract-test.php
+      - name: Render actual sampled score
+        run: |
+          python -m pip install numpy
+          php tools/music-events.php > /tmp/music-events.json
+          python tools/render_music_demo.py /tmp/music-events.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sampled-music-demo-php-${{ matrix.php }}
+          path: docs/audio/
       - name: Pure PHPUnit regressions
         run: phpunit -c phpunit.pure.xml
       - name: Deterministic balance report
