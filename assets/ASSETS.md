@@ -1,5 +1,9 @@
 # Asset provenance
 
+## Animated FPS arsenal and powers (2026-11-04)
+
+`sprites/arsenal/` contains original ImageGen artwork generated for Slave Rift and selected by the project owner: seven eight-pose FPS atlases (`pistol`, `dual_pistol`, `smg`, `dual_smg`, `machinegun`, `minigun`, `dual_minigun`) and five eight-pose VFX atlases (`flame`, `sniper`, `artillery`, `rocket`, `emp`). No third-party game sprites were used. Frame extraction, wrist registration and nearest-neighbour export prepared the runtime PNGs. Runtime atlas: 768×128, eight 96×128 frames, indexed PNG with transparency. The runtime package contains only compact atlases, not source boards or preview GIFs. Existing external assets retain their licences.
+
 Slave Rift uses only assets that are either original project work or from sources with explicit redistribution terms.
 
 ## Quake environment
