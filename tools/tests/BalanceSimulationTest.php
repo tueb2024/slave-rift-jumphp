@@ -28,8 +28,7 @@ final class BalanceSimulationTest extends TestCase
             self::assertGreaterThanOrEqual(12, $result['wave7']['level']);
             self::assertGreaterThan(0, $result['wave7']['health']);
         }
-        // Exclusive powers deliberately remove the previous stacked defensive build.
-        // Keep a reachable late-game path and reject timeouts/softlocks above.
+        // One exclusive power removes the old stacked defensive build; retain a reachable late game.
         self::assertGreaterThanOrEqual(1,$reached,'At least one medium policy must discover late weapons with one power');
     }
 }

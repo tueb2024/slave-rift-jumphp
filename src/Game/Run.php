@@ -643,7 +643,7 @@ final class Run
                 $r = 2.5 + $this->random() * 3.5;
             } else {
                 [$baseX, $baseY, $baseZ] = [$this->x, $this->y, $this->z];
-                $r = ($this->mode->kind===GameMode::DAILY?3.0:6.0) + $this->random() * 6.0;
+                $r = ($this->mode->kind===GameMode::DAILY?3.0:6.0) + $this->random() * ($this->mode->kind===GameMode::DAILY?6.0:4.0);
             }
             $x = $baseX + sin($a) * $r;
             $z = $baseZ + cos($a) * $r;
