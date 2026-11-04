@@ -64,7 +64,7 @@ final class GameMode
     private static function stageRules(string $kind,int $seed,int $stage,?string $id): self
     {
         return new self($kind,$seed,$stage,$id,depth:[6,10,15,22][$stage-1],intensity:[1,1.1,1.2,1.3][$stage-1],
-            finalWaveSize:[12,15,18,22][$stage-1],bossHealth:[1000,1200,1450,1750][$stage-1],campaignStage:$stage);
+            finalWaveSize:$kind===self::DAILY?[24,36,48,64][$stage-1]:[12,15,18,22][$stage-1],bossHealth:[1000,1200,1450,1750][$stage-1],campaignStage:$stage);
     }
 
     public function compositionWave(int $wave): int
@@ -103,30 +103,42 @@ final class GameMode
 
     public function enemyLimit(int $wave): int
     {
+        if($this->kind===self::DAILY)return [24,40,64,88][$this->campaignStage-1];
         return $this->kind === self::HORDE ? min(200, 20 + max(1, $wave) * 4) : Run::MAX_ENEMIES;
     }
 
     public function waveBudget(int $wave): int
     {
+        if($this->kind===self::DAILY)return [24,32,40,48][$this->campaignStage-1]+max(0,$wave-1)*6;
         return $this->kind === self::HORDE ? 14 + max(1, $wave) * 6
             : (int)ceil(min(34, 10 + $wave * 2) * $this->intensity);
     }
 
     public function spawnBatch(int $wave): int
     {
+        if($this->kind===self::DAILY)return [3,4,5,6][$this->campaignStage-1];
         return $this->kind === self::HORDE ? min(6, 1 + intdiv($wave, 3)) : min(2, 1 + intdiv($wave, 4));
     }
 
     public function spawnInterval(int $wave): float
     {
+        if($this->kind===self::DAILY)return [.65,.55,.45,.38][$this->campaignStage-1];
         return $this->kind === self::HORDE ? max(0.12, 1.2 - $wave * 0.035) : max(0.85, 1.4 - $wave * 0.04) / (1+max(0,$this->campaignStage-1)*0.08);
     }
 
     public function enemyHealthScale(int $wave): float
     {
+        if($this->kind===self::DAILY)return [1.0,1.25,1.55,1.9][$this->campaignStage-1]*(1+max(0,$wave-1)*.035);
         return ($this->kind === self::HORDE ? 1.0 + max(0, $wave - 1) * 0.035 : DifficultyDirector::healthScaleFor(1, $wave));
     }
 
+    public function waveCount(): int{return $this->kind===self::DAILY?[3,4,5,6][$this->campaignStage-1]:PHP_INT_MAX;}
+    public function xpThreshold(int $level): int{return $this->kind===self::DAILY?12+max(0,$level-1)*3:XpCurve::threshold($level);}
+    /** The four-map budget is fixed: 114 + 200 + 308 + 442 = 1064 enemies. */
+    public function primaryStageForKills(int $kills): int
+    {
+        $stage=0;foreach([16,53,128,255,447,724]as$threshold)if($kills>=$threshold)$stage++;return $stage;
+    }
     public function label(): string
     {
         return match ($this->kind) {

@@ -68,6 +68,13 @@ final class Run
     public int $rocketRank = 0;
     public int $sniperRank = 0;
     public int $artilleryRank = 0;
+    public int $empRank = 0;
+    public ?string $equippedSecondary = null;
+    private float $empClock = .5;
+    public float $empFx = 0.0;
+    public float $bossStun = 0.0;
+    public int $primaryShotSerial = 0;
+    public int $primaryShotSide = 0;
     public array $projectiles = [];
     public array $explosions = [];
     public array $flameSegments = [];
@@ -116,6 +123,7 @@ final class Run
         $this->secondaryScheduler = new SecondaryScheduler();
         $this->mode = $mode ?? GameMode::fixed($seed);
         $this->remaining = $this->mode->waveBudget(1);
+        $this->nextXp=$this->mode->xpThreshold(1);
         // Quake deathmatch maps often use info_player_start as an intermission
         // camera. DM1's is above empty space, so use a real deathmatch spawn.
         [$this->x, $this->y, $this->z] = $map->spawnPoints[0] ?? $map->playerStart;
@@ -132,7 +140,7 @@ final class Run
         $this->losTests = $this->collisionTests = $this->neighborChecks = 0;
         $this->time += $dt;
         $this->waveTime += $dt;
-        foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible'] as $field) {
+        foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible','empFx','bossStun'] as $field) {
             $this->$field = max(0.0, $this->$field - $dt);
         }
         if ($this->comboTime > 0) {
@@ -189,7 +197,7 @@ final class Run
 
     public function progressionSnapshot(): array
     {
-        return ['level'=>$this->level,'xp'=>$this->xp,'collectedXp'=>$this->collectedXp,'maxHealth'=>$this->maxHealth,
+        return ['empRank'=>$this->empRank,'empClock'=>$this->empClock,'equippedSecondary'=>$this->equippedSecondary,'level'=>$this->level,'xp'=>$this->xp,'collectedXp'=>$this->collectedXp,'maxHealth'=>$this->maxHealth,
             'health'=>$this->health,'damageRank'=>$this->damageRank,'hasteRank'=>$this->hasteRank,'magnetRank'=>$this->magnetRank,
             'pulseRank'=>$this->pulseRank,'pulseUnlocked'=>$this->pulseUnlocked,'flameRank'=>$this->flameRank,'rocketRank'=>$this->rocketRank,
             'pulseClock'=>$this->pulseClock,'flameCooldownClock'=>$this->flameCooldownClock,'rocketClock'=>$this->rocketClock,
@@ -201,12 +209,13 @@ final class Run
     public function restoreProgression(array $saved, float $healMissing = 0.35): void
     {
         foreach (['level','xp','collectedXp','maxHealth','health','damageRank','hasteRank','magnetRank','pulseRank',
-            'pulseUnlocked','flameRank','rocketRank','sniperRank','artilleryRank','sniperClock','artilleryClock','time','flameActive','flameTickClock','pulseClock','flameCooldownClock','rocketClock','score','kills'] as $field) {
+            'pulseUnlocked','flameRank','rocketRank','sniperRank','artilleryRank','sniperClock','artilleryClock','time','flameActive','flameTickClock','pulseClock','flameCooldownClock','rocketClock','score','kills','empRank','empClock','equippedSecondary'] as $field) {
             if (array_key_exists($field,$saved)) $this->$field=$saved[$field];
         }
         if(isset($saved['scheduler']))$this->secondaryScheduler->restore($saved['scheduler']);
+        $power=$this->selectedSecondary();if($power!==null)$this->equipSecondary($power);
         $this->health=min($this->maxHealth,$this->health+(int)round(($this->maxHealth-$this->health)*max(0,min(1,$healMissing))));
-        $this->nextXp=XpCurve::threshold($this->level);
+        $this->nextXp=$this->mode->xpThreshold($this->level);
         $this->syncPrimaryStage();
     }
 
@@ -258,7 +267,8 @@ final class Run
         $this->advanceRoute();
         $objective = $this->objective;
         if ($objective === null) return;
-        if ($objective->updatePlayer($this->x, $this->y, $this->z)) {
+        $wavesComplete=$this->mode->kind!==GameMode::DAILY || ($this->wave >= $this->mode->waveCount() && $this->remaining===0 && $this->enemies===[]);
+        if ($wavesComplete && $objective->updatePlayer($this->x, $this->y, $this->z)) {
             // Keep only reachable threats in the final room. No remote cleanup hunt.
             foreach ($this->enemies as $id => $enemy) {
                 if (!$this->insideFinalArena($enemy['x'], $enemy['z'])) unset($this->enemies[$id]);
@@ -306,6 +316,7 @@ final class Run
 
     private function updateBossCombat(float $dt): void
     {
+        if($this->bossStun>0)return;
         $this->boss->update($dt);
                 $this->bossAttackClock -= $dt;
                 if ($this->bossWarning !== null) {
@@ -344,7 +355,10 @@ final class Run
     {
         if ($this->state !== 'upgrade' || !isset($this->choices[$slot])) return false;
         $choice = $this->choices[$slot];
+        $power=match($choice){'PULSE'=>'pulse','FLAMETHROWER'=>'flame','MINI_ROCKETS'=>'rockets','SNIPER'=>'sniper','ARTILLERY'=>'artillery','EMP'=>'emp',default=>null};
+        if($power!==null)$this->equipSecondary($power);
         match ($choice) {
+            'EMP' => $this->empRank=min(3,$this->empRank+1),
             'POWER' => $this->damageRank++,
             'HASTE' => $this->hasteRank++,
             'MAGNET' => $this->magnetRank++,
@@ -390,7 +404,7 @@ final class Run
 
     private function syncPrimaryStage(): void
     {
-        $next = $this->xpCurve->stageForLevel($this->level);
+        $next = $this->mode->kind===GameMode::DAILY ? $this->mode->primaryStageForKills($this->kills) : $this->xpCurve->stageForLevel($this->level);
         $changed = $next !== $this->primaryStage;
         $this->primaryStage = $next;
         [$tier, $weapon, $guns] = match ($next) {
@@ -450,13 +464,15 @@ final class Run
         return match ($choice) {
             'POWER' => 'PUISSANCE', 'HASTE' => 'CADENCE', 'MAGNET' => 'AIMANT',
             'VITALITY' => $this->maxHealth >= self::HEALTH_CAP ? 'SOINS' : 'VITALITÉ', 'PULSE' => 'IMPULSION',
-            'FLAMETHROWER' => 'LANCE-FLAMMES', 'MINI_ROCKETS' => 'BAZOOKA', 'SNIPER'=>'FUSIL DE PRÉCISION', 'ARTILLERY'=>'ARTILLERIE',
+            'FLAMETHROWER' => 'LANCE-FLAMMES', 'EMP'=>'IEM', 'MINI_ROCKETS' => 'ROQUETTES GUIDÉES', 'SNIPER'=>'RAYON DE PRÉCISION', 'ARTILLERY'=>'ARTILLERIE',
             default => $choice,
         };
     }
 
     public function upgradeDescription(string $choice): string
     {
+        $id=match($choice){'PULSE'=>'pulse','FLAMETHROWER'=>'flame','MINI_ROCKETS'=>'rockets','SNIPER'=>'sniper','ARTILLERY'=>'artillery','EMP'=>'emp',default=>null};
+        if($id!==null && $this->selectedSecondary()!==null && $this->selectedSecondary()!==$id)return 'REMPLACE LE POUVOIR / '.$this->upgradeLabel($choice);
         return match ($choice) {
             'POWER' => '+30% DÉGÂTS / SECONDAIRES RENFORCÉES',
             'HASTE' => 'SECONDAIRES PLUS RAPIDES',
@@ -465,7 +481,8 @@ final class Run
             'FLAMETHROWER' => $this->flameRank === 0 ? 'CÔNE DE FLAMMES PENDANT 2.4 S' : 'FLAMMES PLUS LONGUES ET PUISSANTES',
             'MINI_ROCKETS' => $this->rocketRank === 0 ? 'ROQUETTES VISIBLES / EXPLOSION DE ZONE' : 'PLUS DE ROQUETTES ET DE DÉGÂTS',
             'SNIPER' => 'RAYON LONGUE PORTÉE / CIBLE DANGEREUSE',
-            'ARTILLERY' => 'PROJECTILE LOURD / EXPLOSION DE ZONE',
+            'ARTILLERY' => 'EXPLOSION DE ZONE / REMPLACE LE POUVOIR',
+            'EMP' => 'PARALYSE 2 S / RAYON 3 M / REMPLACE LE POUVOIR',
             default => $this->maxHealth >= self::HEALTH_CAP ? 'SOIGNE 25 PV' : '+15 PV MAX / SOIGNE 25 PV',
         };
     }
@@ -557,9 +574,10 @@ final class Run
             return;
         }
         if ($this->remaining === 0 && $this->enemies === [] && !($this->boss?->active && !$this->boss->defeated)) {
+            if($this->mode->kind===GameMode::DAILY && $this->wave >= $this->mode->waveCount())return;
             $waveBonus = (int)round(($this->wave * 150 + $this->combo * 50) * $this->multiplier);
             $this->score += $waveBonus;
-            $this->intermission = 4.0;
+            $this->intermission = $this->mode->kind===GameMode::DAILY ? 1.5 : 4.0;
             $this->health = min($this->maxHealth, $this->health + 4);
             $this->message = 'BONUS VAGUE +' . $waveBonus . ' / SOIN +4';
             $this->messageTime = 3.0;
@@ -568,10 +586,11 @@ final class Run
         $this->spawnClock -= $dt;
         if ($this->remaining <= 0 || $this->spawnClock > 0 || count($this->enemies) >= $this->mode->enemyLimit($this->wave)) return;
         $batch = min($this->remaining, $this->mode->spawnBatch($this->wave));
+        $before=$this->remaining;
         for ($i = 0; $i < $batch && count($this->enemies) < $this->mode->enemyLimit($this->wave); $i++) {
             if ($this->spawnEnemy()) $this->remaining--;
         }
-        $this->spawnClock = $this->mode->spawnInterval($this->wave);
+        $this->spawnClock = $before===$this->remaining && $this->mode->kind===GameMode::DAILY ? .12 : $this->mode->spawnInterval($this->wave);
     }
 
     private function spawnEnemy(): bool
@@ -615,21 +634,21 @@ final class Run
             }
         }
         $fallbackCandidates = [];
-        for ($attempt = 0; $attempt < 20; $attempt++) {
+        for ($attempt = 0; $attempt < ($this->mode->kind===GameMode::DAILY?36:20); $attempt++) {
             $a = $this->random() * M_PI * 2;
             $anchorIndex = null;
-            if ($this->map->spawnPoints !== []) {
+            if ($this->map->spawnPoints !== [] && $this->mode->kind!==GameMode::DAILY) {
                 $anchorIndex = min(count($this->map->spawnPoints) - 1, (int)floor($this->random() * count($this->map->spawnPoints)));
                 [$baseX, $baseY, $baseZ] = $this->map->spawnPoints[$anchorIndex];
                 $r = 2.5 + $this->random() * 3.5;
             } else {
                 [$baseX, $baseY, $baseZ] = [$this->x, $this->y, $this->z];
-                $r = 6.0 + $this->random() * 4.0;
+                $r = ($this->mode->kind===GameMode::DAILY?3.0:6.0) + $this->random() * 6.0;
             }
             $x = $baseX + sin($a) * $r;
             $z = $baseZ + cos($a) * $r;
             $distance = hypot($x - $this->x, $z - $this->z);
-            if ($distance < 5.0 || $distance > 34.0) continue;
+            if ($distance < ($this->mode->kind===GameMode::DAILY?2.8:5.0) || $distance > 34.0) continue;
             if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
             $ground = $this->supportHeight($x, $z, 0.42, $baseY + 2.0);
             if ($ground === null) continue;
@@ -737,6 +756,7 @@ final class Run
         $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
             'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
             'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0,
+            'spawnDelay'=>$this->mode->kind===GameMode::DAILY?.55:0.0,'stun'=>0.0,
             'yaw' => $yaw, 'attackTime' => 0.0, 'moving' => false, 'animState' => 'idle', 'windup'=>0.0, 'aimX'=>$this->x, 'aimZ'=>$this->z];
         return true;
     }
@@ -754,6 +774,8 @@ final class Run
             $enemy['attackTime'] = max(0.0, $enemy['attackTime'] - $dt);
             $enemy['age'] += $dt;
             $enemy['moving'] = false;
+            $enemy['stun']=max(0,($enemy['stun']??0)-$dt);$enemy['spawnDelay']=max(0,($enemy['spawnDelay']??0)-$dt);
+            if($enemy['stun']>0 || $enemy['spawnDelay']>0){$enemy['windup']=0.0;continue;}
             $dx = $this->x - $enemy['x'];
             $dz = $this->z - $enemy['z'];
             $d = max(0.001, hypot($dx, $dz));
@@ -945,10 +967,39 @@ final class Run
         $this->muzzle = max($this->muzzle, 0.11);
         if (count($this->primaryAudioEvents) >= 32) array_shift($this->primaryAudioEvents);
         $this->primaryAudioEvents[] = $stage;
+        $this->primaryShotSerial++;$this->primaryShotSide=1-$this->primaryGunPhase;
+    }
+    public function selectedSecondary(): ?string
+    {
+        if($this->equippedSecondary!==null)return $this->equippedSecondary;
+        foreach(['flame'=>$this->flameRank,'rockets'=>$this->rocketRank,'sniper'=>$this->sniperRank,'artillery'=>$this->artilleryRank,'emp'=>$this->empRank,'pulse'=>$this->pulseUnlocked?1:0]as$id=>$rank)if($rank>0)return $id;
+        return null;
+    }
+    public function equipSecondary(string $id): void
+    {
+        if(!in_array($id,['flame','rockets','sniper','artillery','emp','pulse'],true))throw new \InvalidArgumentException('Unknown power');
+        $same=$this->selectedSecondary()===$id;
+        foreach(['flame'=>'flameRank','rockets'=>'rocketRank','sniper'=>'sniperRank','artillery'=>'artilleryRank','emp'=>'empRank','pulse'=>'pulseRank']as$key=>$field)if($key!==$id)$this->$field=0;
+        if($id!=='pulse')$this->pulseUnlocked=false;
+        $this->equippedSecondary=$id;
+        if(!$same){$this->flameActive=0;$this->flameSegments=[];$this->projectiles=[];$this->explosions=[];$this->pulse=0;$this->empFx=0;$this->secondaryScheduler=new SecondaryScheduler();$this->secondaryLastFired=[];}
+    }
+    private function empTargetAvailable(): bool
+    {
+        foreach($this->enemies as$e)if(hypot($e['x']-$this->x,$e['z']-$this->z)<=3.0 && abs($e['y']-$this->y)<1.5)return true;
+        return $this->boss?->active && !$this->boss->defeated && hypot($this->bossPosition['x']-$this->x,$this->bossPosition['z']-$this->z)<=3.0;
+    }
+    private function fireEmp(): bool
+    {
+        if(!$this->empTargetAvailable())return false;
+        foreach($this->enemies as&$e)if(hypot($e['x']-$this->x,$e['z']-$this->z)<=3.0 && abs($e['y']-$this->y)<1.5){$e['stun']=2.0;$e['windup']=0.0;}unset($e);
+        if($this->boss?->active && hypot($this->bossPosition['x']-$this->x,$this->bossPosition['z']-$this->z)<=3.0)$this->bossStun=2.0;
+        $this->empFx=.65;$this->empClock=$this->secondaryCooldown('emp');return true;
     }
     public function secondaryCooldown(string $id): float
     {
         return match($id){
+            'emp'=>max(9.0,12.0-($this->empRank-1)),
             'sniper'=>max(3.0,6.0-$this->sniperRank*.6-$this->hasteRank*.08),
             'artillery'=>max(4.0,8.5-$this->artilleryRank*.7-$this->hasteRank*.1),
             'pulse'=>max(1.0,2.4-$this->pulseRank*.15-$this->hasteRank*.04),
@@ -962,8 +1013,9 @@ final class Run
         $out=[];
         foreach(['flame'=>[$this->flameRank,$this->flameCooldownClock], 'rockets'=>[$this->rocketRank,$this->rocketClock],
             'sniper'=>[$this->sniperRank,$this->sniperClock], 'artillery'=>[$this->artilleryRank,$this->artilleryClock],
+            'emp'=>[$this->empRank,$this->empClock],
             'pulse'=>[$this->pulseUnlocked?max(1,$this->pulseRank):0,$this->pulseClock]] as$id=>[$rank,$remaining]){
-            if($rank<=0)continue;
+            if($rank<=0 || $id!==$this->selectedSecondary())continue;
             $active=$id==='flame' && $this->flameActive>0;
             $out[]=['id'=>$id,'rank'=>$rank,'remaining'=>max(0,$remaining),'cooldown'=>$this->secondaryCooldown($id),
                 'ready'=>$remaining<=0 && !$active,'active'=>$active,'flash'=>isset($this->secondaryLastFired[$id]) && $this->time-$this->secondaryLastFired[$id]<0.18];
@@ -991,7 +1043,8 @@ final class Run
 
     private function stepSecondaries(float $dt): void
     {
-        if (!$this->pulseUnlocked && $this->flameRank<=0 && $this->rocketRank<=0 && $this->sniperRank<=0 && $this->artilleryRank<=0) return;
+        $this->empClock-=$dt;
+        if (!$this->pulseUnlocked && $this->empRank<=0 && $this->flameRank<=0 && $this->rocketRank<=0 && $this->sniperRank<=0 && $this->artilleryRank<=0) return;
         if($this->sniperRank>0)$this->sniperClock-=$dt;
         if($this->artilleryRank>0)$this->artilleryClock-=$dt;
         if($this->pulseUnlocked)$this->pulseClock-=$dt;
@@ -1002,10 +1055,12 @@ final class Run
         }
         // Context changes only the insertion order; previously queued weapons keep their turn.
         $urgent=$this->findTarget(2.5,M_PI)!==null;
-        $order=$urgent?['pulse','flame','rockets','sniper','artillery']:['rockets','sniper','artillery','flame','pulse'];
+        $order=$urgent?['emp','pulse','flame','rockets','sniper','artillery']:['emp','rockets','sniper','artillery','flame','pulse'];
         $ready=[];$eligible=[];
         foreach($order as$id){
+            if($id!==$this->selectedSecondary())continue;
             [$owned,$clock,$range,$cone]=match($id){
+                'emp'=>[$this->empRank>0,$this->empClock,3.0,M_PI],
                 'sniper'=>[$this->sniperRank>0,$this->sniperClock,40.0,1.1],
                 'artillery'=>[$this->artilleryRank>0,$this->artilleryClock,26.0,1.2],
                 'pulse'=>[$this->pulseUnlocked,$this->pulseClock,3.6+$this->pulseRank*.35,M_PI],
@@ -1014,12 +1069,12 @@ final class Run
             };
             if(!$owned || $clock>0)continue;
             $ready[]=$id;
-            if($this->findTarget($range,$cone)!==null || $this->bossTargetAvailable($range,$cone))$eligible[]=$id;
+            if(($id==='emp' && $this->empTargetAvailable()) || ($id!=='emp' && ($this->findTarget($range,$cone)!==null || $this->bossTargetAvailable($range,$cone))))$eligible[]=$id;
         }
         $spacing=30.0/(RhythmClock::BPM_BASE+max(0,$this->level-1)*RhythmClock::BPM_PER_LEVEL);
         $id=$this->secondaryScheduler->step($dt,$ready,$eligible,$spacing);
         if($id===null)return;
-        $fired=match($id){'pulse'=>$this->firePulse(),'rockets'=>$this->fireMiniRockets(),'sniper'=>$this->fireSniper(),'artillery'=>$this->fireExplosive('artillery'),default=>(function(){ $this->startFlamethrower();return true; })()};
+        $fired=match($id){'emp'=>$this->fireEmp(),'pulse'=>$this->firePulse(),'rockets'=>$this->fireMiniRockets(),'sniper'=>$this->fireSniper(),'artillery'=>$this->fireExplosive('artillery'),default=>(function(){ $this->startFlamethrower();return true; })()};
         if($fired){
             $this->secondaryLastFired[$id]=$this->time;
             if(count($this->secondaryEvents)>=64)array_shift($this->secondaryEvents);
@@ -1054,7 +1109,7 @@ final class Run
         $cone = 0.48 + ($this->flameRank - 1) * 0.10;
         $limit = 6 + ($this->flameRank - 1) * 2;
         $targets = $this->findTargets($range, $cone, $limit);
-        $baseDamage = 6 + ($this->flameRank - 1) * 2;
+        $baseDamage = 9 + ($this->flameRank - 1) * 3;
         foreach ($targets as $index => $id) {
             if (!isset($this->enemies[$id])) continue;
             $enemy = $this->enemies[$id];
@@ -1081,7 +1136,7 @@ final class Run
             $score=function($id){$e=$this->enemies[$id];return ($e['type']==='enforcer'?80:($e['type']==='brute'?60:0))+hypot($e['x']-$this->x,$e['z']-$this->z);};
             return $score($b)<=>$score($a);
         });
-        $damage=(int)round((130+$this->sniperRank*45)*(1+$this->damageRank*.2));
+        $damage=(int)round((180+$this->sniperRank*55)*(1+$this->damageRank*.2));
         if($targets===[]){if(!$this->fireAtBoss($damage,5,40,1.1,'sniper'))return false;}
         else {$id=$targets[0];$this->addVisualTrace($this->enemies[$id],.15,'sniper');$this->damage($id,$damage);}
         $this->sniperClock=$this->secondaryCooldown('sniper');$this->shots++;$this->hits++;return true;
@@ -1100,8 +1155,8 @@ final class Run
         if($target===null)return false;
         $rank=$kind==='artillery'?$this->artilleryRank:$this->rocketRank;
         $this->projectiles[]=['x'=>$this->x,'y'=>$this->y+.35,'z'=>$this->z,
-            'tx'=>$target['x'],'ty'=>$target['y']+.1,'tz'=>$target['z'],'kind'=>$kind,'age'=>0.0,
-            'damage'=>(int)round((($kind==='artillery'?110:65)+$rank*22)*(1+$this->damageRank*.2)),
+            'targetId'=>$ids[0]??null,'tx'=>$target['x'],'ty'=>$target['y']+.1,'tz'=>$target['z'],'kind'=>$kind,'age'=>0.0,
+            'damage'=>(int)round((($kind==='artillery'?150:95)+$rank*28)*(1+$this->damageRank*.2)),
             'radius'=>$kind==='artillery'?3.6:2.6,'speed'=>$kind==='artillery'?12.0:18.0];
         if($kind==='artillery')$this->artilleryClock=$this->secondaryCooldown($kind);
         else $this->rocketClock=$this->secondaryCooldown($kind);
@@ -1112,7 +1167,9 @@ final class Run
     {
         foreach($this->explosions as$i=>&$e){$e['life']-=$dt;if($e['life']<=0)unset($this->explosions[$i]);}unset($e);
         foreach($this->projectiles as$i=>&$p){
+            if(($p['kind']??'')==='rockets' && isset($this->enemies[$p['targetId']??-1])){$t=$this->enemies[$p['targetId']];$p['tx']=$t['x'];$p['ty']=$t['y']+.1;$p['tz']=$t['z'];}
             $p['age']+=$dt;$a=[$p['x'],$p['y'],$p['z']];$b=[$p['tx'],$p['ty'],$p['tz']];
+            if(($p['kind']??'')==='rockets'){ $desired=atan2($b[0]-$a[0],$b[2]-$a[2]);$heading=$p['heading']??$desired;$delta=self::angleDelta($desired,$heading);$heading+=max(-3.5*$dt,min(3.5*$dt,$delta));$p['heading']=$heading;$distance=hypot($b[0]-$a[0],$b[2]-$a[2]);$b[0]=$a[0]+sin($heading)*$distance;$b[2]=$a[2]+cos($heading)*$distance;}
             $d=sqrt(($b[0]-$a[0])**2+($b[1]-$a[1])**2+($b[2]-$a[2])**2);$t=min(1,$p['speed']*$dt/max(.001,$d));
             $next=[$a[0]+($b[0]-$a[0])*$t,$a[1]+($b[1]-$a[1])*$t,$a[2]+($b[2]-$a[2])*$t];
             $blocked=!$this->lineClear($a,$next);
@@ -1128,7 +1185,7 @@ final class Run
     private function explode(array $at,int $damage,float $radius): void
     {
         if(count($this->explosions)>=8)array_shift($this->explosions);
-        $this->explosions[]=['x'=>$at[0],'y'=>$at[1],'z'=>$at[2],'radius'=>$radius,'life'=>.32];
+        $this->explosions[]=['x'=>$at[0],'y'=>$at[1],'z'=>$at[2],'radius'=>$radius,'life'=>.7,'totalLife'=>.7];
         foreach($this->enemies as$id=>$e){
             $d=sqrt(($e['x']-$at[0])**2+($e['y']+.15-$at[1])**2+($e['z']-$at[2])**2);
             if($d<=$radius && $this->lineClear($at,[$e['x'],$e['y']+.15,$e['z']])){$this->damage($id,(int)round($damage*(1-.5*$d/$radius)));$this->hits++;}
@@ -1201,7 +1258,7 @@ final class Run
         if ($targets === []) {
             if (!$this->fireAtBoss(30+$this->pulseRank*14,5,3.6+$this->pulseRank*.35,M_PI)) return false;
         }
-        foreach ($targets as $id) $this->damage($id, 30 + $this->pulseRank * 14);
+        foreach ($targets as $id) $this->damage($id, 45 + $this->pulseRank * 20);
         $this->pulse = 0.25;
         $this->pulseClock = $this->secondaryCooldown('pulse');
         return true;
@@ -1219,6 +1276,7 @@ final class Run
         if (count($this->corpses) >= self::MAX_VISUAL_CORPSES) array_shift($this->corpses);
         $this->corpses[] = array_merge($enemy, ['age' => 0.0, 'animState' => 'death']);
         $this->kills++;
+        if($this->mode->kind===GameMode::DAILY)$this->syncPrimaryStage();
         $this->combo++;
         $this->comboTime = 3.5;
         $this->multiplier = match (true) {
@@ -1278,7 +1336,7 @@ final class Run
         if ($this->xp < $this->nextXp || $this->state !== 'play') return;
         $this->xp -= $this->nextXp;
         $this->level++;
-        $this->nextXp = XpCurve::threshold($this->level);
+        $this->nextXp = $this->mode->xpThreshold($this->level);
         $this->syncPrimaryStage();
 
         $weaponPool = $this->weaponUpgradePool();
@@ -1304,6 +1362,7 @@ final class Run
     private function weaponUpgradePool(): array
     {
         $pool = [];
+        if($this->level>=8 && $this->empRank<3)$pool[]='EMP';
         if ($this->level >= 3 && $this->flameRank < 3) $pool[] = 'FLAMETHROWER';
         if ($this->level >= 3 && $this->rocketRank < 4) $pool[] = 'MINI_ROCKETS';
         if($this->level>=5 && $this->sniperRank<3)$pool[]='SNIPER';

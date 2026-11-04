@@ -26,21 +26,15 @@ final class SecondarySchedulerTest extends TestCase
         self::assertSame('pulse',$s->step(0,['pulse'],['pulse'],.25));
     }
 
-    public function testRealRunSeparatesLaunchesAndPreservesWaitingCooldowns(): void
+    public function testLegacyMultiPowerStateDispatchesOnlyOneSelectedPower(): void
     {
         $run=new Run(HordeArena::build(),42);$run->remaining=0;$run->intermission=3600;
         $run->flameRank=1;$run->rocketRank=1;$run->pulseUnlocked=true;
         foreach(['pulseClock','rocketClock','flameCooldownClock']as$name)(new \ReflectionProperty($run,$name))->setValue($run,0.0);
         (new \ReflectionMethod($run,'spawnEnemyAt'))->invoke($run,0.0,.55,2.0,'brute');
-        $id=array_key_first($run->enemies);$run->enemies[$id]['health']=$run->enemies[$id]['maxHealth']=100000;$run->enemies[$id]['speed']=0;
-        $run->step(1/60,0,0,0);$events=$run->drainSecondaryEvents();
-        self::assertCount(1,$events);
-        $waiting=array_column($run->secondaryInventory(),null,'id');
-        self::assertEquals(0,$waiting['flame']['remaining']);self::assertEquals(0,$waiting['rockets']['remaining']);
-        self::assertGreaterThan(0,$waiting['pulse']['remaining']);
-        for($i=0;$i<59;$i++){$run->step(1/60,0,0,0);array_push($events,...$run->drainSecondaryEvents());}
-        self::assertCount(3,$events);self::assertSame(['pulse','flame','rockets'],array_column($events,'id'));
-        for($i=1;$i<count($events);$i++)self::assertGreaterThanOrEqual($events[$i-1]['spacing']-1e-8,$events[$i]['time']-$events[$i-1]['time']);
-        foreach($run->secondaryInventory()as$entry)self::assertGreaterThan(0,$entry['remaining']);
+        $run->enemies[array_key_first($run->enemies)]['health']=100000;
+        $events=[];for($i=0;$i<60;$i++){$run->step(1/60,0,0,0);array_push($events,...$run->drainSecondaryEvents());}
+        self::assertSame(['flame'],array_unique(array_column($events,'id')));
+        self::assertCount(1,$run->secondaryInventory());
     }
 }

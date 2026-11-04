@@ -128,12 +128,7 @@ final class PlayScene extends AbstractScene
 
     private function loadAssetLayer(): void
     {
-        foreach ([
-            'weapon_colt' => 'assets/generated/weapons/pistol.png',
-            'weapon_mp44' => 'assets/generated/weapons/smg.png',
-            'weapon_bar' => 'assets/generated/weapons/assault.png',
-            'weapon_gatling' => 'assets/generated/weapons/gatling.png',
-        ] as $key => $path) {
+        foreach (WeaponRenderer::textures()+\App\Gfx\PowerRenderer::textures() as $key => $path) {
             if (!$this->sdl()->hasTexture($key)) $this->sdl()->loadTexture($key, $path);
         }
         foreach (SecondaryHud::textures() as $key=>$path) {
@@ -269,6 +264,7 @@ final class PlayScene extends AbstractScene
         $run = $this->run;
         if ($run === null) { $r->clear([8,7,14]); $this->renderMenu($r); return; }
         $this->world->render($this->engine, $r, $run, $this->pitch);
+        \App\Gfx\PowerRenderer::world($r,$this->sdl(),$run,$this->pitch);
         $font = $this->font();
         $w = $this->width(); $h = $this->height(); $cx = intdiv($w, 2); $cy = intdiv($h, 2);
         $hasSecondaries = $run->secondaryInventory() !== [];
@@ -276,7 +272,8 @@ final class PlayScene extends AbstractScene
         $cream = [240,215,170]; $cyan = [90,235,225];
         $r->fillRect(0, 0, $w, 23, [6,5,12,225]);
         $font->draw($r, 'PV ' . $run->health . '/' . $run->maxHealth, 4, 3, 1, $cream);
-        $font->draw($r, 'V' . $run->wave . '  E' . $run->kills . '  ' . $this->clock($run->time), $w - 48, 3, 1, $cream, 'right');
+        $waveLabel='V'.$run->wave.($run->mode->kind===GameMode::DAILY?'/'.$run->mode->waveCount():'');
+        $font->draw($r, $waveLabel . '  E' . $run->kills . '  ' . $this->clock($run->time), $w - 48, 3, 1, $cream, 'right');
         Hud::bar($r, 4, 13, 82, 4, max(0.0, $run->health / $run->maxHealth));
         $font->draw($r, 'NIV ' . $run->level . ' XP ' . $run->xp . '/' . $run->nextXp, 96, 13, 1, $cyan);
         if ($run->combo > 0) $font->draw($r, 'SÉRIE ' . $run->combo, 226, 13, 1, [255,155,90]);
@@ -289,6 +286,7 @@ final class PlayScene extends AbstractScene
         $weaponKey = $this->weaponRenderer->textureKey($run->primaryStage);
         $weapon = $this->sdl()->getTexture($weaponKey);
         $this->weaponRenderer->render($r, $run, $weapon);
+        \App\Gfx\PowerRenderer::foreground($r,$this->sdl(),$run);
         $font->draw($r, 'SCORE ' . number_format($run->score, 0, '.', ' '), $cx, $h - 20, 1, [255,205,90], 'center');
 
         if ($run->flameActive > 0) $font->draw($r, 'BALAYAGE DE FLAMMES', $cx, $h - 40, 1, [255,170,90], 'center');

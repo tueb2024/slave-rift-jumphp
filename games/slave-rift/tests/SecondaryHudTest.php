@@ -13,8 +13,8 @@ final class SecondaryHudTest extends TestCase
         self::assertSame([],SecondaryHud::layout($run->secondaryInventory()));
         $run->flameRank=1;$run->rocketRank=2;$run->pulseUnlocked=true;
         $items=SecondaryHud::layout($run->secondaryInventory());
-        self::assertSame(['flame','rockets','pulse'],array_column($items,'id'));
-        self::assertSame([26,51,76],array_column($items,'y'));
+        self::assertSame(['flame'],array_column($items,'id'));
+        self::assertSame([26],array_column($items,'y'));
         foreach($items as$item){
             self::assertSame(264,$item['x']);
             self::assertStringEndsWith('_dim',$item['texture']);
@@ -25,7 +25,8 @@ final class SecondaryHudTest extends TestCase
             self::assertFileExists(dirname(__DIR__).'/'.$path);
             self::assertSame([32,16],array_slice(getimagesize(dirname(__DIR__).'/'.$path),0,2));
         }
+        $run->equipSecondary('rockets');$run->rocketRank=2;
         (new \ReflectionProperty($run,'rocketClock'))->setValue($run,0.0);
-        self::assertSame('secondary_rockets',SecondaryHud::layout($run->secondaryInventory())[1]['texture']);
+        self::assertSame('secondary_rockets',SecondaryHud::layout($run->secondaryInventory())[0]['texture']);
     }
 }

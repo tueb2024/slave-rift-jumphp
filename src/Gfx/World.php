@@ -396,24 +396,8 @@ final class World
             for($i=0;$i<$width;$i++)$r->drawLine((int)$p[0],(int)$p[1]+$i,(int)$q[0],(int)$q[1]+$i,$color);
         };
         foreach($run->traces as$t){
-            if(!in_array($t['type'],['pistol','auto','sniper'],true))continue;
+            if(!in_array($t['type'],['pistol','auto'],true))continue;
             $line([$t['startX'],$t['startY'],$t['startZ']],[$t['endX'],$t['endY'],$t['endZ']],$t['type']==='sniper'?[130,255,250]:[255,215,95],$t['type']==='sniper'?2:1);
-        }
-        foreach($run->flameSegments as$seg){
-            if(!$run->lineClear(self::eye($run),$seg['b']))continue;
-            $line($seg['a'],$seg['b'],[255,125+(int)(sin($run->time*40+$seg['d'])*40),40],max(1,(int)($seg['d']*.7)));
-        }
-        foreach($run->projectiles as$p){
-            $at=[$p['x'],$p['y'],$p['z']];if(!$run->lineClear(self::eye($run),$at))continue;
-            $q=$project($at);if($q===null)continue;
-            $size=max(2,min(7,(int)(32/max(1,hypot($p['x']-$run->x,$p['z']-$run->z)))));
-            $r->fillCircle((int)$q[0],(int)$q[1],$size,[255,190,65]);$r->fillCircle((int)$q[0],(int)$q[1],max(1,$size-1),[255,246,180]);
-        }
-        foreach($run->explosions as$e){
-            $at=[$e['x'],$e['y'],$e['z']];if(!$run->lineClear(self::eye($run),$at))continue;
-            $q=$project($at);if($q===null)continue;
-            $radius=(int)min(34,180*$e['radius']/max(2,hypot($e['x']-$run->x,$e['z']-$run->z))*(1-$e['life']/.4));
-            for($i=0;$i<12;$i++){$a=$i*M_PI/6;$b=$a+M_PI/6;$r->drawLine((int)($q[0]+cos($a)*$radius),(int)($q[1]+sin($a)*$radius),(int)($q[0]+cos($b)*$radius),(int)($q[1]+sin($b)*$radius),[255,170,55]);}
         }
         $count=0;
         foreach($run->enemies as$e){
@@ -430,19 +414,14 @@ final class World
         if ($run->traces === []) return;
         $sdl = $engine->sdl;
         if (!$sdl->hasTexture('hit_spark')) $sdl->loadTexture('hit_spark', 'assets/sprites/effects/spark-impact.png');
-        if (!$sdl->hasTexture('flame_fx')) $sdl->loadTexture('flame_fx', 'assets/sprites/effects/muzzle-large-fire.png');
         $spark = $sdl->getTexture('hit_spark');
-        $flame = $sdl->getTexture('flame_fx');
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
         foreach (array_slice($run->traces, -self::MAX_IMPACTS) as $trace) {
             $point = Mat4::project($vp, [$trace['x'], $trace['y'], $trace['z']], $r->getWidth(), $r->getHeight());
             if ($point === null || $point[2] < 0 || $point[2] > 1) continue;
             $distance = hypot($trace['x'] - $run->x, $trace['z'] - $run->z);
             $size = (int)max(14, min(46, 150.0 / max(1.25, $distance)));
-            if (($trace['type'] ?? '') === 'flame') {
-                $r->copy($flame['texture'], null, (int)round($point[0] - $size / 2), (int)round($point[1] - $size / 2), $size, $size);
-                continue;
-            }
+            if (($trace['type'] ?? '') === 'flame') continue;
             if (($trace['type'] ?? '') === 'shuriken') {
                 $spin = $run->time * 12.0;
                 $radius = max(3, (int)round($size * 0.28));

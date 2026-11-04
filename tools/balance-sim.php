@@ -49,6 +49,14 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         if ($run->state === 'upgrade') {
             // Varied choices; prefer healing under pressure, not a single optimized build.
             $slot = ($seed + $run->level) % count($run->choices);
+            // A single-slot build keeps its upgraded power instead of randomly
+            // replacing it with rank one at every level. This uses legal choices only.
+            $powers=['FLAMETHROWER'=>'flame','MINI_ROCKETS'=>'rockets','SNIPER'=>'sniper','ARTILLERY'=>'artillery','EMP'=>'emp','PULSE'=>'pulse'];
+            $equipped=$run->selectedSecondary();
+            if($equipped!==null && isset($powers[$run->choices[$slot]]) && $powers[$run->choices[$slot]]!==$equipped){
+                foreach($run->choices as$i=>$choice)if(($powers[$choice]??null)===$equipped){$slot=$i;break;}
+                if(isset($powers[$run->choices[$slot]]) && $powers[$run->choices[$slot]]!==$equipped)foreach($run->choices as$i=>$choice)if(!isset($powers[$choice])){$slot=$i;break;}
+            }
             if ($run->health < $run->maxHealth * 0.6) {
                 $heal = array_search('VITALITY', $run->choices, true);
                 if ($heal !== false) $slot = $heal;

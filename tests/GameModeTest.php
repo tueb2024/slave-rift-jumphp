@@ -32,7 +32,7 @@ final class GameModeTest extends TestCase
             $seeds[] = $mode->seed;
             if ($previous !== null) {
                 self::assertGreaterThan($previous->depth, $mode->depth);
-                self::assertSame($previous->enemyHealthScale(7), $mode->enemyHealthScale(7));
+                self::assertGreaterThan($previous->enemyHealthScale(7), $mode->enemyHealthScale(7));
                 self::assertGreaterThan($previous->damageScale(7),$mode->damageScale(7));
                 self::assertGreaterThan($previous->waveBudget(7), $mode->waveBudget(7));
                 self::assertGreaterThan($previous->bossHealth, $mode->bossHealth);

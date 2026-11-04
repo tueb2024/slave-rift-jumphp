@@ -11,8 +11,8 @@ final class WeaponRendererTest extends TestCase
     {
         $renderer = new WeaponRenderer();
         $pistol = $renderer->layout(320, 180, 0, 0.0);
-        self::assertSame(97, $pistol['drawH']);
-        self::assertSame(146, $pistol['drawW']);
+        self::assertSame(135, $pistol['drawH']);
+        self::assertEqualsWithDelta(101.25, $pistol['drawW'], .01);
         self::assertSame(1, $pistol['copies']);
         self::assertGreaterThanOrEqual(0, $pistol['x']);
         self::assertGreaterThanOrEqual(0, $pistol['y']);
@@ -66,13 +66,13 @@ final class WeaponRendererTest extends TestCase
         self::assertSame(0, $renderer->frameForState(WeaponRenderer::READY));
         self::assertSame(2, $renderer->frameForState(WeaponRenderer::FIRE));
         self::assertSame(3, $renderer->frameForState(WeaponRenderer::RECOIL));
-        self::assertSame(1, $renderer->frameForState(WeaponRenderer::COOLDOWN));
-        self::assertSame(144, WeaponRenderer::FRAME_W);
-        self::assertSame(96, WeaponRenderer::FRAME_H);
+        self::assertSame(5, $renderer->frameForState(WeaponRenderer::COOLDOWN));
+        self::assertSame(96, WeaponRenderer::FRAME_W);
+        self::assertSame(128, WeaponRenderer::FRAME_H);
         self::assertSame(0, $renderer->rowForStage(0));
-        self::assertSame('weapon_colt', $renderer->textureKey(0));
-        self::assertSame('weapon_mp44', $renderer->textureKey(2));
-        self::assertSame('weapon_bar', $renderer->textureKey(4));
-        self::assertSame('weapon_gatling', $renderer->textureKey(6));
+        self::assertSame('weapon_pistol', $renderer->textureKey(0));
+        self::assertSame('weapon_smg', $renderer->textureKey(2));
+        self::assertSame('weapon_machinegun', $renderer->textureKey(4));
+        self::assertSame('weapon_dual_minigun', $renderer->textureKey(6));
     }
 }

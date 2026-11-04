@@ -33,6 +33,12 @@ jobs:
         run: php tools/simulation-test.php
       - name: Sampled music contracts
         run: php tools/sampler-contract-test.php
+      - name: Daily pressure in real procedural maps
+        run: php tools/daily-pressure-report.php > daily-pressure.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: daily-pressure-php-${{ matrix.php }}
+          path: daily-pressure.json
       - name: Render actual sampled score
         run: |
           python -m pip install numpy

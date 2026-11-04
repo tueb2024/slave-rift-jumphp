@@ -60,14 +60,15 @@ final class MechaCombatTest extends TestCase
         self::assertSame($active,$r2->flameActive);for($i=0;$i<60;$i++)$r2->step(.05,0,0,0);
         self::assertSame(0.0,$r2->flameActive);self::assertSame([],$r2->flameSegments);
     }
-    public function testFiveSecondariesNeverBeginTogetherAndSerialize(): void
+    public function testSecondariesAreExclusiveAndSelectionSurvivesMaps(): void
     {
-        $r=$this->fixture();$r->flameRank=1;$r->rocketRank=1;$r->sniperRank=1;$r->artilleryRank=1;$r->pulseUnlocked=true;
-        $this->spawn($r,'brute',0,2);$r->enemies[array_key_first($r->enemies)]['health']=100000;
-        foreach(['sniperClock','artilleryClock','rocketClock','flameCooldownClock','pulseClock']as$p)(new \ReflectionProperty($r,$p))->setValue($r,0.0);
-        $events=[];for($i=0;$i<150;$i++){$r->step(1/60,0,0,0);$events=array_merge($events,$r->drainSecondaryEvents());}
-        self::assertGreaterThanOrEqual(5,count($events));for($i=1;$i<count($events);$i++)self::assertGreaterThanOrEqual($events[$i]['spacing']-1e-8,$events[$i]['time']-$events[$i-1]['time']);
-        $copy=$this->fixture();$copy->restoreProgression($r->progressionSnapshot(),0);self::assertCount(5,$copy->secondaryInventory());
+        $r=$this->fixture();
+        foreach(['FLAMETHROWER','MINI_ROCKETS','SNIPER','ARTILLERY','EMP','PULSE']as$choice){
+            $r->state='upgrade';$r->choices=[$choice];self::assertTrue($r->chooseUpgrade(0));
+            self::assertCount(1,$r->secondaryInventory());
+            $copy=$this->fixture();$copy->restoreProgression($r->progressionSnapshot(),0);
+            self::assertSame($r->selectedSecondary(),$copy->selectedSecondary());self::assertCount(1,$copy->secondaryInventory());
+        }
     }
     public function testHordeSpawnsOneBossPerFifthWaveAndBlocksAdvance(): void
     {
@@ -82,8 +83,8 @@ final class MechaCombatTest extends TestCase
         $c=CampaignRun::daily('2026-11-03');self::assertCount(4,array_unique($c->stageSeeds));$area=0;
         for($stage=1;$stage<=4;$stage++){
             self::assertSame(GameMode::DAILY,$c->run->mode->kind);self::assertGreaterThan($area,$c->geometry['footprint']);$area=$c->geometry['footprint'];
-            self::assertNotNull($c->run->boss);$c->run->sniperRank=2;$c->run->artilleryRank=3;$c->run->time=100.*$stage;$c->run->health=20;$c->run->state='won';
-            if($stage<4){self::assertSame('level_complete',$c->state());self::assertTrue($c->advance());self::assertSame(48,$c->run->health);self::assertSame(2,$c->run->sniperRank);self::assertSame(3,$c->run->artilleryRank);self::assertSame(100.*$stage,$c->run->time);}
+            self::assertNotNull($c->run->boss);$c->run->equipSecondary('sniper');$c->run->sniperRank=2;$c->run->time=100.*$stage;$c->run->health=20;$c->run->state='won';
+            if($stage<4){self::assertSame('level_complete',$c->state());self::assertTrue($c->advance());self::assertSame(48,$c->run->health);self::assertSame(2,$c->run->sniperRank);self::assertSame(0,$c->run->artilleryRank);self::assertSame(100.*$stage,$c->run->time);}
             else{self::assertSame('won',$c->state());self::assertFalse($c->advance());}
         }
     }    public function testLargerSurfaceUsesFixedModulesOnPreviouslyFailingDays(): void

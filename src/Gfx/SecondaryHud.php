@@ -10,9 +10,7 @@ final class SecondaryHud
 {
     public static function textures(): array
     {
-        $out=[];foreach(['flame','rockets','pulse','sniper','artillery']as$id)foreach(['','-dim']as$suffix)
-            $out['secondary_'.$id.($suffix?'_dim':'')]='assets/generated/weapons/'.match($id){'rockets'=>'bazooka',default=>$id}.'-hud'.$suffix.'.png';
-        return $out;
+        return []; // Powers are represented by a recharge ring, not another firearm.
     }
 
     public static function layout(array $inventory,int $width=320): array
@@ -30,9 +28,10 @@ final class SecondaryHud
     {
         foreach(self::layout($run->secondaryInventory(),$width)as$item){
             $x=$item['x'];$y=$item['y'];$r->fillRect($x,$y,54,25,[6,9,15,225]);
-            $texture=$sdl->getTexture($item['texture']);$r->copy($texture['texture'],[0,0,32,16],$x+2,$y+1,32,16);
+            PowerRenderer::ring($r,$x+14,$y+12,9,[45,60,76]);
+            PowerRenderer::ring($r,$x+14,$y+12,9,$item['ready']?[90,245,225]:[160,190,210],$item['progress']);
             $color=$item['flash']?[255,245,170]:($item['active']?[255,156,70]:($item['ready']?[90,245,225]:[115,133,151]));
-            $prefix=match($item['id']){'flame'=>'F','rockets'=>'R','sniper'=>'S','artillery'=>'A',default=>'I'};
+            $prefix=match($item['id']){'flame'=>'F','rockets'=>'R','sniper'=>'S','artillery'=>'A','emp'=>'IEM',default=>'P'};
             $font->draw($r,$prefix.$item['rank'],$x+51,$y+5,1,$color,'right');
             $r->fillRect($x+2,$y+20,48,3,[32,44,57]);$r->fillRect($x+2,$y+20,(int)round(48*$item['progress']),3,$color);
             if($item['flash']||$item['active'])$r->drawRect($x,$y,54,25,$color,1);

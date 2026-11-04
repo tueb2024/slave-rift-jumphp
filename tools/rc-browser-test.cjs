@@ -89,8 +89,11 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await tap(160,152); await expect('screen','main');
     if(!mobile){await page.keyboard.press('Enter');await delay(450);}else await tap(160,60);
     await expect('mode','normal');
-    await php("$rcRun->flameRank=1;$rcRun->rocketRank=1;$rcRun->pulseUnlocked=true;");
-    await delay(150); assert.equal((await state()).secondaries.length,3); await page.screenshot({path:`${out}/${name}-secondary-arsenal.png`});
+    await php("$rcRun->state='upgrade';$rcRun->choices=['FLAMETHROWER'];$rcRun->chooseUpgrade(0);");
+    await delay(150); assert.equal((await state()).secondaries.length,1);
+    await php("$rcRun->state='upgrade';$rcRun->choices=['EMP'];$rcRun->chooseUpgrade(0);$rcRun->empFx=.65;");
+    await delay(100); assert.equal((await state()).secondaries[0].id,'emp');
+    await page.screenshot({path:`${out}/${name}-secondary-arsenal.png`});
     // Enter an upgrade fixture and select its second row by a real pointer/tap.
     await php("$rcRun->state='upgrade'; $rcRun->choices=['POWER','MAGNET','VITALITY'];");
     await delay(100); await tap(160,100); await expect('state','play');
