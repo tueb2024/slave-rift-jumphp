@@ -102,3 +102,9 @@ All seven sheets are by Nmn (Pawel Zarczynski), CC0. The local files are compact
 ## Secondary arsenal HUD (2026-11)
 
 `assets/sprites/secondaries/{flame,rockets,pulse}.png` and their `-dim.png` recharge variants are original 32×16 pixel pictograms drawn from geometric primitives by `tools/build_secondary_icons.py`. Artwork: **CC0-1.0**. No external images, proprietary sprites or traced weapon designs were used. The icons represent the three existing mechanics (flamethrower sweep, mini-rocket salvo, radial pulse); no new gameplay weapon was added. Source-generation script follows the repository code licence.
+
+## Original mecha overhaul (2026-11-03)
+
+`assets/generated/` contains original procedural plate-and-piston mechas, the siege boss, industrial weapons and HUD icons, generated specifically for Slave Rift. No downloaded model or proprietary sprite was used. Source geometry and palette are in `tools/blender/art_spec.py`; builders, poses and renderer are in `tools/blender/`. These source scripts and their generated original assets use the repository's GPL-3.0-or-later licence.
+
+The committed PNGs are portable faceted fallback renders. They are not Blender screenshots. The Windows pipeline replaces them with transparent Blender renders under the same atlas contract, preserves editable `.blend` sources outside the game package, and writes `assets/generated/manifest.json` with hashes and producer information. No existing external asset licence is changed; historical resources remain available but are no longer the active enemy/primary weapon art layer. See `docs/mecha-art-pipeline.md` for dimensions, provenance, commands and qualification limits.

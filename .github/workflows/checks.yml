@@ -22,6 +22,13 @@ jobs:
           tools: phpunit:${{ matrix.php == '8.2' && '10' || '11' }}
       - name: Lint PHP
         run: find src tools tests games/slave-rift/src -name '*.php' -print0 | xargs -0 -n1 php -l
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Blender pipeline syntax and generated resource hashes
+        run: |
+          python -m py_compile tools/blender/*.py
+          python tools/blender/verify_assets.py
       - name: Simulation regressions
         run: php tools/simulation-test.php
       - name: Pure PHPUnit regressions

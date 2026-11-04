@@ -33,5 +33,5 @@ function measureHorde(int $population, int $frames = 300): array
 
 if (realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {
     echo json_encode(['scope' => 'PHP CPU simulation only; no rendering/GPU measurement. Fixed-population fixture, not a human run.',
-        'cap' => 200, 'results' => array_map(static fn ($n) => measureHorde($n), [50,100,150,200])], JSON_PRETTY_PRINT) . "\n";
+        'cap' => 200, 'results' => array_map(static fn ($n) => measureHorde($n), [25,50,100,200])], JSON_PRETTY_PRINT) . "\n";
 }

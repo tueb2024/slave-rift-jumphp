@@ -9,7 +9,7 @@ foreach (['src', 'config', 'assets', 'tests', 'patches'] as $folder) {
     $dir = $root . '/' . $folder;
     if (!is_dir($dir)) continue;
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
-    foreach ($iterator as $file) if ($file->isFile()) $files[] = substr($file->getPathname(), strlen($root) + 1);
+    foreach ($iterator as $file) if ($file->isFile() && !str_contains($file->getPathname(),'/generated/models/') && !str_contains($file->getPathname(),'/generated/.work/')) $files[] = substr($file->getPathname(), strlen($root) + 1);
 }
 $errors = [];
 foreach ($files as $file) {

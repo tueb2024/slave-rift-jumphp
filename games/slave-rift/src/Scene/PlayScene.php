@@ -5,6 +5,7 @@ namespace App\Scene;
 use App\Audio\RiftMusic;
 use App\Audio\RiftSfx;
 use App\Game\AssembledLevel;
+use App\Game\CampaignRun;
 use App\Game\BrushMap;
 use App\Game\DifficultyDirector;
 use App\Game\GameMode;
@@ -26,6 +27,7 @@ use JumPHP\Ui\Hud;
 final class PlayScene extends AbstractScene
 {
     private ?Run $run = null;
+    private ?CampaignRun $campaign = null;
     private ?GameMode $mode = null;
     private MenuFlow $menu;
     private array $recentFrames = [];
@@ -44,6 +46,7 @@ final class PlayScene extends AbstractScene
     private ?AssembledLevel $assembledLevel = null;
     private ?TreasureDirector $objective = null;
     private float $frameMs = 16.7;
+    private array $simulationTimes = [];
     private float $pointerCooldown = 0.0;
     private bool $paused = false;
     private bool $welcome = true;
@@ -60,11 +63,13 @@ final class PlayScene extends AbstractScene
 
     public function enter(array $params = []): void
     {
+        $this->campaign = null;
         $this->demo = (bool)($params['demo'] ?? false);
         $this->debug = (bool)($params['debug'] ?? false);
         $this->menu = new MenuFlow();
         $this->pointerCooldown = 0.0;
         $this->recentFrames = [];
+        $this->simulationTimes=[];
         $this->lastFrameAt = null;
         $this->paused = false;
         $this->welcome = !$this->demo && !($params['playing'] ?? false);
@@ -89,6 +94,11 @@ final class PlayScene extends AbstractScene
         }
         $this->run = new Run($map, $this->levelSeed, $this->mode);
         if ($this->assembledLevel !== null) $this->run->setObjective($this->assembledLevel, $this->mode->finalWaveSize);
+        if($this->mode->kind===GameMode::DAILY){
+            $this->campaign=CampaignRun::daily(substr($this->mode->dailyId,0,10),$params['dailySeeds']??null,$params['dailyServerId']??null);
+            $this->run=$this->campaign->run;$this->assembledLevel=$this->campaign->level;$this->mode=$this->run->mode;
+            $this->levelSeed=$this->mode->seed;$this->proceduralDepth=$this->mode->depth;
+        }
         $this->objective = $this->run->objective;
         $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();
@@ -113,15 +123,16 @@ final class PlayScene extends AbstractScene
             $this->music = new RiftMusic($this->sound());
             $this->music->register();
         }
+        $this->music->reset($this->campaign?->seed??$this->levelSeed);
     }
 
     private function loadAssetLayer(): void
     {
         foreach ([
-            'weapon_colt' => 'assets/sprites/weapons/fps-colt.png',
-            'weapon_mp44' => 'assets/sprites/weapons/fps-mp44.png',
-            'weapon_bar' => 'assets/sprites/weapons/fps-bar.png',
-            'weapon_gatling' => 'assets/sprites/weapons/fps-gatling.png',
+            'weapon_colt' => 'assets/generated/weapons/pistol.png',
+            'weapon_mp44' => 'assets/generated/weapons/smg.png',
+            'weapon_bar' => 'assets/generated/weapons/assault.png',
+            'weapon_gatling' => 'assets/generated/weapons/gatling.png',
         ] as $key => $path) {
             if (!$this->sdl()->hasTexture($key)) $this->sdl()->loadTexture($key, $path);
         }
@@ -143,9 +154,10 @@ final class PlayScene extends AbstractScene
         $this->pointerCooldown = max(0.0, $this->pointerCooldown - $dt);
         $tap = $this->pointerCooldown > 0 ? null : $this->pointerPress();
         if ($this->run !== null && in_array($this->run->state, ['dead','won'], true)) {
-            if ($this->menu->screen !== $this->run->state) $this->menu->open($this->run->state);
+            $end=$this->campaign?->state()??$this->run->state;
+            if ($this->menu->screen !== $end) $this->menu->open($end);
             $this->restartDelay += $dt;
-            if ($this->demo && $this->restartDelay > 1.0) { $this->restartRun(true); return; }
+            if ($this->demo && $this->restartDelay > 1.0) { if($end==='level_complete')$this->nextCampaignMap();else $this->restartRun(true); return; }
         }
         if ($this->run !== null && $this->menu->screen === 'play' && ($this->actions()->isPressed('pause_game')
             || ($tap !== null && $tap[0] >= $this->width()-45 && $tap[1] >= 0 && $tap[1] < 24))) {
@@ -214,6 +226,7 @@ final class PlayScene extends AbstractScene
 
         $beforeState = $this->run->state;
         $beforeXp = $this->run->xp;
+        $simulationStarted=microtime(true);
         $this->step->run($dt, function (float $h) use ($forward, $strafe, $turn, $fire): void {
             if ($this->run->state !== 'play') return;
             $this->difficulty->beforeStep($this->run);
@@ -223,8 +236,11 @@ final class PlayScene extends AbstractScene
             $this->jumpPending = false;
         });
 
+        $this->simulationTimes[]=(microtime(true)-$simulationStarted)*1000;
+        if(count($this->simulationTimes)>120)array_shift($this->simulationTimes);
         $this->playAudioEvents($beforeState, $beforeXp, $dt);
-        $this->music->playSteps($this->rhythm->drain(), $this->run->level);
+        $this->music->playSteps($this->rhythm->drain(), $this->run->level, $this->run->boss?->active && !$this->run->boss->defeated, count($this->run->enemies));
+        if(($this->campaign?->state()??$this->run->state)==='won')$this->music->resolve();
     }
 
     private function playAudioEvents(string $beforeState, int $beforeXp, float $dt): void
@@ -285,7 +301,7 @@ final class PlayScene extends AbstractScene
         if ($run->boss !== null && $run->boss->active && !$run->boss->defeated) {
             $boss = $run->boss;
             $liveOrbs = count(array_filter($boss->orbs, static fn(array $orb): bool => $orb['alive']));
-            $label = $boss->vulnerable ? 'COEUR OUVERT '.(int)ceil($boss->vulnerableTimer).' S : TIREZ !' : 'ORBES RESTANTES : '.$liveOrbs.'/3';
+            $label = $boss->vulnerable ? 'COEUR OUVERT '.(int)ceil($boss->vulnerableTimer).' S : TIREZ !' : 'MODULES RESTANTS : '.$liveOrbs.'/3';
             $font->draw($r, $label . ' / PHASE ' . $boss->phase, $objectiveCx, 40, 1, $boss->vulnerable ? [100,255,130] : [255,160,90], 'center');
             Hud::bar($r, $hasSecondaries ? 30 : 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
             if ($run->bossWarning !== null) $font->draw($r, 'DANGER AU SOL : BOUGEZ !', $objectiveCx, 61, 1, [255,100,65], 'center');
@@ -363,6 +379,17 @@ final class PlayScene extends AbstractScene
         }
     }
 
+    private function nextCampaignMap(): void
+    {
+        if($this->campaign===null||!$this->campaign->advance())return;
+        $this->world->release($this->engine->gl());
+        $this->run=$this->campaign->run;$this->assembledLevel=$this->campaign->level;$this->objective=$this->run->objective;
+        $this->mode=$this->run->mode;$this->levelSeed=$this->mode->seed;$this->proceduralDepth=$this->mode->depth;
+        $this->world->prepare($this->engine->gl(),$this->run);$this->weaponRenderer->reset($this->run->time);
+        $this->menu->open('play');$this->paused=false;$this->restartDelay=0;$this->jumpPending=false;
+        // Keep RhythmClock and music phrase counters: this is the same run.
+    }
+
     private function startMode(GameMode $mode): void
     {
         $this->enter(['demo'=>$this->demo, 'debug'=>$this->debug, 'playing'=>true, 'gameMode'=>$mode]);
@@ -375,7 +402,7 @@ final class PlayScene extends AbstractScene
         if (!$sameMap && $mode->kind === GameMode::NORMAL && !$this->demo) $mode = GameMode::normal($mode->seed);
         if (!$sameMap && $mode->kind === GameMode::HORDE) $mode = GameMode::horde();
         $this->enter(['demo'=>$this->demo,'debug'=>$this->debug,'playing'=>true,
-            'gameMode'=>$mode,'procedural'=>$this->procedural]);
+            'gameMode'=>$mode,'procedural'=>$this->procedural,'dailySeeds'=>$this->campaign?->stageSeeds]);
     }
 
     private function handleMenuAction(?string $action): void
@@ -386,8 +413,8 @@ final class PlayScene extends AbstractScene
             case 'replay': case 'retry': $this->restartRun(true); break;
             case 'restart': $this->restartRun(false); break;
             case 'resume': $this->paused = false; break;
-            case 'daily1': case 'daily2': case 'daily3': case 'daily4':
-                $this->startMode(GameMode::daily(GameMode::today(), (int)substr($action,-1))); break;
+            case 'daily_start': $this->startMode(GameMode::daily(GameMode::today())); break;
+            case 'next_map': $this->nextCampaignMap();break;
             case 'menu': case 'back': case 'daily': case 'controls':
                 if ($this->run !== null && isset($this->world)) $this->world->release($this->engine->gl());
                 $this->run = null; $this->mode = null; $this->objective = null; $this->assembledLevel = null;
@@ -401,11 +428,11 @@ final class PlayScene extends AbstractScene
         $font = $this->font(); $w = $this->width(); $cx = intdiv($w,2);
         $r->fillRect(8, 4, $w-16, $this->height()-8, [8,7,14,255]);
         $title = match ($this->menu->screen) {
-            'daily'=>'DÉFI DU JOUR', 'controls'=>'COMMANDES', 'pause'=>'PAUSE', 'dead'=>'VOUS ÊTES MORT', 'won'=>'VICTOIRE !', default=>'SLAVE RIFT',
+            'daily'=>'DÉFI DU JOUR', 'controls'=>'COMMANDES', 'pause'=>'PAUSE', 'dead'=>'VOUS ÊTES MORT', 'won'=>'VICTOIRE !', 'level_complete'=>'MAP TERMINÉE', default=>'SLAVE RIFT',
         };
         $font->draw($r, $title, $cx, 12, 2, [90,235,225], 'center');
         if ($this->menu->screen === 'daily') $font->draw($r, GameMode::dateLabel(GameMode::today()), $cx, 32, 1, [240,215,170], 'center');
-        if (in_array($this->menu->screen,['dead','won'],true) && $this->run !== null) {
+        if (in_array($this->menu->screen,['dead','won','level_complete'],true) && $this->run !== null) {
             $font->draw($r, 'SCORE '.$this->run->score.' / '.$this->clock($this->run->time), $cx, 40, 1, [240,215,170], 'center');
             $font->draw($r, 'VAGUE '.$this->run->wave.' / '.$this->run->kills.' ÉLIMINATIONS', $cx, 54, 1, [240,215,170], 'center');
         }

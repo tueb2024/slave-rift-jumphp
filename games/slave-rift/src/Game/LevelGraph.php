@@ -24,7 +24,7 @@ final class LevelGraph
     {
         // Public depth remains a compact difficulty knob; physical route length is
         // deliberately larger so several waves happen before the terminal room.
-        $physicalDepth = max(12, min(32, $targetMainDepth * 2));
+        $physicalDepth = max(12, min(48, $targetMainDepth * 2));
         $this->build($physicalDepth);
     }
 

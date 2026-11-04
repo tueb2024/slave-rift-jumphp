@@ -12,8 +12,9 @@ final class CampaignRunTest extends TestCase
         for($stage=1;$stage<=4;$stage++){
             self::assertSame($stage,$c->stage);$seeds[]=$c->run->mode->seed;
             self::assertNotNull($c->run->boss);self::assertNotNull($c->run->objective);
-            self::assertEqualsWithDelta($c->baseArea*(2**($stage-1)),$c->geometry['footprint'],.001);
-            self::assertLessThanOrEqual(32,$c->geometry['mainRooms']);
+            self::assertSame([12,20,30,44][$stage-1],$c->geometry['mainRooms']);
+            self::assertEquals(1,$c->geometry['horizontalScale']);
+            self::assertLessThanOrEqual(48,$c->geometry['mainRooms']);
             $state=$c->run->progressionSnapshot();$state['level']=12;$state['xp']=3;$state['flameRank']=2;$state['rocketRank']=3;$state['pulseUnlocked']=true;$state['health']=20;
             $c->run->restoreProgression($state,0);
             self::assertSame(3,$c->run->primaryStage);
