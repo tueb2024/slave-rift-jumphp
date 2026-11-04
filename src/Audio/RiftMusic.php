@@ -12,7 +12,7 @@ final class RiftMusic
     private bool $resolved=false;
     public function __construct(SoundManager $sound){$this->sampler=new Sampler($sound);$this->reset(1337);}
     public function register(): void{$this->sampler->register();}
-    public function reset(int $seed): void{$this->score=new ProceduralScore($seed);$this->bar=0;$this->previous=-1;$this->resolved=false;}
+    public function reset(int $seed): void{$this->sampler->stop();$this->score=new ProceduralScore($seed);$this->bar=0;$this->previous=-1;$this->resolved=false;}
     public function playSteps(array $steps,int $level,bool $boss=false,int $pressure=0): void
     {
         $this->register(); // Retry after browser audio becomes available on a gesture.

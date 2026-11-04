@@ -50,9 +50,10 @@ final class ProceduralScore
         if($level>=4 && in_array($step,[4,12],true))$events[]=['snare',null];
         if($level>=12 && in_array($step,[4,12],true))$events[]=['clap',null];
         if(($pressure>=12||$boss)&&$step%2===1)$events[]=['hat',null];
-        if($level>=3 && $step%8===0)$events[]=['bass',$p['bass']];
-        if(($level>=6||$boss)&&isset($p['lead'][$step]))$events[]=['lead',$p['lead'][$step]];
-        if($level>=12 && isset($p['counter'][$step]))$events[]=['counter',$p['counter'][$step]];
+        if(($pressure>=20||$boss)&&$step===14)$events[]=['openhat',null];
+        if($step%8===0)$events[]=['bass',$p['bass']];
+        if($level>=8&&isset($p['lead'][$step]))$events[]=['lead',$p['lead'][$step]];
+        if($level>=16 && isset($p['counter'][$step]))$events[]=['counter',$p['counter'][$step]];
         if($boss&&$step===15)$events[]=['bass',$this->root-12+7];
         return $events;
     }

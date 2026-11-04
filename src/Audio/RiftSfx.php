@@ -12,10 +12,10 @@ final class RiftSfx
     public static function register(SoundManager $sound): void
     {
         if ($sound->hasSfx('colt_fire')) return;
-        $sound->synth('rift_kick', self::kick());
-        $sound->synth('rift_snare', self::snare());
-        $sound->synth('rift_clap', self::clap());
-        $sound->synth('rift_hat', self::hat());
+        if (!$sound->hasSfx('rift_kick')) $sound->synth('rift_kick', self::kick());
+        if (!$sound->hasSfx('rift_snare')) $sound->synth('rift_snare', self::snare());
+        if (!$sound->hasSfx('rift_clap')) $sound->synth('rift_clap', self::clap());
+        if (!$sound->hasSfx('rift_hat')) $sound->synth('rift_hat', self::hat());
         $sound->synth('colt_fire', self::gun(0.22, 0.62, 0.52));
         $sound->synth('sten_fire', self::gun(0.12, 0.42, 0.50));
         $sound->synth('heavy_fire', self::gun(0.16, 0.72, 0.46));
