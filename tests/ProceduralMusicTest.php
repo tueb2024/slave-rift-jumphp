@@ -24,6 +24,20 @@ final class ProceduralMusicTest extends TestCase
             self::assertLessThan(3,count(array_intersect(array_keys($p['lead']),array_keys($p['counter']))));
         }
     }
+    public function testNewSessionMusicHasIndependentSeedAndDifferentOpeningMelody(): void
+    {
+        $previous = null;
+        foreach (range(1,24) as $_) {
+            $seed = ProceduralScore::freshSeed($previous);
+            self::assertGreaterThanOrEqual(1,$seed);
+            self::assertLessThanOrEqual(65520,$seed);
+            $current = (new ProceduralScore($seed))->melodySignature();
+            self::assertNotSame($previous,$current);
+            self::assertSame($current,(new ProceduralScore($seed))->melodySignature());
+            $previous = $current;
+        }
+    }
+
     public function testSamplerFrequencyAndArrangementProgression(): void
     {
         self::assertEqualsWithDelta(440,Sampler::frequency(69),.001);self::assertEqualsWithDelta(220,Sampler::frequency(57),.001);

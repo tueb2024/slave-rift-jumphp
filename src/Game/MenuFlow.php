@@ -25,7 +25,7 @@ final class MenuFlow
             'dead', 'won' => match ($this->mode) {
                 GameMode::DAILY => ['retry' => 'REJOUER LE DÉFI', 'menu' => 'MENU PRINCIPAL'],
                 GameMode::HORDE => ['retry' => 'RECOMMENCER', 'menu' => 'MENU PRINCIPAL'],
-                default => ['replay' => 'REJOUER CETTE MAP', 'new' => 'NOUVELLE MAP ALÉATOIRE', 'menu' => 'MENU PRINCIPAL'],
+                default => ['new' => 'NOUVELLE CAMPAGNE ALÉATOIRE', 'menu' => 'MENU PRINCIPAL'],
             },
             default => [],
         };

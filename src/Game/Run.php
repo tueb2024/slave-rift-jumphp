@@ -574,6 +574,9 @@ final class Run
     private function spawnEnemy(): bool
     {
         $type = $this->chooseEnemyType();
+        // Defer distant daily spawn points until local, visible candidates have
+        // been tried. Preserve a safe fallback so a cramped room cannot stall.
+        $deferredDailySpawn = null;
         $radius = $this->enemyRadius($type);
         if ($this->map->spawnPoints !== []) {
             $candidates = [];
@@ -582,7 +585,7 @@ final class Run
                 $y = $mapY - 0.20;
                 if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
                 $distance = hypot($x - $this->x, $z - $this->z);
-                if ($distance < 4.5 || $distance > 34.0) continue;
+                if ($distance < 4.5 || $distance > ($this->mode->kind===GameMode::DAILY?18.0:34.0)) continue;
                 // DM1 has stacked floors. A spawn directly above the player
                 // reads as an enemy walking on the ceiling from below.
                 if (abs($y - $this->y) > 1.5) continue;
@@ -592,7 +595,7 @@ final class Run
                 $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
                 $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
                 if ($this->objective !== null && !$visible) continue;
-                $distanceScore = abs($distance - 12.0) * 0.28;
+                $distanceScore = abs($distance - ($this->mode->kind===GameMode::DAILY?7.5:12.0)) * 0.40;
                 $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
                 $visibilityPenalty = $visible ? 2.4 : -1.3;
                 $recentPenalty = 0.0;
@@ -607,12 +610,16 @@ final class Run
             if ($candidates !== []) {
                 usort($candidates, static fn (array $a, array $b): int => $a['score'] <=> $b['score']);
                 $spawn = $candidates[0];
-                $this->rememberSpawnPoint($spawn['index']);
-                return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z'], $type);
+                if ($this->mode->kind===GameMode::DAILY && hypot($spawn['x']-$this->x,$spawn['z']-$this->z)>11.5) {
+                    $deferredDailySpawn = $spawn;
+                } else {
+                    $this->rememberSpawnPoint($spawn['index']);
+                    return $this->spawnEnemyAt($spawn['x'], $spawn['y'], $spawn['z'], $type);
+                }
             }
         }
         $fallbackCandidates = [];
-        for ($attempt = 0; $attempt < ($this->mode->kind===GameMode::DAILY?36:20); $attempt++) {
+        for ($attempt = 0; $attempt < ($this->mode->kind===GameMode::DAILY?60:20); $attempt++) {
             $a = $this->random() * M_PI * 2;
             $anchorIndex = null;
             if ($this->map->spawnPoints !== [] && $this->mode->kind!==GameMode::DAILY) {
@@ -621,12 +628,12 @@ final class Run
                 $r = 2.5 + $this->random() * 3.5;
             } else {
                 [$baseX, $baseY, $baseZ] = [$this->x, $this->y, $this->z];
-                $r = ($this->mode->kind===GameMode::DAILY?3.0:6.0) + $this->random() * ($this->mode->kind===GameMode::DAILY?6.0:4.0);
+                $r = ($this->mode->kind===GameMode::DAILY?4.7:6.0) + $this->random() * ($this->mode->kind===GameMode::DAILY?5.3:4.0);
             }
             $x = $baseX + sin($a) * $r;
             $z = $baseZ + cos($a) * $r;
             $distance = hypot($x - $this->x, $z - $this->z);
-            if ($distance < ($this->mode->kind===GameMode::DAILY?2.8:5.0) || $distance > 34.0) continue;
+            if ($distance < ($this->mode->kind===GameMode::DAILY?4.5:5.0) || $distance > ($this->mode->kind===GameMode::DAILY?18.0:34.0)) continue;
             if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
             $ground = $this->supportHeight($x, $z, 0.42, $baseY + 2.0);
             if ($ground === null) continue;
@@ -644,7 +651,7 @@ final class Run
             }
             $fallbackCandidates[] = ['x' => $x, 'y' => $y, 'z' => $z,
                 'index' => $anchorIndex,
-                'score' => abs($distance - 12.0) * 0.28 + ($angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0)
+                'score' => abs($distance - ($this->mode->kind===GameMode::DAILY?7.5:12.0)) * 0.40 + ($angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0)
                     + ($visible ? 2.4 : -1.3) + $nearby * 1.5 + $recentPenalty + $this->random() * 0.55];
         }
         if ($fallbackCandidates !== []) {
@@ -652,6 +659,10 @@ final class Run
             $point = $fallbackCandidates[0];
             if ($point['index'] !== null) $this->rememberSpawnPoint($point['index']);
             return $this->spawnEnemyAt($point['x'], $point['y'], $point['z'], $type);
+        }
+        if ($deferredDailySpawn !== null) {
+            $this->rememberSpawnPoint($deferredDailySpawn['index']);
+            return $this->spawnEnemyAt($deferredDailySpawn['x'],$deferredDailySpawn['y'],$deferredDailySpawn['z'],$type);
         }
         return false;
     }
