@@ -80,6 +80,8 @@ final class GameSmokeTest extends GameTestCase
     {
         $this->game->start(PlayScene::class, ['seed' => 1337, 'playing' => true]);
         foreach (['dead', 'won'] as $state) {
+            // Each iteration starts a legacy single-map fixture: campaign victories use next_map.
+            $this->game->start(PlayScene::class,['seed'=>1337,'playing'=>true]);
             $old = $this->game->peek('run');
             $old->state = $state;
             $old->health = 0;
@@ -104,6 +106,8 @@ final class GameSmokeTest extends GameTestCase
         $x = ($lx + 160 * $lw / 320) / $ow;
         $y = ($ly + 118 * $lh / 180) / $oh;
         foreach (['dead', 'won'] as $state) {
+            // Each iteration starts a legacy single-map fixture: campaign victories use next_map.
+            $this->game->start(PlayScene::class,['seed'=>1337,'playing'=>true]);
             $old = $this->game->peek('run'); $old->state = $state;
             $touch = $this->game->engine->input->getTouch();
             $touch->handle((object)['type' => SDL_FINGERDOWN, 'tfinger' => (object)['x' => $x, 'y' => $y]]);
