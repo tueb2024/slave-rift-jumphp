@@ -24,6 +24,20 @@ final class DailyPacingTest extends TestCase
         foreach($survivors as $id)self::assertArrayHasKey($id,$r->enemies);
     }
 
+    public function testDailySpawnsStayNearThePlayerWithoutLosingTheLiveCap(): void
+    {
+        foreach (['2026-11-04','2026-11-05','2026-11-06'] as $date) {
+            $run=CampaignRun::daily($date)->run;
+            $run->health=100000;
+            for($i=0;$i<300;$i++)$run->step(.05,0,0,0);
+            self::assertGreaterThan(0,count($run->enemies));
+            foreach ($run->enemies as $enemy) {
+                self::assertLessThanOrEqual(18.01,hypot($enemy['x']-$run->x,$enemy['z']-$run->z));
+            }
+            self::assertLessThanOrEqual(4,count($run->enemies));
+        }
+    }
+
     public function testFirstWeaponUpgradeUnlocksAFasterOpeningCadence(): void
     {
         $m=GameMode::daily('2026-11-05');

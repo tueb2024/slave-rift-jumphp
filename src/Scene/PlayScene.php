@@ -2,6 +2,7 @@
 
 namespace App\Scene;
 
+use App\Audio\ProceduralScore;
 use App\Audio\RiftMusic;
 use App\Audio\RiftSfx;
 use App\Game\AssembledLevel;
@@ -36,6 +37,7 @@ final class PlayScene extends AbstractScene
     private WeaponRenderer $weaponRenderer;
     private FixedStep $step;
     private RiftMusic $music;
+    private ?string $lastMelodySignature = null;
     private RhythmClock $rhythm;
     private DifficultyDirector $difficulty;
     private bool $demo = false;
@@ -84,21 +86,33 @@ final class PlayScene extends AbstractScene
         $this->procedural = $this->mode->kind !== GameMode::HORDE && (bool)($params['procedural'] ?? true);
         $this->levelSeed = $this->mode->seed;
         $this->proceduralDepth = $this->mode->depth;
-        if ($this->procedural) {
-            $graph = new LevelGraph($this->levelSeed, $this->proceduralDepth);
-            $this->assembledLevel = (new LevelAssembler())->assemble($graph);
-            $map = $this->assembledLevel->map;
+
+        if ($this->mode->kind === GameMode::DAILY) {
+            $this->campaign = CampaignRun::daily(substr($this->mode->dailyId,0,10),$params['dailySeeds']??null,$params['dailyServerId']??null);
+        } elseif ($this->mode->kind === GameMode::NORMAL && ($params['campaign'] ?? false)) {
+            $this->campaign = CampaignRun::random($params['campaignLength'] ?? random_int(3,4),$this->mode->seed);
+        }
+
+        if ($this->campaign !== null) {
+            $this->run = $this->campaign->run;
+            $this->assembledLevel = $this->campaign->level;
+            $this->mode = $this->run->mode;
+            $this->levelSeed = $this->mode->seed;
+            $this->proceduralDepth = $this->mode->depth;
+            $this->procedural = true;
         } else {
-            $this->assembledLevel = null;
-            $map = $this->mode->kind === GameMode::HORDE ? HordeArena::build() : BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
+            if ($this->procedural) {
+                $graph = new LevelGraph($this->levelSeed, $this->proceduralDepth);
+                $this->assembledLevel = (new LevelAssembler())->assemble($graph);
+                $map = $this->assembledLevel->map;
+            } else {
+                $this->assembledLevel = null;
+                $map = $this->mode->kind === GameMode::HORDE ? HordeArena::build() : BrushMap::load($this->engine->config->path('assets/maps/quake-dm1.map'));
+            }
+            $this->run = new Run($map, $this->levelSeed, $this->mode);
+            if ($this->assembledLevel !== null) $this->run->setObjective($this->assembledLevel, $this->mode->finalWaveSize);
         }
-        $this->run = new Run($map, $this->levelSeed, $this->mode);
-        if ($this->assembledLevel !== null) $this->run->setObjective($this->assembledLevel, $this->mode->finalWaveSize);
-        if($this->mode->kind===GameMode::DAILY){
-            $this->campaign=CampaignRun::daily(substr($this->mode->dailyId,0,10),$params['dailySeeds']??null,$params['dailyServerId']??null);
-            $this->run=$this->campaign->run;$this->assembledLevel=$this->campaign->level;$this->mode=$this->run->mode;
-            $this->levelSeed=$this->mode->seed;$this->proceduralDepth=$this->mode->depth;
-        }
+        $this->menu->campaign = $this->campaign !== null && $this->mode->kind === GameMode::NORMAL;
         $this->objective = $this->run->objective;
         $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();
@@ -123,7 +137,13 @@ final class PlayScene extends AbstractScene
             $this->music = new RiftMusic($this->sound());
             $this->music->register();
         }
-        $this->music->reset($this->campaign?->seed??$this->levelSeed);
+        if ($this->demo) {
+            $this->music->reset($this->campaign?->seed??$this->levelSeed);
+        } else {
+            $musicSeed = ProceduralScore::freshSeed($this->lastMelodySignature);
+            $this->lastMelodySignature = (new ProceduralScore($musicSeed))->melodySignature();
+            $this->music->reset($musicSeed);
+        }
     }
 
     private function loadAssetLayer(): void
@@ -350,7 +370,12 @@ final class PlayScene extends AbstractScene
         else {
             $r->fillRect($w - 44, 0, 44, 23, [8,5,12,235]);
             $font->draw($r, 'PAUSE', $w - 22, 7, 1, $cyan, 'center');
-            if ($this->mode?->kind !== GameMode::NORMAL) $font->draw($r, $this->mode->label(), $cx, $h-31, 1, $cyan, 'center', [8,5,12]);
+            if ($this->campaign !== null || $this->mode?->kind !== GameMode::NORMAL) {
+                $modeLabel = $this->campaign !== null && $this->mode?->kind === GameMode::NORMAL
+                    ? 'JOUER / MAP '.$this->campaign->stage.'/'.$this->campaign->totalStages
+                    : $this->mode->label();
+                $font->draw($r, $modeLabel, $cx, $h-31, 1, $cyan, 'center', [8,5,12]);
+            }
         }
         if ($this->demo) $font->draw($r, 'DEMO', $w - 4, 27, 1, $cream, 'right');
         if ($this->debug && $this->menu->screen === 'play') {
@@ -390,17 +415,18 @@ final class PlayScene extends AbstractScene
 
     private function startMode(GameMode $mode): void
     {
-        $this->enter(['demo'=>$this->demo, 'debug'=>$this->debug, 'playing'=>true, 'gameMode'=>$mode]);
+        $this->enter(['demo'=>$this->demo, 'debug'=>$this->debug, 'playing'=>true, 'gameMode'=>$mode, 'campaign'=>$mode->kind===GameMode::NORMAL]);
     }
 
     private function restartRun(bool $sameMap = false): void
     {
         if ($this->mode === null) return;
         $mode = $this->mode;
+        $normalCampaign = $this->campaign !== null && $mode->kind === GameMode::NORMAL;
         if (!$sameMap && $mode->kind === GameMode::NORMAL && !$this->demo) $mode = GameMode::normal($mode->seed);
         if (!$sameMap && $mode->kind === GameMode::HORDE) $mode = GameMode::horde();
         $this->enter(['demo'=>$this->demo,'debug'=>$this->debug,'playing'=>true,
-            'gameMode'=>$mode,'procedural'=>$this->procedural,'dailySeeds'=>$this->campaign?->stageSeeds]);
+            'gameMode'=>$mode,'procedural'=>$this->procedural,'campaign'=>$normalCampaign,'dailySeeds'=>$this->campaign?->stageSeeds]);
     }
 
     private function handleMenuAction(?string $action): void

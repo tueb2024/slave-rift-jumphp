@@ -80,6 +80,8 @@ final class GameSmokeTest extends GameTestCase
     {
         $this->game->start(PlayScene::class, ['seed' => 1337, 'playing' => true]);
         foreach (['dead', 'won'] as $state) {
+            // Each iteration starts a legacy single-map fixture: campaign victories use next_map.
+            $this->game->start(PlayScene::class,['seed'=>1337,'playing'=>true]);
             $old = $this->game->peek('run');
             $old->state = $state;
             $old->health = 0;
@@ -104,6 +106,8 @@ final class GameSmokeTest extends GameTestCase
         $x = ($lx + 160 * $lw / 320) / $ow;
         $y = ($ly + 118 * $lh / 180) / $oh;
         foreach (['dead', 'won'] as $state) {
+            // Each iteration starts a legacy single-map fixture: campaign victories use next_map.
+            $this->game->start(PlayScene::class,['seed'=>1337,'playing'=>true]);
             $old = $this->game->peek('run'); $old->state = $state;
             $touch = $this->game->engine->input->getTouch();
             $touch->handle((object)['type' => SDL_FINGERDOWN, 'tfinger' => (object)['x' => $x, 'y' => $y]]);
@@ -145,12 +149,14 @@ final class GameSmokeTest extends GameTestCase
         $this->game->press('upgrade_select', 1);
         $first = $this->game->peek('run');
         self::assertSame('normal',$first->mode->kind);
+        $campaign = $this->game->peek('campaign');
+        self::assertNotNull($campaign);
+        self::assertContains($campaign->totalStages,[3,4]);
+        self::assertCount($campaign->totalStages,array_unique($campaign->stageSeeds));
         $first->state = 'dead'; $this->game->run(1);
-        $this->game->press('upgrade_select', 1);
-        self::assertSame($first->mode->seed,$this->game->peek('run')->mode->seed);
-        $this->game->peek('run')->state = 'dead'; $this->game->run(1);
-        $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
+        $this->game->press('upgrade_select', 1); // NOUVELLE CAMPAGNE
         self::assertNotSame($first->mode->seed,$this->game->peek('run')->mode->seed);
+        self::assertNotNull($this->game->peek('campaign'));
         $this->game->start(PlayScene::class);
         $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
         self::assertSame('daily',$this->game->peek('menu')->screen);

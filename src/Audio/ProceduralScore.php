@@ -15,6 +15,21 @@ final class ProceduralScore
         $this->scale=$rng->chance(.5)?[0,2,3,5,7,8,10]:[0,2,3,5,7,9,10];
         $this->motif=$rng->chance(.5)?[0,2,4,3,2,0]:[0,1,3,4,2,1];
     }
+    /** Detect repeated opening melodies even when two different seeds yield the same motif. */
+    public function melodySignature(): string
+    {
+        return implode(',',array_values($this->phrase(0)['lead']));
+    }
+
+    /** Independent musical seed for a new button-initiated run, never tied to the map seed. */
+    public static function freshSeed(?string $previousSignature = null): int
+    {
+        do {
+            $seed = random_int(1,65520);
+        } while ((new self($seed))->melodySignature() === $previousSignature);
+        return $seed;
+    }
+
     /** One four-beat phrase, repeated with controlled variation every four bars. */
     public function phrase(int $bar): array
     {

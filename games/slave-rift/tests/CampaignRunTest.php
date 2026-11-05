@@ -28,6 +28,26 @@ final class CampaignRunTest extends TestCase
         self::assertCount(4,array_unique($seeds));
     }
 
+    public function testRandomJouerCampaignCanHaveThreeOrFourIndependentlySeededMaps(): void
+    {
+        foreach ([3,4] as $count) {
+            $campaign = CampaignRun::random($count,42);
+            self::assertSame($count,$campaign->totalStages);
+            self::assertCount($count,$campaign->stageSeeds);
+            self::assertCount($count,array_unique($campaign->stageSeeds));
+            self::assertSame(42,$campaign->stageSeeds[0]);
+            for ($stage=1;$stage<=$count;$stage++) {
+                self::assertSame($campaign->stageSeeds[$stage-1],$campaign->run->mode->seed);
+                self::assertSame($stage,$campaign->run->mode->campaignStage);
+                self::assertNotNull($campaign->run->objective);
+                $campaign->run->state='won';
+                self::assertSame($stage===$count?'won':'level_complete',$campaign->state());
+                if($stage<$count) self::assertTrue($campaign->advance());
+                else self::assertFalse($campaign->advance());
+            }
+        }
+    }
+
     public function testCannotSkipABossByAdvancingWhilePlayingOrDead(): void
     {
         $c=new CampaignRun(42);self::assertFalse($c->advance());$c->run->state='dead';self::assertFalse($c->advance());

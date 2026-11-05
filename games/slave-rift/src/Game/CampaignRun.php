@@ -10,16 +10,17 @@ final class CampaignRun
     public float $baseArea = 0;
     public array $geometry = [];
 
-    public function __construct(public readonly int $seed, public readonly XpCurve $xpCurve = new XpCurve(XpCurve::ACCESSIBLE, XpCurve::CAMPAIGN_MILESTONES), public readonly float $healMissing = 0.35, public readonly ?string $dailyId = null, public readonly ?array $stageSeeds = null)
+    public function __construct(public readonly int $seed, public readonly XpCurve $xpCurve = new XpCurve(XpCurve::ACCESSIBLE, XpCurve::CAMPAIGN_MILESTONES), public readonly float $healMissing = 0.35, public readonly ?string $dailyId = null, public readonly ?array $stageSeeds = null, public readonly int $totalStages = 4)
     {
         if($seed<1 || $seed>65520)throw new \InvalidArgumentException('Campaign seed must be 1..65520');
-        if($stageSeeds!==null && (count($stageSeeds)!==4 || count(array_unique($stageSeeds))!==4 || array_filter($stageSeeds,static fn($s)=>!is_int($s)||$s<1||$s>65520)!==[]))throw new \InvalidArgumentException('Four distinct valid seeds required');
+        if (!in_array($this->totalStages,[3,4],true)) throw new \InvalidArgumentException('Campaign must have three or four stages');
+        if($stageSeeds!==null && (count($stageSeeds)!==$this->totalStages || count(array_unique($stageSeeds))!==$this->totalStages || array_filter($stageSeeds,static fn($s)=>!is_int($s)||$s<1||$s>65520)!==[]))throw new \InvalidArgumentException('Distinct valid stage seeds required');
         $this->build(null);
     }
 
     public function state(): string
     {
-        return $this->run->state === 'won' ? ($this->stage === 4 ? 'won' : 'level_complete') : $this->run->state;
+        return $this->run->state === 'won' ? ($this->stage === $this->totalStages ? 'won' : 'level_complete') : $this->run->state;
     }
 
     public function advance(): bool
@@ -59,6 +60,23 @@ final class CampaignRun
         $this->run=new Run($this->level->map,$mode->seed,$mode,$this->xpCurve);
         $this->run->setObjective($this->level,$mode->finalWaveSize);
         if($saved!==null)$this->run->restoreProgression($saved,$this->healMissing);
+    }
+
+    /**
+     * Each new JOUER campaign rolls independent, unique seeds for its 3 or 4 maps.
+     * No daily ID or date influences this run; the selected seeds remain stable
+     * during the same campaign and can be logged/replayed if needed.
+     */
+    public static function random(int $stageCount = 4, ?int $firstSeed = null): self
+    {
+        if (!in_array($stageCount,[3,4],true)) throw new \InvalidArgumentException('Campaign must have three or four stages');
+        if ($firstSeed !== null && ($firstSeed < 1 || $firstSeed > 65520)) throw new \InvalidArgumentException('Invalid first-stage seed');
+        $seeds = $firstSeed === null ? [] : [$firstSeed];
+        while (count($seeds) < $stageCount) {
+            $candidate = random_int(1,65520);
+            if (!in_array($candidate,$seeds,true)) $seeds[] = $candidate;
+        }
+        return new self($seeds[0],new XpCurve(XpCurve::ACCESSIBLE,XpCurve::CAMPAIGN_MILESTONES),.35,null,$seeds,$stageCount);
     }
 
     public static function daily(string $date,?array $serverSeeds=null,?string $id=null): self
