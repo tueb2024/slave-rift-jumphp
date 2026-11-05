@@ -145,12 +145,14 @@ final class GameSmokeTest extends GameTestCase
         $this->game->press('upgrade_select', 1);
         $first = $this->game->peek('run');
         self::assertSame('normal',$first->mode->kind);
+        $campaign = $this->game->peek('campaign');
+        self::assertNotNull($campaign);
+        self::assertContains($campaign->totalStages,[3,4]);
+        self::assertCount($campaign->totalStages,array_unique($campaign->stageSeeds));
         $first->state = 'dead'; $this->game->run(1);
-        $this->game->press('upgrade_select', 1);
-        self::assertSame($first->mode->seed,$this->game->peek('run')->mode->seed);
-        $this->game->peek('run')->state = 'dead'; $this->game->run(1);
-        $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
+        $this->game->press('upgrade_select', 1); // NOUVELLE CAMPAGNE
         self::assertNotSame($first->mode->seed,$this->game->peek('run')->mode->seed);
+        self::assertNotNull($this->game->peek('campaign'));
         $this->game->start(PlayScene::class);
         $this->game->press('upgrade_next',1); $this->game->press('upgrade_select',1);
         self::assertSame('daily',$this->game->peek('menu')->screen);

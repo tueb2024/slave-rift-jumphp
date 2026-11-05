@@ -112,6 +112,7 @@ final class PlayScene extends AbstractScene
             $this->run = new Run($map, $this->levelSeed, $this->mode);
             if ($this->assembledLevel !== null) $this->run->setObjective($this->assembledLevel, $this->mode->finalWaveSize);
         }
+        $this->menu->campaign = $this->campaign !== null && $this->mode->kind === GameMode::NORMAL;
         $this->objective = $this->run->objective;
         $this->difficulty = new DifficultyDirector();
         $this->world ??= new World();

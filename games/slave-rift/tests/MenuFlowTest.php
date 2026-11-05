@@ -35,6 +35,16 @@ final class MenuFlowTest extends TestCase
         }
     }
 
+    public function testCampaignTerminalMenuOffersNewCampaignWhileLegacyFixtureAllowsReplay(): void
+    {
+        $menu = new MenuFlow();
+        $menu->campaign = true;
+        $menu->open('dead');
+        self::assertSame(['new','menu'],array_keys($menu->items()));
+        $menu->campaign = false;
+        self::assertSame(['replay','new','menu'],array_keys($menu->items()));
+    }
+
     public function testEveryChoiceHasANonoverlappingTouchTarget(): void
     {
         foreach (['main','daily','controls','pause','dead','won'] as $screen) {
