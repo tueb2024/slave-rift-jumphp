@@ -1,0 +1,681 @@
+{
+  "scope": "PHP 8.3.6 CPU simulation; no renderer, GPU or mobile frame timing. Timings depend on host load.",
+  "realMapCrowd": {
+    "scope": "90s pursuit across real daily rooms, doors and stairs; fixed population, no weapons, high-health stationary target. CPU only, not difficulty or GPU benchmark.",
+    "seed": 33771,
+    "runs": [
+      {
+        "enemies": 25,
+        "frames": 5400,
+        "meanStepMs": 0.9288323808599401,
+        "p95StepMs": 1.867055892944336,
+        "maxStepMs": 17.930030822753906,
+        "maxExpansionsPerFrame": 40,
+        "failedSearches": 0,
+        "recoveries": 67,
+        "peakPhpBytes": 4194304,
+        "positions": [
+          {
+            "id": 1,
+            "type": "runner",
+            "x": 106.17672591370108,
+            "y": 0.55,
+            "z": 17.479613254319066,
+            "pursuing": true
+          },
+          {
+            "id": 2,
+            "type": "guardian",
+            "x": 63.577687109686885,
+            "y": 0.55,
+            "z": 16.45498930730543,
+            "pursuing": true
+          },
+          {
+            "id": 3,
+            "type": "enforcer",
+            "x": 63.88156599053464,
+            "y": 0.55,
+            "z": 17.04327025300657,
+            "pursuing": true
+          },
+          {
+            "id": 4,
+            "type": "brute",
+            "x": 51.84341926675407,
+            "y": 2.8,
+            "z": 17.000282254061094,
+            "pursuing": true
+          },
+          {
+            "id": 5,
+            "type": "runner",
+            "x": 106.69376272620988,
+            "y": 0.55,
+            "z": 17.453120491572818,
+            "pursuing": true
+          },
+          {
+            "id": 6,
+            "type": "guardian",
+            "x": 71.01573721768287,
+            "y": 0.55,
+            "z": 16.99998029873132,
+            "pursuing": true
+          },
+          {
+            "id": 7,
+            "type": "enforcer",
+            "x": 62.897630383237974,
+            "y": 0.55,
+            "z": 17.118732856307822,
+            "pursuing": true
+          },
+          {
+            "id": 8,
+            "type": "brute",
+            "x": 49.93087681879419,
+            "y": 3.25,
+            "z": 16.999999845440602,
+            "pursuing": true
+          },
+          {
+            "id": 9,
+            "type": "runner",
+            "x": 107.19653852031233,
+            "y": 0.55,
+            "z": 17.474367400615836,
+            "pursuing": true
+          },
+          {
+            "id": 10,
+            "type": "guardian",
+            "x": 90.56232421642763,
+            "y": 0.55,
+            "z": 16.99999999957141,
+            "pursuing": true
+          },
+          {
+            "id": 11,
+            "type": "enforcer",
+            "x": 57.8684112711494,
+            "y": 1.4500000000000002,
+            "z": 17.024047479389047,
+            "pursuing": true
+          },
+          {
+            "id": 12,
+            "type": "brute",
+            "x": 54.20159792951944,
+            "y": 2.3500000000000005,
+            "z": 17.000754904597148,
+            "pursuing": true
+          },
+          {
+            "id": 13,
+            "type": "runner",
+            "x": 106.19617039085456,
+            "y": 0.55,
+            "z": 16.56754679889606,
+            "pursuing": true
+          },
+          {
+            "id": 14,
+            "type": "guardian",
+            "x": 93.78142729759989,
+            "y": 0.55,
+            "z": 16.999999999983213,
+            "pursuing": true
+          },
+          {
+            "id": 15,
+            "type": "enforcer",
+            "x": 77.82656902618812,
+            "y": 0.55,
+            "z": 17.002978496417217,
+            "pursuing": true
+          },
+          {
+            "id": 16,
+            "type": "brute",
+            "x": 52.69822091382215,
+            "y": 2.8,
+            "z": 16.999424085261392,
+            "pursuing": true
+          },
+          {
+            "id": 17,
+            "type": "runner",
+            "x": 106.70824089026463,
+            "y": 0.55,
+            "z": 16.56725805645012,
+            "pursuing": true
+          },
+          {
+            "id": 18,
+            "type": "guardian",
+            "x": 87.3421880742314,
+            "y": 0.55,
+            "z": 16.999999979837927,
+            "pursuing": true
+          },
+          {
+            "id": 19,
+            "type": "enforcer",
+            "x": 75.55410304636932,
+            "y": 0.55,
+            "z": 17.00002320363977,
+            "pursuing": true
+          },
+          {
+            "id": 20,
+            "type": "brute",
+            "x": 58.802944463025874,
+            "y": 1.4500000000000002,
+            "z": 17.00933553704889,
+            "pursuing": true
+          },
+          {
+            "id": 21,
+            "type": "runner",
+            "x": 106.97777178640597,
+            "y": 0.55,
+            "z": 17.92666075990574,
+            "pursuing": true
+          },
+          {
+            "id": 22,
+            "type": "guardian",
+            "x": 81.67682980433132,
+            "y": 0.55,
+            "z": 16.998818194319327,
+            "pursuing": true
+          },
+          {
+            "id": 23,
+            "type": "enforcer",
+            "x": 64.58280772944967,
+            "y": 0.55,
+            "z": 17.016595182923165,
+            "pursuing": true
+          },
+          {
+            "id": 24,
+            "type": "brute",
+            "x": 55.672670708863535,
+            "y": 1.9000000000000001,
+            "z": 16.9774246101149,
+            "pursuing": true
+          },
+          {
+            "id": 25,
+            "type": "runner",
+            "x": 106.45265230005408,
+            "y": 0.55,
+            "z": 16.999999999999986,
+            "pursuing": true
+          }
+        ]
+      },
+      {
+        "enemies": 50,
+        "frames": 5400,
+        "meanStepMs": 2.3084085517459445,
+        "p95StepMs": 4.436016082763672,
+        "maxStepMs": 20.045995712280273,
+        "maxExpansionsPerFrame": 49,
+        "failedSearches": 0,
+        "recoveries": 232,
+        "peakPhpBytes": 4194304,
+        "positions": [
+          {
+            "id": 1,
+            "type": "runner",
+            "x": 105.86238061307868,
+            "y": 0.55,
+            "z": 17.81188843569229,
+            "pursuing": true
+          },
+          {
+            "id": 2,
+            "type": "guardian",
+            "x": 58.956145290798645,
+            "y": 1.4500000000000002,
+            "z": 16.633407100898147,
+            "pursuing": true
+          },
+          {
+            "id": 3,
+            "type": "enforcer",
+            "x": 47.20524457842594,
+            "y": 3.25,
+            "z": 17.54993699460436,
+            "pursuing": true
+          },
+          {
+            "id": 4,
+            "type": "brute",
+            "x": 44.79036066746437,
+            "y": 3.25,
+            "z": 16.9980746692697,
+            "pursuing": true
+          },
+          {
+            "id": 5,
+            "type": "runner",
+            "x": 106.15693678465585,
+            "y": 0.55,
+            "z": 17.407840086471012,
+            "pursuing": true
+          },
+          {
+            "id": 6,
+            "type": "guardian",
+            "x": 50.00982271695677,
+            "y": 3.25,
+            "z": 17.6521561765404,
+            "pursuing": true
+          },
+          {
+            "id": 7,
+            "type": "enforcer",
+            "x": 58.64497187219714,
+            "y": 1.4500000000000002,
+            "z": 17.404239933549366,
+            "pursuing": true
+          },
+          {
+            "id": 8,
+            "type": "brute",
+            "x": 41.509941000577015,
+            "y": 3.25,
+            "z": 17.000092441298825,
+            "pursuing": true
+          },
+          {
+            "id": 9,
+            "type": "runner",
+            "x": 105.49128871306712,
+            "y": 0.55,
+            "z": 17.3872400546281,
+            "pursuing": true
+          },
+          {
+            "id": 10,
+            "type": "guardian",
+            "x": 62.10995987252043,
+            "y": 0.55,
+            "z": 16.70677207653481,
+            "pursuing": true
+          },
+          {
+            "id": 11,
+            "type": "enforcer",
+            "x": 47.049393160021154,
+            "y": 3.25,
+            "z": 16.976410922362984,
+            "pursuing": true
+          },
+          {
+            "id": 12,
+            "type": "brute",
+            "x": 48.56915746536092,
+            "y": 3.25,
+            "z": 17.366650159795064,
+            "pursuing": true
+          },
+          {
+            "id": 13,
+            "type": "runner",
+            "x": 87.20538367052077,
+            "y": 0.55,
+            "z": 17.553694530808627,
+            "pursuing": true
+          },
+          {
+            "id": 14,
+            "type": "guardian",
+            "x": 69.95738554924354,
+            "y": 0.55,
+            "z": 16.621980245092505,
+            "pursuing": true
+          },
+          {
+            "id": 15,
+            "type": "enforcer",
+            "x": 64.84507477708729,
+            "y": 0.55,
+            "z": 17.341956357729906,
+            "pursuing": true
+          },
+          {
+            "id": 16,
+            "type": "brute",
+            "x": 47.696897986543696,
+            "y": 3.25,
+            "z": 16.641643241682573,
+            "pursuing": true
+          },
+          {
+            "id": 17,
+            "type": "runner",
+            "x": 107.38101603979085,
+            "y": 0.55,
+            "z": 17.954581679432845,
+            "pursuing": true
+          },
+          {
+            "id": 18,
+            "type": "guardian",
+            "x": 54.62305985230086,
+            "y": 2.3500000000000005,
+            "z": 15.905342533686515,
+            "pursuing": true
+          },
+          {
+            "id": 19,
+            "type": "enforcer",
+            "x": 56.17014329288383,
+            "y": 1.9000000000000001,
+            "z": 17.17489645642033,
+            "pursuing": true
+          },
+          {
+            "id": 20,
+            "type": "brute",
+            "x": 51.50342488525131,
+            "y": 2.8,
+            "z": 17.006816850337053,
+            "pursuing": true
+          },
+          {
+            "id": 21,
+            "type": "runner",
+            "x": 106.85538474797261,
+            "y": 0.55,
+            "z": 17.935113796771905,
+            "pursuing": true
+          },
+          {
+            "id": 22,
+            "type": "guardian",
+            "x": 49.85468890312306,
+            "y": 3.25,
+            "z": 16.805481904343395,
+            "pursuing": true
+          },
+          {
+            "id": 23,
+            "type": "enforcer",
+            "x": 60.46864657295532,
+            "y": 1.0000000000000002,
+            "z": 17.66257757830299,
+            "pursuing": true
+          },
+          {
+            "id": 24,
+            "type": "brute",
+            "x": 50.58851188034343,
+            "y": 3.25,
+            "z": 17.113530034594692,
+            "pursuing": true
+          },
+          {
+            "id": 25,
+            "type": "runner",
+            "x": 107.23404326690004,
+            "y": 0.55,
+            "z": 16.511955830927487,
+            "pursuing": true
+          },
+          {
+            "id": 26,
+            "type": "guardian",
+            "x": 77.59611262697906,
+            "y": 0.55,
+            "z": 16.537895735208032,
+            "pursuing": true
+          },
+          {
+            "id": 27,
+            "type": "enforcer",
+            "x": 54.55865032362374,
+            "y": 2.3500000000000005,
+            "z": 17.398598884623606,
+            "pursuing": true
+          },
+          {
+            "id": 28,
+            "type": "brute",
+            "x": 54.6892496915752,
+            "y": 2.3500000000000005,
+            "z": 16.688373375685753,
+            "pursuing": true
+          },
+          {
+            "id": 29,
+            "type": "runner",
+            "x": 107.21988839859705,
+            "y": 0.55,
+            "z": 17.480857909006122,
+            "pursuing": true
+          },
+          {
+            "id": 30,
+            "type": "guardian",
+            "x": 50.437113886130824,
+            "y": 3.25,
+            "z": 16.346690349882646,
+            "pursuing": true
+          },
+          {
+            "id": 31,
+            "type": "enforcer",
+            "x": 64.29380877298725,
+            "y": 0.55,
+            "z": 17.052654815100055,
+            "pursuing": true
+          },
+          {
+            "id": 32,
+            "type": "brute",
+            "x": 59.72591665702668,
+            "y": 1.0000000000000002,
+            "z": 16.844349038126087,
+            "pursuing": true
+          },
+          {
+            "id": 33,
+            "type": "runner",
+            "x": 106.71650603336221,
+            "y": 0.55,
+            "z": 16.55000476025834,
+            "pursuing": true
+          },
+          {
+            "id": 34,
+            "type": "guardian",
+            "x": 87.43280592965554,
+            "y": 0.55,
+            "z": 16.967485849068588,
+            "pursuing": true
+          },
+          {
+            "id": 35,
+            "type": "enforcer",
+            "x": 74.99047883399489,
+            "y": 0.55,
+            "z": 17.000168747968118,
+            "pursuing": true
+          },
+          {
+            "id": 36,
+            "type": "brute",
+            "x": 63.48664782547523,
+            "y": 0.55,
+            "z": 16.921618584831787,
+            "pursuing": true
+          },
+          {
+            "id": 37,
+            "type": "runner",
+            "x": 106.71320105746591,
+            "y": 0.55,
+            "z": 17.451727874387945,
+            "pursuing": true
+          },
+          {
+            "id": 38,
+            "type": "guardian",
+            "x": 105.99523169995436,
+            "y": 0.55,
+            "z": 16.587042273815797,
+            "pursuing": true
+          },
+          {
+            "id": 39,
+            "type": "enforcer",
+            "x": 83.77645726115243,
+            "y": 0.55,
+            "z": 16.992155479815555,
+            "pursuing": true
+          },
+          {
+            "id": 40,
+            "type": "brute",
+            "x": 56.64412597367833,
+            "y": 1.9000000000000001,
+            "z": 16.59333285456451,
+            "pursuing": true
+          },
+          {
+            "id": 41,
+            "type": "runner",
+            "x": 107.52492512435155,
+            "y": 0.55,
+            "z": 17.08098160631321,
+            "pursuing": true
+          },
+          {
+            "id": 42,
+            "type": "guardian",
+            "x": 93.96600994584576,
+            "y": 0.55,
+            "z": 16.993954441472503,
+            "pursuing": true
+          },
+          {
+            "id": 43,
+            "type": "enforcer",
+            "x": 77.9103348799078,
+            "y": 0.55,
+            "z": 17.120297022816427,
+            "pursuing": true
+          },
+          {
+            "id": 44,
+            "type": "brute",
+            "x": 65.47358546856833,
+            "y": 0.55,
+            "z": 16.969455949117542,
+            "pursuing": true
+          },
+          {
+            "id": 45,
+            "type": "runner",
+            "x": 106.4504757489273,
+            "y": 0.55,
+            "z": 16.999999999999986,
+            "pursuing": true
+          },
+          {
+            "id": 46,
+            "type": "guardian",
+            "x": 106.45633131543775,
+            "y": 0.55,
+            "z": 15.986669850635757,
+            "pursuing": true
+          },
+          {
+            "id": 47,
+            "type": "enforcer",
+            "x": 69.21657524243052,
+            "y": 0.55,
+            "z": 17.344680024132828,
+            "pursuing": true
+          },
+          {
+            "id": 48,
+            "type": "brute",
+            "x": 60.732172747948255,
+            "y": 1.0000000000000002,
+            "z": 16.996294612266972,
+            "pursuing": true
+          },
+          {
+            "id": 49,
+            "type": "runner",
+            "x": 107.77466737506516,
+            "y": 0.55,
+            "z": 17.53186912813072,
+            "pursuing": true
+          },
+          {
+            "id": 50,
+            "type": "guardian",
+            "x": 100.88217184282172,
+            "y": 0.55,
+            "z": 16.98124903586856,
+            "pursuing": true
+          }
+        ]
+      }
+    ]
+  },
+  "horde": {
+    "scope": "PHP CPU simulation only; no rendering/GPU measurement. Fixed-population fixture, not a human run.",
+    "cap": 200,
+    "results": [
+      {
+        "enemies": 25,
+        "frames": 300,
+        "totalMs": 89.98,
+        "meanStepMs": 0.3,
+        "maxStepMs": 2.05,
+        "p95StepMs": 0.68,
+        "peakPhpBytes": 2097152,
+        "state": "play"
+      },
+      {
+        "enemies": 50,
+        "frames": 300,
+        "totalMs": 153.32,
+        "meanStepMs": 0.511,
+        "maxStepMs": 2.184,
+        "p95StepMs": 0.863,
+        "peakPhpBytes": 2097152,
+        "state": "play"
+      },
+      {
+        "enemies": 100,
+        "frames": 300,
+        "totalMs": 322.17,
+        "meanStepMs": 1.073,
+        "maxStepMs": 3.173,
+        "p95StepMs": 1.691,
+        "peakPhpBytes": 4194304,
+        "state": "play"
+      },
+      {
+        "enemies": 200,
+        "frames": 300,
+        "totalMs": 758.25,
+        "meanStepMs": 2.527,
+        "maxStepMs": 9.069,
+        "p95StepMs": 4.737,
+        "peakPhpBytes": 4194304,
+        "state": "play"
+      }
+    ]
+  }
+}

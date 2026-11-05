@@ -44,6 +44,8 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
     $checkpoints = ['finalRoom'=>null,'boss'=>null,'bossDefeated'=>null,'treasure'=>null];
     $snapshot = static fn () => ['time'=>round($run->time,1),'xpTotal'=>$run->collectedXp,'wave'=>$run->wave,'level'=>$run->level,
         'weapon'=>$run->primaryWeaponLabel(),'health'=>$run->health,'maxHealth'=>$run->maxHealth,'healthRatio'=>$run->health/$run->maxHealth];
+    $lastKills=$run->kills;$lastCombatProgress=$run->time;
+    $cpuStarted=microtime(true);$stepTimes=[];$peakEnemies=count($run->enemies);$maxSearches=0;$maxExpansions=0;
     for ($frame = 0; $frame < (int)($limit / $dt); $frame++) {
         if ($run->state === 'dead' || $run->state === 'won') break;
         if ($run->state === 'upgrade') {
@@ -64,6 +66,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             $run->chooseUpgrade($slot);
             continue;
         }
+        $searchesBefore=$run->navigation->searches;$expansionsBefore=$run->navigation->expansions;
         if ($run->time >= $nextReaction) {
             $nextReaction = $run->time + $reaction;
             $goal = $run->routeTarget();
@@ -87,6 +90,9 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
                     $aim = $enemy; $nearest = $d;
                 }
             }
+            // Search visually for leftover threats instead of staring at the route's
+            // endpoint forever. This scans the camera; it does not reveal hidden targets.
+            $scanning=$aim===null && $run->remaining===0 && $run->enemies!==[] && $run->time-$lastCombatProgress>8;
             $pickupDistance = $collection;
             foreach ($run->pickups as $pickup) {
                 $attentionToXp = match ($profile) {'faible'=>50, 'bon'=>95, default=>80};
@@ -111,6 +117,10 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
                 // Reaction delay and imperfect escape speed can still leave weaker profiles in the blast.
                 $goal = ['x' => $run->bossWarning['x'] + 2.5, 'z' => $run->bossWarning['z']];
             }
+            if($scanning && !($run->boss?->active??false))$goal=['x'=>$run->x,'y'=>$run->y,'z'=>$run->z];
+            else $scanning=false;
+            // Route movement through doors and stairs; aiming remains the profile's own policy.
+            if ($goal !== null) $goal = $run->navigationTarget($goal);
             // Intermittent attention errors: navigation distracts from aiming.
             $attention = match ($profile) { 'faible' => 0.45, 'bon' => 0.90, default => 0.70 };
             if (fmod($run->time + $seed * 0.7, 4.0) > 4.0 * $attention) $aim = $goal;
@@ -118,6 +128,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             $desired = $aim === null ? $run->yaw : atan2($aim['x'] - $run->x, $aim['z'] - $run->z);
             $error = atan2(sin($desired - $run->yaw), cos($desired - $run->yaw));
             $turn = max(-1.0, min(1.0, -$error * 2.0 + sin($run->time * 1.7 + $seed) * $aimError));
+            if($scanning)$turn=1.0;
             $noise = match ($profile) {'faible'=>0.25,'bon'=>0.02,default=>0.12};
             $dx = ($goal['x'] ?? $run->x) - $run->x + sin($run->time*0.7+$seed)*$noise;
             $dz = ($goal['z'] ?? $run->z) - $run->z + cos($run->time*0.9+$seed)*$noise;
@@ -126,12 +137,19 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             }
             $hesitation = $profile === 'faible' ? 0.25 : ($profile === 'moyen' ? 0.10 : 0.0);
             if (fmod($run->time + $seed, 3.0) < $hesitation * 3.0) $dx = $dz = 0.0;
+            if($scanning)$dx=$dz=0.0;
             $norm = max(1.0, hypot($dx, $dz));
             $forward = (sin($run->yaw) * $dx + cos($run->yaw) * $dz) / $norm * $speed;
             $strafe = (-cos($run->yaw) * $dx + sin($run->yaw) * $dz) / $norm * $speed;
         }
+        $stepStarted=microtime(true);
         $run->step($dt, $forward, $strafe, $turn, false, false, false, $rhythm->advance($dt, $run->level));
+        $stepTimes[]=(microtime(true)-$stepStarted)*1000;
+        $peakEnemies=max($peakEnemies,count($run->enemies));
+        $maxSearches=max($maxSearches,$run->navigation->searches-$searchesBefore);
+        $maxExpansions=max($maxExpansions,$run->navigation->expansions-$expansionsBefore);
         $rhythm->drain();
+        if($run->kills!==$lastKills){$lastKills=$run->kills;$lastCombatProgress=$run->time;}
         if ($run->primaryWeaponLabel() !== $arsenalTimeline[array_key_last($arsenalTimeline)]['weapon']) $arsenalTimeline[]=['time'=>round($run->time,1),'level'=>$run->level,'weapon'=>$run->primaryWeaponLabel()];
         $lowestHealth = min($lowestHealth, $run->health);
         $lowestHealthRatio = min($lowestHealthRatio, $run->health/$run->maxHealth);
@@ -141,11 +159,17 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         }
         if ($wave7 === null && $run->wave >= 7) $wave7 = ['level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health];
     }
-    return ['arsenalTimeline'=>$arsenalTimeline,'secondaries'=>$run->secondaryInventory(),'xpModel'=>$run->xpCurve->model,'xpTotal'=>$run->collectedXp,'droppedXp'=>$run->droppedXp,'progression'=>$run->progressionSnapshot(), 'scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
+    sort($stepTimes);$n=count($stepTimes);
+    $performance=['frames'=>$n,'cpuSeconds'=>microtime(true)-$cpuStarted,'meanStepMs'=>$n?array_sum($stepTimes)/$n:0,
+        'p95StepMs'=>$n?$stepTimes[(int)floor(($n-1)*.95)]:0,'maxStepMs'=>$n?max($stepTimes):0,
+        'peakEnemies'=>$peakEnemies,'cap'=>$run->mode->enemyLimit($run->wave),'peakPhpBytes'=>memory_get_peak_usage(true),
+        'navigation'=>['searches'=>$run->navigation->searches,'expanded'=>$run->navigation->expansions,'failed'=>$run->navigation->failed,
+            'budgetExhausted'=>$run->navigation->budgetExhausted,'recoveries'=>$run->navigationRecoveries,'maxSearchesPerFrame'=>$maxSearches,'maxExpansionsPerFrame'=>$maxExpansions]];
+    return ['performance'=>$performance,'arsenalTimeline'=>$arsenalTimeline,'secondaries'=>$run->secondaryInventory(),'xpModel'=>$run->xpCurve->model,'xpTotal'=>$run->collectedXp,'droppedXp'=>$run->droppedXp,'progression'=>$run->progressionSnapshot(), 'scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
         'wave' => $run->wave, 'level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health,
         'lowestHealth' => $lowestHealth, 'lowestHealthRatio'=>$lowestHealthRatio,'checkpoints'=>$checkpoints,'maxHealth'=>$run->maxHealth, 'kills' => $run->kills, 'wave7' => $wave7,
         'finalRoom' => ($run->objective?->finalRoomReached ?? false), 'bossReached' => ($run->boss?->active ?? false),
-        'bossDefeated' => ($run->boss?->defeated ?? false), 'objective' => $run->objective?->state, 'remaining' => $run->remaining, 'liveEnemies' => count($run->enemies), 'player' => [$run->x, $run->y, $run->z], 'stalledEnemies' => $run->state === 'play' ? array_values($run->enemies) : []];
+        'bossDefeated' => ($run->boss?->defeated ?? false), 'objective' => $run->objective?->state, 'remaining' => $run->remaining, 'liveEnemies' => count($run->enemies), 'routeTarget'=>$run->routeTarget(),'lastKillAt'=>$lastCombatProgress,'player' => [$run->x, $run->y, $run->z], 'stalledEnemies' => $run->state === 'play' ? array_values($run->enemies) : []];
 }
 
 if (realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {
@@ -190,3 +214,4 @@ if (realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {
     }
     echo json_encode(['note' => 'Input-policy guardrail, not a human win-rate prediction. Timeouts remain play/upgrade; no teleporting or extra XP.', 'summary' => $summary, 'runs' => $rows], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 }
+

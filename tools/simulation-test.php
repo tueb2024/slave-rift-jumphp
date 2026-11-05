@@ -10,6 +10,7 @@ require __DIR__ . '/../src/Game/BossController.php';
 require __DIR__ . '/../src/Game/GameMode.php';
 require __DIR__ . '/../src/Game/XpCurve.php';
 require __DIR__ . '/../src/Game/SecondaryScheduler.php';
+require __DIR__ . '/../src/Game/Navigation.php';
 require __DIR__ . '/../src/Game/Run.php';
 require __DIR__ . '/../src/Gfx/Meshes.php';
 require __DIR__ . '/../src/Gfx/EnemyAtlas.php';
@@ -216,3 +217,4 @@ foreach ([8, 16, 32, 48] as $population) {
 }
 
 echo json_encode(['checks'=>$count,'brushes'=>count($run->map->solids)], JSON_PRETTY_PRINT) . "\n";
+

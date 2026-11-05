@@ -44,6 +44,13 @@ final class Run
     public float $time = 0.0;
     public string $state = 'play';
     public array $enemies = [];
+    public readonly Navigation $navigation;
+    public int $navigationRecoveries = 0;
+    private int $navigationBudget = 2;
+    private array $botPath = [];
+    private ?array $botGoal = null;
+    private ?array $botPreviousPosition = null;
+    private float $botRepathAt = 0.0;
     /** @var array<int,array<string,mixed>> Short-lived visual death animations; excluded from live enemy pressure. */
     public array $corpses = [];
     public array $pickups = [];
@@ -119,6 +126,7 @@ final class Run
 
     public function __construct(public readonly BrushMap $map, int $seed = 1337, ?GameMode $mode = null, ?XpCurve $xpCurve = null)
     {
+        $this->navigation = new Navigation($map);
         $this->xpCurve = $xpCurve ?? new XpCurve();
         $this->secondaryScheduler = new SecondaryScheduler();
         $this->mode = $mode ?? GameMode::fixed($seed);
@@ -222,6 +230,7 @@ final class Run
     public function setObjective(AssembledLevel $level, int $finalWaveSize = 12): void
     {
         $this->objective = TreasureDirector::fromLevel($level, $finalWaveSize);
+        $this->navigation->setRooms($level->rooms);
         $this->route = [];
         foreach ($level->rooms as $room) {
             if (!$room['mainPath']) continue;
@@ -269,10 +278,7 @@ final class Run
         if ($objective === null) return;
         $wavesComplete=$this->mode->kind!==GameMode::DAILY || ($this->wave >= $this->mode->waveCount() && $this->remaining===0 && $this->enemies===[]);
         if ($wavesComplete && $objective->updatePlayer($this->x, $this->y, $this->z)) {
-            // Keep only reachable threats in the final room. No remote cleanup hunt.
-            foreach ($this->enemies as $id => $enemy) {
-                if (!$this->insideFinalArena($enemy['x'], $enemy['z'])) unset($this->enemies[$id]);
-            }
+            // Survivors retain their target and path across the final-room transition.
             $this->remaining = $objective->finalWaveSize;
             $this->intermission = 0.0;
             $this->message = 'SALLE FINALE : ELIMINEZ LES ENNEMIS';
@@ -516,38 +522,10 @@ final class Run
         }
         if ($target === null) return [0.25, 0.4, 0.3, false];
         if ($visibleTarget === null) {
-            // Use the map's deathmatch points as safe exploration waypoints while
-            // every live enemy is hidden behind geometry.
-            $goalX = $target['x'];
-            $goalZ = $target['z'];
-            $waypointDistance = INF;
-            foreach ($this->map->spawnPoints as $point) {
-                $distance = hypot($point[0] - $this->x, $point[2] - $this->z);
-                if ($distance < 6.0 || $distance >= $waypointDistance) continue;
-                $goalX = $point[0];
-                $goalZ = $point[2];
-                $waypointDistance = $distance;
-            }
-
-            $goalAngle = atan2($goalX - $this->x, $goalZ - $this->z);
-            $bestHeading = null;
-            $bestPathScore = INF;
-            for ($i = 0; $i < 24; $i++) {
-                $heading = $goalAngle + $i * (M_PI / 12.0);
-                $probeX = $this->x + sin($heading);
-                $probeZ = $this->z + cos($heading);
-                if ($this->collides($probeX, $this->y, $probeZ, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) continue;
-                if (!$this->collides($probeX, $this->y - 0.12, $probeZ, self::PLAYER_RADIUS, self::PLAYER_HALF_HEIGHT)) continue;
-                $remaining = hypot($goalX - $probeX, $goalZ - $probeZ);
-                $score = $remaining + abs(self::angleDelta($heading, $goalAngle)) * 0.16;
-                if ($score < $bestPathScore) {
-                    $bestPathScore = $score;
-                    $bestHeading = $heading;
-                }
-            }
-            if ($bestHeading === null) return [0.18, sin($this->time * 0.8) * 0.55, 0.68, false];
-            $error = self::angleDelta($bestHeading, $this->yaw);
-            return [0.72, 0.0, max(-1.0, min(1.0, -$error * 1.5)), false];
+            $goal = $this->navigationTarget($target);
+            $goalAngle = atan2($goal['x']-$this->x,$goal['z']-$this->z);
+            $error = self::angleDelta($goalAngle,$this->yaw);
+            return [abs($error)<.7 ? .72 : .1,0.0,max(-1.0,min(1.0,-$error*1.5)),false];
         }
         // Prefer an enemy the weapons can actually hit. The nearest enemy may be
         // on the other side of a DM1 wall, where it would otherwise hold aim forever.
@@ -756,6 +734,7 @@ final class Run
         $this->enemies[$id] = ['id' => $id, 'type' => $type, 'x' => $x, 'y' => $y, 'z' => $z,
             'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
             'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0,
+            'pursuing'=>$this->objective !== null || $this->lineClear([$x,$y+.28,$z],[$this->x,$this->y+.35,$this->z]),
             'spawnDelay'=>$this->mode->kind===GameMode::DAILY?.55:0.0,'stun'=>0.0,
             'yaw' => $yaw, 'attackTime' => 0.0, 'moving' => false, 'animState' => 'idle', 'windup'=>0.0, 'aimX'=>$this->x, 'aimZ'=>$this->z];
         return true;
@@ -763,6 +742,8 @@ final class Run
 
     private function stepEnemies(float $dt): void
     {
+        $this->navigationBudget = 2;
+        $this->navigation->pump($this->enemies);
         $grid = [];
         foreach ($this->enemies as $id => $entry) {
             $cell = (int)floor($entry['x'] / 1.5) . ':' . (int)floor($entry['z'] / 1.5);
@@ -781,6 +762,13 @@ final class Run
             $d = max(0.001, hypot($dx, $dz));
             $angle = atan2($dx, $dz);
             $enemy['yaw'] = $angle;
+            $enemy['sightAt'] ??= 0.0;
+            if ($this->time >= $enemy['sightAt']) {
+                $enemy['visible'] = $this->lineClear([$enemy['x'],$enemy['y']+.28,$enemy['z']],[$this->x,$this->y+.35,$this->z]);
+                $enemy['sightAt'] = $this->time + .25 + ($id % 5) * .015;
+                if ($enemy['visible']) $enemy['pursuing'] = true;
+            }
+            if (!($enemy['pursuing'] ?? false)) continue;
             $ranged = $enemy['type'] === 'enforcer';
             $heavy = $enemy['type'] === 'brute';
             $attackRange = $ranged ? ($d > 2.0 && $d < 17.0) : ($d < $enemy['radius'] + ($heavy ? 1.05 : .55) && abs($this->y-$enemy['y'])<1.1);
@@ -806,7 +794,11 @@ final class Run
                     $enemy['cooldown']=$enemy['type']==='runner' ? .7 : 1.0;$enemy['attackTime']=.32;
                 }
             }
-            if ($d >= .55 && $enemy['windup']<=0 && !($ranged && $d>5 && $d<13)) {
+            if ($d >= .55 && $enemy['windup']<=0 && !($ranged && $d>5 && $d<13 && ($enemy['visible']??false))) {
+                $waypoint = $this->pursuitWaypoint($enemy);
+                $dx = $waypoint[0] - $enemy['x']; $dz = $waypoint[2] - $enemy['z'];
+                if (hypot($dx,$dz)<.001) { $enemy['animState']='idle'; continue; }
+                $seekDistance = max(.001,hypot($dx,$dz));
                 $separateX = $separateZ = 0.0;
                 $cx = (int)floor($enemy['x'] / 1.5); $cz = (int)floor($enemy['z'] / 1.5);
                 for ($ix = $cx - 1; $ix <= $cx + 1; $ix++) for ($iz = $cz - 1; $iz <= $cz + 1; $iz++) {
@@ -823,14 +815,15 @@ final class Run
                         $separateZ += $awayZ * $weight;
                     }
                 }
-                $seekAngle = atan2($dx / $d + $separateX * 0.28, $dz / $d + $separateZ * 0.28);
+                $seekAngle = atan2($dx / $seekDistance + $separateX * 0.12, $dz / $seekDistance + $separateZ * 0.12);
                 $side = $id % 2 === 0 ? 1 : -1;
-                foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3] as $offset) {
+                // Backing out is essential when two bodies meet at a door jamb.
+                foreach ([0.0, $side * 0.65, -$side * 0.65, $side * 1.3, -$side * 1.3, $side * 2.1, -$side * 2.1, M_PI] as $offset) {
                     $speed = $enemy['speed'] * $dt;
                     $nx = $enemy['x'] + sin($seekAngle + $offset) * $speed;
                     $nz = $enemy['z'] + cos($seekAngle + $offset) * $speed;
-                    $ground = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.23);
-                    if ($ground === null) continue;
+                    $ground = $this->supportHeight($nx, $nz, $enemy['radius'], $enemy['y'] - 0.55 + 0.58);
+                    if ($ground === null || $ground < $enemy['y'] - .55 - .8) continue;
                     $ny = $ground + 0.55;
                     if ($this->collides($nx, $ny, $nz, $enemy['radius'], 0.55)) continue;
                     $blocked = false;
@@ -840,7 +833,7 @@ final class Run
                             if ($otherId === $id) continue;
                             $this->neighborChecks++;
                             $other = $this->enemies[$otherId];
-                            $spacing = $enemy['radius'] + $other['radius'] + ($enemy['type'] === 'brute' || $other['type'] === 'brute' ? 0.55 : 0.42);
+                            $spacing = $enemy['radius'] + $other['radius'] + 0.04;
                             if (abs($ny - $other['y']) < 1.1) {
                                 $nextDistance = hypot($nx - $other['x'], $nz - $other['z']);
                                 $oldDistance = hypot($enemy['x'] - $other['x'], $enemy['z'] - $other['z']);
@@ -861,6 +854,70 @@ final class Run
             $enemy['animState'] = $enemy['flash'] > 0 ? 'pain' : ($enemy['attackTime'] > 0 ? 'attack' : ($enemy['moving'] ? 'walk' : 'idle'));
         }
         unset($enemy);
+    }
+
+    private function pursuitWaypoint(array &$enemy): array
+    {
+        $from=[$enemy['x'],$enemy['y']-.55,$enemy['z']];
+        $goal=[$this->x,$this->y-self::PLAYER_HALF_HEIGHT,$this->z];
+        $enemy['path'] ??= [];
+        $ready=$this->navigation->poll($enemy['id']);
+        if($ready!==null){$enemy['path']=$ready;$enemy['pathSerial']=($enemy['pathSerial']??0)+1;}
+        $enemy['repathAt'] ??= 0.0;
+        $enemy['progressAt'] ??= $this->time;
+        $enemy['progressPosition'] ??= $from;
+        if($this->time-$enemy['progressAt']>=2.0){
+            $p=$enemy['progressPosition'];
+            $routeDistance=0.0;$previous=$from;
+            foreach($enemy['path'] as $point){$routeDistance+=hypot($point[0]-$previous[0],$point[2]-$previous[2]);$previous=$point;}
+            $samePath=($enemy['progressSerial']??-1)===($enemy['pathSerial']??0);
+            $noRouteProgress=$enemy['path']!==[]&&$samePath&&$routeDistance>=($enemy['progressDistance']??INF)-.2;
+            // Check both displacement and remaining route length, including large steering loops.
+            if(hypot($from[0]-$p[0],$from[2]-$p[2])<.45 || $noRouteProgress){
+                $enemy['path']=[];$enemy['repathAt']=0.0;$this->navigationRecoveries++;
+            }
+            $enemy['progressAt']=$this->time;$enemy['progressPosition']=$from;
+            $enemy['progressDistance']=$routeDistance;$enemy['progressSerial']=$enemy['pathSerial']??0;
+        }
+        while($enemy['path']!==[]){$p=$enemy['path'][0];
+            if(hypot($from[0]-$p[0],$from[2]-$p[2])>.3||abs($from[1]-$p[1])>.6)break;
+            array_shift($enemy['path']);
+        }
+        $old=$enemy['pathGoal']??$from;
+        $changed=hypot($goal[0]-$old[0],$goal[2]-$old[2])>1.5||abs($goal[1]-$old[1])>.6;
+        if($this->time>=$enemy['repathAt'] && ($changed||$enemy['path']===[]) && $this->navigationBudget>0){
+            $this->navigationBudget--;
+            $planned=$this->navigation->request($enemy['id'],$from,$goal,$enemy['radius']+.025);
+            if($planned!==null){$enemy['path']=$planned;$enemy['pathSerial']=($enemy['pathSerial']??0)+1;}
+            $enemy['pathGoal']=$goal;$enemy['repathAt']=$this->time+.65+($enemy['id']%7)*.07;
+        }
+        return $enemy['path'][0]??$from;
+    }
+
+    /** Shared geometry routing for input-policy bots, without moving or aiming for them. */
+    public function navigationTarget(array $goal): array
+    {
+        $from=[$this->x,$this->y-self::PLAYER_HALF_HEIGHT,$this->z];
+        $to=[$goal['x'],$goal['y']??$this->y,$goal['z']];
+        $to[1]-=self::PLAYER_HALF_HEIGHT;
+        $old=$this->botGoal??$from;
+        // Slow reaction profiles can step over a grid waypoint between decisions.
+        // Consume points passed by the actual movement segment, avoiding endless oscillation.
+        $last=$this->botPreviousPosition??$from;
+        $dx=$from[0]-$last[0];$dz=$from[2]-$last[2];$length2=$dx*$dx+$dz*$dz;
+        while($this->botPath!==[]){
+            $p=$this->botPath[0];
+            $t=$length2>.00001?max(0,min(1,(($p[0]-$last[0])*$dx+($p[2]-$last[2])*$dz)/$length2)):1;
+            if(hypot($p[0]-$last[0]-$t*$dx,$p[2]-$last[2]-$t*$dz)>.3)break;
+            array_shift($this->botPath);
+        }
+        $this->botPreviousPosition=$from;
+        if($this->time >= $this->botRepathAt && ($this->botPath===[]||hypot($to[0]-$old[0],$to[2]-$old[2])>1.5)){
+            $this->botPath=$this->navigation->path($from,$to,self::PLAYER_RADIUS+.025,self::PLAYER_HALF_HEIGHT);
+            $this->botGoal=$to;$this->botRepathAt=$this->time+.5;
+        }
+        $p=$this->botPath[0]??$from;
+        return ['x'=>$p[0],'y'=>$p[1]+self::PLAYER_HALF_HEIGHT,'z'=>$p[2]];
     }
 
     private function triggerPrimaryRhythmStep(int $step): void
@@ -1440,27 +1497,12 @@ final class Run
     public function collides(float $x, float $y, float $z, float $radius, float $halfHeight): bool
     {
         $this->collisionTests++;
-        foreach ($this->map->solids as $solid) {
-            [$minX, $minY, $minZ] = $solid['min']; [$maxX, $maxY, $maxZ] = $solid['max'];
-            if ($y + $halfHeight <= $minY + 0.001 || $y - $halfHeight >= $maxY - 0.001) continue;
-            $cx = $x - max($minX, min($maxX, $x));
-            $cz = $z - max($minZ, min($maxZ, $z));
-            if ($cx * $cx + $cz * $cz < $radius * $radius) return true;
-        }
-        return false;
+        return $this->navigation->collides($x,$y,$z,$radius,$halfHeight);
     }
 
     private function supportHeight(float $x, float $z, float $radius, float $ceiling): ?float
     {
-        $top = null;
-        foreach ($this->map->solids as $solid) {
-            $height = $solid['max'][1];
-            if ($height > $ceiling + 0.002 || ($top !== null && $height < $top)) continue;
-            $dx = $x - max($solid['min'][0], min($solid['max'][0], $x));
-            $dz = $z - max($solid['min'][2], min($solid['max'][2], $z));
-            if ($dx * $dx + $dz * $dz < $radius * $radius) $top = $height;
-        }
-        return $top;
+        return $this->navigation->support($x,$z,$radius,$ceiling);
     }
 
     private function random(): float
@@ -1476,3 +1518,4 @@ final class Run
         return $d - M_PI;
     }
 }
+

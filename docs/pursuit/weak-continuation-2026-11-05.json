@@ -1,0 +1,160 @@
+{
+  "scope": "Separate continuation of the damage-suppressed weak-profile fixture after the official 1800-second limit; NOT a normal difficulty result and NOT included in the three official runs.",
+  "extraLimitSeconds": 300,
+  "result": {
+    "performance": {
+      "frames": 4335,
+      "cpuSeconds": 0.6549520492553711,
+      "meanStepMs": 0.14655515809372635,
+      "p95StepMs": 0.8702278137207031,
+      "maxStepMs": 14.55998420715332,
+      "peakEnemies": 27,
+      "cap": 88,
+      "peakPhpBytes": 6291456,
+      "navigation": {
+        "searches": 830,
+        "expanded": 214,
+        "failed": 0,
+        "budgetExhausted": 0,
+        "recoveries": 1,
+        "maxSearchesPerFrame": 2,
+        "maxExpansionsPerFrame": 0
+      }
+    },
+    "arsenalTimeline": [
+      {
+        "time": 0,
+        "level": 39,
+        "weapon": "DOUBLE GATLING"
+      }
+    ],
+    "secondaries": [
+      {
+        "id": "rockets",
+        "rank": 3,
+        "remaining": 0,
+        "cooldown": 2.92,
+        "ready": true,
+        "active": false,
+        "flash": false
+      }
+    ],
+    "xpModel": "2-3-4-6",
+    "xpTotal": 2820,
+    "droppedXp": 1370,
+    "progression": {
+      "empRank": 0,
+      "empClock": -1691.833333332452,
+      "equippedSecondary": "rockets",
+      "level": 41,
+      "xp": 0,
+      "collectedXp": 2820,
+      "maxHealth": 130,
+      "health": 130,
+      "damageRank": 7,
+      "hasteRank": 4,
+      "magnetRank": 6,
+      "pulseRank": 0,
+      "pulseUnlocked": false,
+      "flameRank": 0,
+      "rocketRank": 3,
+      "pulseClock": 1,
+      "flameCooldownClock": 2.633333333333349,
+      "rocketClock": -4.279999999999995,
+      "score": 2845622,
+      "kills": 1064,
+      "sniperRank": 0,
+      "artilleryRank": 0,
+      "sniperClock": 3.1733333333333382,
+      "artilleryClock": 0.7333333333333498,
+      "time": 1944.1666666655558,
+      "flameActive": 0,
+      "flameTickClock": 0.013333333333333211,
+      "scheduler": {
+        "queue": [
+          "rockets"
+        ],
+        "gap": 0
+      }
+    },
+    "scenario": "route",
+    "profile": "faible",
+    "seed": 10764,
+    "result": "won",
+    "time": 1944.2,
+    "wave": 6,
+    "level": 41,
+    "weapon": "DOUBLE GATLING",
+    "health": 130,
+    "lowestHealth": 100,
+    "lowestHealthRatio": 1,
+    "checkpoints": {
+      "finalRoom": {
+        "time": 1927.5,
+        "xpTotal": 2615,
+        "wave": 6,
+        "level": 39,
+        "weapon": "DOUBLE GATLING",
+        "health": 130,
+        "maxHealth": 130,
+        "healthRatio": 1
+      },
+      "boss": {
+        "time": 1935.5,
+        "xpTotal": 2808,
+        "wave": 6,
+        "level": 40,
+        "weapon": "DOUBLE GATLING",
+        "health": 130,
+        "maxHealth": 130,
+        "healthRatio": 1
+      },
+      "bossDefeated": {
+        "time": 1937.3,
+        "xpTotal": 2816,
+        "wave": 6,
+        "level": 40,
+        "weapon": "DOUBLE GATLING",
+        "health": 130,
+        "maxHealth": 130,
+        "healthRatio": 1
+      },
+      "treasure": {
+        "time": 1944.2,
+        "xpTotal": 2820,
+        "wave": 6,
+        "level": 41,
+        "weapon": "DOUBLE GATLING",
+        "health": 130,
+        "maxHealth": 130,
+        "healthRatio": 1
+      }
+    },
+    "maxHealth": 130,
+    "kills": 1064,
+    "wave7": null,
+    "finalRoom": true,
+    "bossReached": true,
+    "bossDefeated": true,
+    "objective": "complete",
+    "remaining": 0,
+    "liveEnemies": 0,
+    "routeTarget": {
+      "x": 92,
+      "y": 0.25,
+      "z": 426,
+      "tags": [
+        "treasure"
+      ],
+      "roomId": 43,
+      "roomType": "BOSS_ROOM"
+    },
+    "lastKillAt": 1935.4333333322304,
+    "player": [
+      92.73227253124598,
+      0.6990007324218762,
+      424.3790528879281
+    ],
+    "stalledEnemies": []
+  }
+}

@@ -39,6 +39,18 @@ jobs:
         with:
           name: daily-pressure-php-${{ matrix.php }}
           path: daily-pressure.json
+      - name: Daily pursuit and real-map crowd guardrails
+        run: |
+          php tools/daily-pursuit-report.php 2026-11-05 > daily-pursuit.json
+          php tools/pursuit-stress.php > pursuit-stress.json
+          php tools/daily-pursuit-report.php 2026-11-05 /tmp/navigation-progress.json --navigation-only > pursuit-navigation-only.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pursuit-php-${{ matrix.php }}
+          path: |
+            daily-pursuit.json
+            pursuit-stress.json
+            pursuit-navigation-only.json
       - name: Render actual sampled score
         run: |
           python -m pip install numpy
@@ -133,3 +145,4 @@ jobs:
           name: jumphp-screenshots
           path: runtime/games/slave-rift/var/screenshots/
           if-no-files-found: ignore
+

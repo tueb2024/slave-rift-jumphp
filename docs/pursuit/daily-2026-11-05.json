@@ -1,0 +1,403 @@
+{
+  "navigationOnly": false,
+  "date": "2026-11-05",
+  "limitSeconds": 1800,
+  "seeds": [
+    33771,
+    4262,
+    40273,
+    10764
+  ],
+  "runs": [
+    {
+      "profile": "faible",
+      "state": "dead",
+      "cpuSeconds": 0.06732797622680664,
+      "maps": [
+        {
+          "map": 1,
+          "duration": 7.899999999999982,
+          "result": {
+            "performance": {
+              "frames": 237,
+              "cpuSeconds": 0.06564712524414062,
+              "meanStepMs": 0.27084149388824336,
+              "p95StepMs": 0.8289813995361328,
+              "maxStepMs": 5.06591796875,
+              "peakEnemies": 15,
+              "cap": 24,
+              "peakPhpBytes": 4194304,
+              "navigation": {
+                "searches": 49,
+                "expanded": 65,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 0,
+                "maxSearchesPerFrame": 2,
+                "maxExpansionsPerFrame": 30
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 1,
+                "weapon": "COLT .45"
+              }
+            ],
+            "secondaries": [],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 14,
+            "droppedXp": 26,
+            "progression": {
+              "empRank": 0,
+              "empClock": -7.36666666666665,
+              "equippedSecondary": null,
+              "level": 2,
+              "xp": 2,
+              "collectedXp": 14,
+              "maxHealth": 100,
+              "health": 0,
+              "damageRank": 1,
+              "hasteRank": 0,
+              "magnetRank": 0,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": 1,
+              "flameCooldownClock": 4.5,
+              "rocketClock": 3,
+              "score": 1963,
+              "kills": 12,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 7.899999999999982,
+              "flameActive": 0,
+              "flameTickClock": 0,
+              "scheduler": {
+                "queue": [],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "faible",
+            "seed": 33771,
+            "result": "dead",
+            "time": 7.9,
+            "wave": 1,
+            "level": 2,
+            "weapon": "COLT .45",
+            "health": 0,
+            "lowestHealth": 0,
+            "lowestHealthRatio": 0,
+            "checkpoints": {
+              "finalRoom": null,
+              "boss": null,
+              "bossDefeated": null,
+              "treasure": null
+            },
+            "maxHealth": 100,
+            "kills": 12,
+            "wave7": null,
+            "finalRoom": false,
+            "bossReached": false,
+            "bossDefeated": false,
+            "objective": "exploring",
+            "remaining": 0,
+            "liveEnemies": 12,
+            "routeTarget": {
+              "x": 0,
+              "y": 0.75,
+              "z": 14
+            },
+            "lastKillAt": 7.36666666666665,
+            "player": [
+              -0.5481892314433292,
+              0.6990014648437499,
+              2.3668307815132628
+            ],
+            "stalledEnemies": []
+          }
+        }
+      ]
+    },
+    {
+      "profile": "moyen",
+      "state": "dead",
+      "cpuSeconds": 0.9390380382537842,
+      "maps": [
+        {
+          "map": 1,
+          "duration": 128.56666666666194,
+          "result": {
+            "performance": {
+              "frames": 3857,
+              "cpuSeconds": 0.9375901222229004,
+              "meanStepMs": 0.2344694970832886,
+              "p95StepMs": 1.2309551239013672,
+              "maxStepMs": 5.641937255859375,
+              "peakEnemies": 17,
+              "cap": 24,
+              "peakPhpBytes": 4194304,
+              "navigation": {
+                "searches": 714,
+                "expanded": 224,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 0,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 25
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 1,
+                "weapon": "COLT .45"
+              },
+              {
+                "time": 27,
+                "level": 3,
+                "weapon": "DOUBLE COLT"
+              },
+              {
+                "time": 118.4,
+                "level": 5,
+                "weapon": "MP44"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "flame",
+                "rank": 2,
+                "remaining": 0,
+                "cooldown": 7.1499999999999995,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 108,
+            "droppedXp": 184,
+            "progression": {
+              "empRank": 0,
+              "empClock": -128.03333333332864,
+              "equippedSecondary": "flame",
+              "level": 6,
+              "xp": 18,
+              "collectedXp": 108,
+              "maxHealth": 100,
+              "health": 0,
+              "damageRank": 1,
+              "hasteRank": 1,
+              "magnetRank": 1,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 2,
+              "rocketRank": 0,
+              "pulseClock": 1,
+              "flameCooldownClock": -3.1499999999999986,
+              "rocketClock": 3,
+              "score": 33376,
+              "kills": 80,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 128.56666666666194,
+              "flameActive": 0,
+              "flameTickClock": 0.1199999999999999,
+              "scheduler": {
+                "queue": [
+                  "flame"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "moyen",
+            "seed": 33771,
+            "result": "dead",
+            "time": 128.6,
+            "wave": 3,
+            "level": 6,
+            "weapon": "MP44",
+            "health": 0,
+            "lowestHealth": 0,
+            "lowestHealthRatio": 0,
+            "checkpoints": {
+              "finalRoom": null,
+              "boss": null,
+              "bossDefeated": null,
+              "treasure": null
+            },
+            "maxHealth": 100,
+            "kills": 80,
+            "wave7": null,
+            "finalRoom": false,
+            "bossReached": false,
+            "bossDefeated": false,
+            "objective": "exploring",
+            "remaining": 0,
+            "liveEnemies": 10,
+            "routeTarget": {
+              "x": 113,
+              "y": 0.25,
+              "z": 17,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 11,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 128.0999999999953,
+            "player": [
+              104.65721863703122,
+              0.6990007324218762,
+              17.048528840553928
+            ],
+            "stalledEnemies": []
+          }
+        }
+      ]
+    },
+    {
+      "profile": "bon",
+      "state": "dead",
+      "cpuSeconds": 0.5683000087738037,
+      "maps": [
+        {
+          "map": 1,
+          "duration": 101.63333333333013,
+          "result": {
+            "performance": {
+              "frames": 3049,
+              "cpuSeconds": 0.5639209747314453,
+              "meanStepMs": 0.16608532235910947,
+              "p95StepMs": 0.5528926849365234,
+              "maxStepMs": 5.0868988037109375,
+              "peakEnemies": 21,
+              "cap": 24,
+              "peakPhpBytes": 4194304,
+              "navigation": {
+                "searches": 645,
+                "expanded": 186,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 0,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 38
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 1,
+                "weapon": "COLT .45"
+              },
+              {
+                "time": 19.5,
+                "level": 2,
+                "weapon": "DOUBLE COLT"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "rockets",
+                "rank": 3,
+                "remaining": 0.446666666666668,
+                "cooldown": 3.28,
+                "ready": false,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 70,
+            "droppedXp": 115,
+            "progression": {
+              "empRank": 0,
+              "empClock": -101.09999999999683,
+              "equippedSecondary": "rockets",
+              "level": 5,
+              "xp": 4,
+              "collectedXp": 70,
+              "maxHealth": 100,
+              "health": 0,
+              "damageRank": 0,
+              "hasteRank": 1,
+              "magnetRank": 0,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 0,
+              "rocketRank": 3,
+              "pulseClock": 1,
+              "flameCooldownClock": 4.5,
+              "rocketClock": 0.446666666666668,
+              "score": 15306,
+              "kills": 49,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 101.63333333333013,
+              "flameActive": 0,
+              "flameTickClock": 0,
+              "scheduler": {
+                "queue": [],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "bon",
+            "seed": 33771,
+            "result": "dead",
+            "time": 101.6,
+            "wave": 2,
+            "level": 5,
+            "weapon": "DOUBLE COLT",
+            "health": 0,
+            "lowestHealth": 0,
+            "lowestHealthRatio": 0,
+            "checkpoints": {
+              "finalRoom": null,
+              "boss": null,
+              "bossDefeated": null,
+              "treasure": null
+            },
+            "maxHealth": 100,
+            "kills": 49,
+            "wave7": null,
+            "finalRoom": false,
+            "bossReached": false,
+            "bossDefeated": false,
+            "objective": "exploring",
+            "remaining": 0,
+            "liveEnemies": 5,
+            "routeTarget": {
+              "x": 113,
+              "y": 0.25,
+              "z": 17,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 11,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 98.96666666666361,
+            "player": [
+              112.63022538008782,
+              0.6990007324218762,
+              17.346128299344375
+            ],
+            "stalledEnemies": []
+          }
+        }
+      ]
+    }
+  ],
+  "baseHead": "81daa940fb8cac4620d0d5c06e9c69add0cef209"
+}
