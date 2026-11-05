@@ -1,0 +1,33 @@
+name: Daily challenge full-campaign simulation
+on:
+  push:
+    branches:
+      - validation/daily-challenge-20261105
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  daily-campaign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - name: Validate simulation script
+        run: php -l tools/daily-challenge-sim.php
+      - name: Simulate full daily challenge for 2026-11-05
+        run: php tools/daily-challenge-sim.php 2026-11-05 > daily-challenge-2026-11-05.json
+      - name: Validate report and display summary
+        run: |
+          php -r '$j=json_decode(file_get_contents("daily-challenge-2026-11-05.json"),true,512,JSON_THROW_ON_ERROR); foreach($j["runs"] as $r){echo $r["profile"].": ".$r["result"].", maps=".$r["mapsReached"].", time=".$r["totalSeconds"]."s, victory=".($r["victory"]?"yes":"no").PHP_EOL;}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-full-campaign-2026-11-05
+          path: daily-challenge-2026-11-05.json
+          if-no-files-found: warn
