@@ -1,8 +1,8 @@
 {
-  "build": "2026-11-04T12:54:34Z",
-  "php-web.mjs": "3f844d9ba8c7",
+  "build": "2026-11-05T08:03:38Z",
+  "php-web.mjs": "61c60af1dbb1",
   "php-web.wasm": "eeb522547ab0",
-  "php-web.data": "7f79d9b72d16",
+  "php-web.data": "09e2fd3eb4ae",
   "jumphp-device.js": "20b1eeb543f9",
   "jumphp-files.js": "c20fcafb1aa7",
   "jumphp-gamepad.js": "01564efc73e1",
