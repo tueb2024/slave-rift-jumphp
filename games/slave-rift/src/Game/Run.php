@@ -595,7 +595,7 @@ final class Run
                 $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
                 $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
                 if ($this->objective !== null && !$visible) continue;
-                $distanceScore = abs($distance - ($this->mode->kind===GameMode::DAILY?7.5:12.0)) * 0.40;
+                $distanceScore = abs($distance - ($this->mode->kind===GameMode::DAILY?7.5:12.0)) * ($this->mode->kind===GameMode::DAILY?0.40:0.28);
                 $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
                 $visibilityPenalty = $visible ? 2.4 : -1.3;
                 $recentPenalty = 0.0;
@@ -651,7 +651,7 @@ final class Run
             }
             $fallbackCandidates[] = ['x' => $x, 'y' => $y, 'z' => $z,
                 'index' => $anchorIndex,
-                'score' => abs($distance - ($this->mode->kind===GameMode::DAILY?7.5:12.0)) * 0.40 + ($angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0)
+                'score' => abs($distance - ($this->mode->kind===GameMode::DAILY?7.5:12.0)) * ($this->mode->kind===GameMode::DAILY?0.40:0.28) + ($angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0)
                     + ($visible ? 2.4 : -1.3) + $nearby * 1.5 + $recentPenalty + $this->random() * 0.55];
         }
         if ($fallbackCandidates !== []) {
