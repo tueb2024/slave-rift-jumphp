@@ -18,18 +18,18 @@ final class ArsenalDailyTest extends TestCase
     {
         $total=0;
         foreach(range(1,4)as$stage){$m=GameMode::daily('2026-11-04',$stage);self::assertSame($stage+2,$m->waveCount());
-            self::assertLessThan(.7,$m->spawnInterval(1));self::assertGreaterThanOrEqual(3,$m->spawnBatch(1));
+            self::assertGreaterThanOrEqual(.55,$m->spawnInterval(1));self::assertLessThanOrEqual(2,$m->spawnBatch(1));
             for($w=1;$w<=$m->waveCount();$w++)$total+=$m->waveBudget($w);$total+=$m->finalWaveSize;
         }
-        self::assertSame(1064,$total);$m=GameMode::daily('2026-11-04');$r=new Run(HordeArena::build(),42,$m);
-        foreach([0=>0,16=>1,53=>2,128=>3,255=>4,447=>5,724=>6]as$kills=>$stage){$r->restoreProgression(['kills'=>$kills,'level'=>1],0);self::assertSame($stage,$r->primaryStage);}
+        self::assertSame(520,$total);$m=GameMode::daily('2026-11-04');$r=new Run(HordeArena::build(),42,$m);
+        foreach([0=>0,8=>1,26=>2,63=>3,125=>4,218=>5,354=>6]as$kills=>$stage){$r->restoreProgression(['kills'=>$kills,'level'=>1],0);self::assertSame($stage,$r->primaryStage);}
         self::assertSame(12,$r->nextXp);self::assertSame(69,$m->xpThreshold(20));
     }
     public function testDailySpawnsSustainedPressureWithoutExceedingCap(): void
     {
         foreach([1,4]as$stage){$m=GameMode::daily('2026-11-04',$stage);$r=new Run(HordeArena::build(),42,$m);$r->health=100000;
             for($i=0;$i<300;$i++)$r->step(.05,0,0,0);
-            self::assertGreaterThan(8,$r->spawned);self::assertLessThanOrEqual($m->enemyLimit(1),count($r->enemies));
+            self::assertGreaterThanOrEqual($m->enemyLimit(1),$r->spawned);self::assertLessThanOrEqual($m->enemyLimit(1),count($r->enemies));
         }
     }
     public function testEmpStopsNearbyEnemiesThenTheyRecoverAndSlotIsExclusive(): void
@@ -50,7 +50,7 @@ final class ArsenalDailyTest extends TestCase
         $r->x=($b['min'][0]+$b['max'][0])/2;$r->z=($b['min'][2]+$b['max'][2])/2;$r->y=$b['min'][1]+.75;
         $this->invoke($r,'stepObjective',.05);self::assertSame(TreasureDirector::EXPLORING,$r->objective->state);
         $r->remaining=0;$r->enemies=[];$r->wave=$r->mode->waveCount();
-        $this->invoke($r,'stepObjective',.05);self::assertSame(TreasureDirector::FINAL_WAVE,$r->objective->state);self::assertSame(24,$r->remaining);
+        $this->invoke($r,'stepObjective',.05);self::assertSame(TreasureDirector::FINAL_WAVE,$r->objective->state);self::assertSame(8,$r->remaining);
     }
     public function testHomingRocketUpdatesTargetAndHitsGeometry(): void
     {
@@ -61,3 +61,4 @@ final class ArsenalDailyTest extends TestCase
         self::assertSame($r->enemies[$id]['x'],$r->projectiles[0]['tx']);self::assertGreaterThan(0,$r->projectiles[0]['age']);
     }
 }
+

@@ -555,7 +555,7 @@ final class Run
             if($this->mode->kind===GameMode::DAILY && $this->wave >= $this->mode->waveCount())return;
             $waveBonus = (int)round(($this->wave * 150 + $this->combo * 50) * $this->multiplier);
             $this->score += $waveBonus;
-            $this->intermission = $this->mode->kind===GameMode::DAILY ? 1.5 : 4.0;
+            $this->intermission = $this->mode->intermissionSeconds();
             $this->health = min($this->maxHealth, $this->health + 4);
             $this->message = 'BONUS VAGUE +' . $waveBonus . ' / SOIN +4';
             $this->messageTime = 3.0;
@@ -568,7 +568,7 @@ final class Run
         for ($i = 0; $i < $batch && count($this->enemies) < $this->mode->enemyLimit($this->wave); $i++) {
             if ($this->spawnEnemy()) $this->remaining--;
         }
-        $this->spawnClock = $before===$this->remaining && $this->mode->kind===GameMode::DAILY ? .12 : $this->mode->spawnInterval($this->wave);
+        $this->spawnClock = $before===$this->remaining && $this->mode->kind===GameMode::DAILY ? .12 : $this->mode->spawnInterval($this->wave,$this->kills);
     }
 
     private function spawnEnemy(): bool

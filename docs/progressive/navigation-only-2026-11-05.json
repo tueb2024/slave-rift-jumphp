@@ -1,0 +1,2041 @@
+{
+  "navigationOnly": true,
+  "date": "2026-11-05",
+  "limitSeconds": 1800,
+  "seeds": [
+    33771,
+    4262,
+    40273,
+    10764
+  ],
+  "runs": [
+    {
+      "profile": "faible",
+      "state": "won",
+      "cpuSeconds": 15.603636026382446,
+      "maps": [
+        {
+          "map": 1,
+          "duration": 184.09999999999212,
+          "result": {
+            "performance": {
+              "frames": 5523,
+              "cpuSeconds": 0.5599339008331299,
+              "meanStepMs": 0.09484561310284124,
+              "p95StepMs": 0.32591819763183594,
+              "maxStepMs": 9.758949279785156,
+              "peakEnemies": 6,
+              "cap": 8,
+              "peakPhpBytes": 4194304,
+              "navigation": {
+                "searches": 96,
+                "expanded": 20,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 0,
+                "maxSearchesPerFrame": 1,
+                "maxExpansionsPerFrame": 14
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 1,
+                "weapon": "COLT .45"
+              },
+              {
+                "time": 10.5,
+                "level": 1,
+                "weapon": "DOUBLE COLT"
+              },
+              {
+                "time": 42.1,
+                "level": 4,
+                "weapon": "MP44"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "pulse",
+                "rank": 3,
+                "remaining": 0,
+                "cooldown": 1.95,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 58,
+            "droppedXp": 100,
+            "progression": {
+              "empRank": 0,
+              "empClock": -183.56666666665882,
+              "equippedSecondary": "pulse",
+              "level": 4,
+              "xp": 13,
+              "collectedXp": 58,
+              "maxHealth": 100,
+              "health": 100,
+              "damageRank": 0,
+              "hasteRank": 0,
+              "magnetRank": 0,
+              "pulseRank": 3,
+              "pulseUnlocked": true,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": -133.9833333333283,
+              "flameCooldownClock": 4.5,
+              "rocketClock": 3,
+              "score": 29937,
+              "kills": 44,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 184.09999999999212,
+              "flameActive": 0,
+              "flameTickClock": 0,
+              "scheduler": {
+                "queue": [
+                  "pulse"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "faible",
+            "seed": 33771,
+            "result": "won",
+            "time": 184.1,
+            "wave": 3,
+            "level": 4,
+            "weapon": "MP44",
+            "health": 100,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 166.8,
+                "xpTotal": 52,
+                "wave": 3,
+                "level": 4,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 172.1,
+                "xpTotal": 52,
+                "wave": 3,
+                "level": 4,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 181,
+                "xpTotal": 58,
+                "wave": 3,
+                "level": 4,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 184.1,
+                "xpTotal": 58,
+                "wave": 3,
+                "level": 4,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 100,
+            "kills": 44,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 113,
+              "y": 0.25,
+              "z": 17,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 11,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 172.03333333332614,
+            "player": [
+              111.24057390438773,
+              0.6990007324218762,
+              16.811169831371785
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 2,
+          "duration": 341.4000000001873,
+          "result": {
+            "performance": {
+              "frames": 10242,
+              "cpuSeconds": 1.1610140800476074,
+              "meanStepMs": 0.10675849497399742,
+              "p95StepMs": 0.4329681396484375,
+              "maxStepMs": 11.127948760986328,
+              "peakEnemies": 9,
+              "cap": 12,
+              "peakPhpBytes": 4194304,
+              "navigation": {
+                "searches": 222,
+                "expanded": 195,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 9,
+                "maxSearchesPerFrame": 2,
+                "maxExpansionsPerFrame": 61
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 4,
+                "weapon": "MP44"
+              },
+              {
+                "time": 210.1,
+                "level": 5,
+                "weapon": "DOUBLE MP44"
+              },
+              {
+                "time": 507.1,
+                "level": 9,
+                "weapon": "BAR"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "artillery",
+                "rank": 2,
+                "remaining": 0,
+                "cooldown": 6.8,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 229,
+            "droppedXp": 244,
+            "progression": {
+              "empRank": 0,
+              "empClock": -524.9333333335132,
+              "equippedSecondary": "artillery",
+              "level": 10,
+              "xp": 13,
+              "collectedXp": 229,
+              "maxHealth": 115,
+              "health": 115,
+              "damageRank": 0,
+              "hasteRank": 3,
+              "magnetRank": 0,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": -2.3033333333333372,
+              "flameCooldownClock": 4.5,
+              "rocketClock": 3,
+              "score": 106970,
+              "kills": 132,
+              "sniperRank": 0,
+              "artilleryRank": 2,
+              "sniperClock": 1,
+              "artilleryClock": -10.533333333333292,
+              "time": 525.5000000001794,
+              "flameActive": 0,
+              "flameTickClock": 0,
+              "scheduler": {
+                "queue": [
+                  "artillery"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "faible",
+            "seed": 4262,
+            "result": "won",
+            "time": 525.5,
+            "wave": 4,
+            "level": 10,
+            "weapon": "BAR",
+            "health": 115,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 500.6,
+                "xpTotal": 214,
+                "wave": 4,
+                "level": 9,
+                "weapon": "DOUBLE MP44",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 510.5,
+                "xpTotal": 226,
+                "wave": 4,
+                "level": 10,
+                "weapon": "BAR",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 514.2,
+                "xpTotal": 226,
+                "wave": 4,
+                "level": 10,
+                "weapon": "BAR",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 525.5,
+                "xpTotal": 229,
+                "wave": 4,
+                "level": 10,
+                "weapon": "BAR",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 115,
+            "kills": 132,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 205,
+              "y": 2.95,
+              "z": 29,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 19,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 510.50000000019054,
+            "player": [
+              203.21019899553477,
+              3.3990007324218756,
+              29.075353427476294
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 3,
+          "duration": 434.86666666627116,
+          "result": {
+            "performance": {
+              "frames": 13046,
+              "cpuSeconds": 4.061229944229126,
+              "meanStepMs": 0.3059657461051467,
+              "p95StepMs": 1.1057853698730469,
+              "maxStepMs": 17.31109619140625,
+              "peakEnemies": 14,
+              "cap": 16,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 562,
+                "expanded": 128,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 1,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 31
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 10,
+                "weapon": "BAR"
+              },
+              {
+                "time": 644.5,
+                "level": 14,
+                "weapon": "GATLING"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "flame",
+                "rank": 3,
+                "remaining": 0,
+                "cooldown": 5.699999999999999,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 590,
+            "droppedXp": 455,
+            "progression": {
+              "empRank": 0,
+              "empClock": -959.7666666664511,
+              "equippedSecondary": "flame",
+              "level": 17,
+              "xp": 38,
+              "collectedXp": 590,
+              "maxHealth": 115,
+              "health": 115,
+              "damageRank": 0,
+              "hasteRank": 6,
+              "magnetRank": 1,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 3,
+              "rocketRank": 0,
+              "pulseClock": -2.3033333333333372,
+              "flameCooldownClock": -3.9833333333333187,
+              "rocketClock": 3,
+              "score": 345910,
+              "kills": 284,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 3.9333333333333433,
+              "time": 960.3666666664506,
+              "flameActive": 0,
+              "flameTickClock": 0.02666666666666652,
+              "scheduler": {
+                "queue": [
+                  "flame"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "faible",
+            "seed": 40273,
+            "result": "won",
+            "time": 960.4,
+            "wave": 5,
+            "level": 17,
+            "weapon": "GATLING",
+            "health": 115,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 944.9,
+                "xpTotal": 547,
+                "wave": 5,
+                "level": 16,
+                "weapon": "GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 952.2,
+                "xpTotal": 584,
+                "wave": 5,
+                "level": 17,
+                "weapon": "GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 956.2,
+                "xpTotal": 590,
+                "wave": 5,
+                "level": 17,
+                "weapon": "GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 960.4,
+                "xpTotal": 590,
+                "wave": 5,
+                "level": 17,
+                "weapon": "GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 115,
+            "kills": 284,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 62,
+              "y": 2.95,
+              "z": 288,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 29,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 952.1999999997913,
+            "player": [
+              62.212112007631696,
+              3.399000732421875,
+              286.2253661129793
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 4,
+          "duration": 790.1333333326147,
+          "result": {
+            "performance": {
+              "frames": 23704,
+              "cpuSeconds": 9.769973039627075,
+              "meanStepMs": 0.40772382246655386,
+              "p95StepMs": 2.137899398803711,
+              "maxStepMs": 18.35799217224121,
+              "peakEnemies": 20,
+              "cap": 20,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 954,
+                "expanded": 844,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 2,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 56
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 17,
+                "weapon": "GATLING"
+              },
+              {
+                "time": 1030.6,
+                "level": 20,
+                "weapon": "DOUBLE GATLING"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "flame",
+                "rank": 3,
+                "remaining": 0,
+                "cooldown": 5.55,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 1224,
+            "droppedXp": 737,
+            "progression": {
+              "empRank": 0,
+              "empClock": -1749.8666666657325,
+              "equippedSecondary": "flame",
+              "level": 26,
+              "xp": 24,
+              "collectedXp": 1224,
+              "maxHealth": 115,
+              "health": 115,
+              "damageRank": 5,
+              "hasteRank": 7,
+              "magnetRank": 4,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 3,
+              "rocketRank": 0,
+              "pulseClock": -2.3033333333333372,
+              "flameCooldownClock": -9.716666666666633,
+              "rocketClock": 3,
+              "score": 726241,
+              "kills": 520,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 3.9333333333333433,
+              "time": 1750.4999999990653,
+              "flameActive": 0,
+              "flameTickClock": 0.02666666666666652,
+              "scheduler": {
+                "queue": [
+                  "flame"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "faible",
+            "seed": 10764,
+            "result": "won",
+            "time": 1750.5,
+            "wave": 6,
+            "level": 26,
+            "weapon": "DOUBLE GATLING",
+            "health": 115,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 1729.5,
+                "xpTotal": 1160,
+                "wave": 6,
+                "level": 25,
+                "weapon": "DOUBLE GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 1734.4,
+                "xpTotal": 1162,
+                "wave": 6,
+                "level": 25,
+                "weapon": "DOUBLE GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 1736.1,
+                "xpTotal": 1175,
+                "wave": 6,
+                "level": 25,
+                "weapon": "DOUBLE GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 1750.5,
+                "xpTotal": 1224,
+                "wave": 6,
+                "level": 26,
+                "weapon": "DOUBLE GATLING",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 115,
+            "kills": 520,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 92,
+              "y": 0.25,
+              "z": 426,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 43,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 1734.3333333324133,
+            "player": [
+              91.00583483756306,
+              0.6990007324218762,
+              424.5049014089823
+            ],
+            "stalledEnemies": []
+          }
+        }
+      ]
+    },
+    {
+      "profile": "moyen",
+      "state": "won",
+      "cpuSeconds": 11.228214979171753,
+      "maps": [
+        {
+          "map": 1,
+          "duration": 150.43333333332737,
+          "result": {
+            "performance": {
+              "frames": 4513,
+              "cpuSeconds": 0.4584920406341553,
+              "meanStepMs": 0.09320586847144274,
+              "p95StepMs": 0.27298927307128906,
+              "maxStepMs": 2.5870800018310547,
+              "peakEnemies": 6,
+              "cap": 8,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 430,
+                "expanded": 40,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 0,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 9
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 1,
+                "weapon": "COLT .45"
+              },
+              {
+                "time": 20.2,
+                "level": 2,
+                "weapon": "DOUBLE COLT"
+              },
+              {
+                "time": 121.1,
+                "level": 2,
+                "weapon": "MP44"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "pulse",
+                "rank": 1,
+                "remaining": 0,
+                "cooldown": 2.25,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 47,
+            "droppedXp": 105,
+            "progression": {
+              "empRank": 0,
+              "empClock": -149.89999999999407,
+              "equippedSecondary": "pulse",
+              "level": 4,
+              "xp": 2,
+              "collectedXp": 47,
+              "maxHealth": 115,
+              "health": 115,
+              "damageRank": 0,
+              "hasteRank": 0,
+              "magnetRank": 1,
+              "pulseRank": 1,
+              "pulseUnlocked": true,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": -0.5166666666666687,
+              "flameCooldownClock": 4.5,
+              "rocketClock": 3,
+              "score": 34217,
+              "kills": 44,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 150.43333333332737,
+              "flameActive": 0,
+              "flameTickClock": 0,
+              "scheduler": {
+                "queue": [
+                  "pulse"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "moyen",
+            "seed": 33771,
+            "result": "won",
+            "time": 150.4,
+            "wave": 3,
+            "level": 4,
+            "weapon": "MP44",
+            "health": 115,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 131.6,
+                "xpTotal": 34,
+                "wave": 3,
+                "level": 3,
+                "weapon": "MP44",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 140.5,
+                "xpTotal": 41,
+                "wave": 3,
+                "level": 3,
+                "weapon": "MP44",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 150.2,
+                "xpTotal": 47,
+                "wave": 3,
+                "level": 4,
+                "weapon": "MP44",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 150.4,
+                "xpTotal": 47,
+                "wave": 3,
+                "level": 4,
+                "weapon": "MP44",
+                "health": 115,
+                "maxHealth": 115,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 115,
+            "kills": 44,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 113,
+              "y": 0.25,
+              "z": 17,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 11,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 140.43333333332794,
+            "player": [
+              111.23569924624165,
+              0.6990007324218762,
+              16.978461202387543
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 2,
+          "duration": 209.16666666674308,
+          "result": {
+            "performance": {
+              "frames": 6275,
+              "cpuSeconds": 0.8638930320739746,
+              "meanStepMs": 0.12786112933519828,
+              "p95StepMs": 0.4019737243652344,
+              "maxStepMs": 2.917051315307617,
+              "peakEnemies": 12,
+              "cap": 12,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 596,
+                "expanded": 143,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 0,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 14
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 4,
+                "weapon": "MP44"
+              },
+              {
+                "time": 275.2,
+                "level": 5,
+                "weapon": "DOUBLE MP44"
+              },
+              {
+                "time": 347.5,
+                "level": 8,
+                "weapon": "BAR"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "pulse",
+                "rank": 2,
+                "remaining": 0,
+                "cooldown": 2.1,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 228,
+            "droppedXp": 247,
+            "progression": {
+              "empRank": 0,
+              "empClock": -359.03333333340333,
+              "equippedSecondary": "pulse",
+              "level": 10,
+              "xp": 12,
+              "collectedXp": 228,
+              "maxHealth": 130,
+              "health": 130,
+              "damageRank": 1,
+              "hasteRank": 0,
+              "magnetRank": 4,
+              "pulseRank": 2,
+              "pulseUnlocked": true,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": -3.449999999999998,
+              "flameCooldownClock": 4.5,
+              "rocketClock": 3,
+              "score": 136806,
+              "kills": 132,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 359.60000000007045,
+              "flameActive": 0,
+              "flameTickClock": 0,
+              "scheduler": {
+                "queue": [
+                  "pulse"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "moyen",
+            "seed": 4262,
+            "result": "won",
+            "time": 359.6,
+            "wave": 4,
+            "level": 10,
+            "weapon": "BAR",
+            "health": 130,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 343.5,
+                "xpTotal": 171,
+                "wave": 4,
+                "level": 8,
+                "weapon": "DOUBLE MP44",
+                "health": 130,
+                "maxHealth": 130,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 354.3,
+                "xpTotal": 208,
+                "wave": 4,
+                "level": 9,
+                "weapon": "BAR",
+                "health": 130,
+                "maxHealth": 130,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 358.7,
+                "xpTotal": 228,
+                "wave": 4,
+                "level": 10,
+                "weapon": "BAR",
+                "health": 130,
+                "maxHealth": 130,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 359.6,
+                "xpTotal": 228,
+                "wave": 4,
+                "level": 10,
+                "weapon": "BAR",
+                "health": 130,
+                "maxHealth": 130,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 130,
+            "kills": 132,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 205,
+              "y": 2.95,
+              "z": 29,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 19,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 354.2666666667329,
+            "player": [
+              203.27581404992065,
+              3.3990007324218756,
+              28.957663775940752
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 3,
+          "duration": 479.56666666649033,
+          "result": {
+            "performance": {
+              "frames": 14387,
+              "cpuSeconds": 2.5697929859161377,
+              "meanStepMs": 0.16768757377397014,
+              "p95StepMs": 0.5040168762207031,
+              "maxStepMs": 8.726119995117188,
+              "peakEnemies": 14,
+              "cap": 16,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 1364,
+                "expanded": 414,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 0,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 29
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 10,
+                "weapon": "BAR"
+              },
+              {
+                "time": 756.9,
+                "level": 14,
+                "weapon": "GATLING"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "rockets",
+                "rank": 1,
+                "remaining": 2.6600000000000055,
+                "cooldown": 4.26,
+                "ready": false,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 586,
+            "droppedXp": 441,
+            "progression": {
+              "empRank": 0,
+              "empClock": -838.5666666665613,
+              "equippedSecondary": "rockets",
+              "level": 17,
+              "xp": 34,
+              "collectedXp": 586,
+              "maxHealth": 145,
+              "health": 145,
+              "damageRank": 1,
+              "hasteRank": 2,
+              "magnetRank": 6,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 0,
+              "rocketRank": 1,
+              "pulseClock": 0.9699999999999972,
+              "flameCooldownClock": 4.5,
+              "rocketClock": 2.6600000000000055,
+              "score": 332382,
+              "kills": 284,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 839.1666666665608,
+              "flameActive": 0,
+              "flameTickClock": 0,
+              "scheduler": {
+                "queue": [],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "moyen",
+            "seed": 40273,
+            "result": "won",
+            "time": 839.2,
+            "wave": 5,
+            "level": 17,
+            "weapon": "GATLING",
+            "health": 145,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 808.8,
+                "xpTotal": 540,
+                "wave": 5,
+                "level": 16,
+                "weapon": "GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 833.6,
+                "xpTotal": 582,
+                "wave": 5,
+                "level": 17,
+                "weapon": "GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 837.9,
+                "xpTotal": 586,
+                "wave": 5,
+                "level": 17,
+                "weapon": "GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 839.2,
+                "xpTotal": 586,
+                "wave": 5,
+                "level": 17,
+                "weapon": "GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 145,
+            "kills": 284,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 62,
+              "y": 2.95,
+              "z": 288,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 29,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 833.5666666665659,
+            "player": [
+              62.31854034468995,
+              3.399000732421875,
+              286.2365393798915
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 4,
+          "duration": 683.7333333327115,
+          "result": {
+            "performance": {
+              "frames": 20512,
+              "cpuSeconds": 7.29686713218689,
+              "meanStepMs": 0.34024802366396567,
+              "p95StepMs": 1.065969467163086,
+              "maxStepMs": 13.429880142211914,
+              "peakEnemies": 20,
+              "cap": 20,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 2867,
+                "expanded": 591,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 5,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 38
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 17,
+                "weapon": "GATLING"
+              },
+              {
+                "time": 1412.2,
+                "level": 19,
+                "weapon": "DOUBLE GATLING"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "pulse",
+                "rank": 1,
+                "remaining": 0,
+                "cooldown": 2.17,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 1267,
+            "droppedXp": 752,
+            "progression": {
+              "empRank": 0,
+              "empClock": -1522.2666666659395,
+              "equippedSecondary": "pulse",
+              "level": 26,
+              "xp": 67,
+              "collectedXp": 1267,
+              "maxHealth": 145,
+              "health": 145,
+              "damageRank": 3,
+              "hasteRank": 2,
+              "magnetRank": 8,
+              "pulseRank": 1,
+              "pulseUnlocked": true,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": -2.0966666666666716,
+              "flameCooldownClock": 2.733333333333351,
+              "rocketClock": 0.7600000000000047,
+              "score": 797374,
+              "kills": 520,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1.2066666666666732,
+              "artilleryClock": 3.966666666666679,
+              "time": 1522.8999999992723,
+              "flameActive": 0,
+              "flameTickClock": 0.1199999999999999,
+              "scheduler": {
+                "queue": [
+                  "pulse"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "moyen",
+            "seed": 10764,
+            "result": "won",
+            "time": 1522.9,
+            "wave": 6,
+            "level": 26,
+            "weapon": "DOUBLE GATLING",
+            "health": 145,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 1511.7,
+                "xpTotal": 1121,
+                "wave": 6,
+                "level": 25,
+                "weapon": "DOUBLE GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 1519.4,
+                "xpTotal": 1244,
+                "wave": 6,
+                "level": 26,
+                "weapon": "DOUBLE GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 1521.5,
+                "xpTotal": 1265,
+                "wave": 6,
+                "level": 26,
+                "weapon": "DOUBLE GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 1522.9,
+                "xpTotal": 1267,
+                "wave": 6,
+                "level": 26,
+                "weapon": "DOUBLE GATLING",
+                "health": 145,
+                "maxHealth": 145,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 145,
+            "kills": 520,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 92,
+              "y": 0.25,
+              "z": 426,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 43,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 1519.3666666659421,
+            "player": [
+              91.68785639550057,
+              0.6990007324218762,
+              424.3020967047353
+            ],
+            "stalledEnemies": []
+          }
+        }
+      ]
+    },
+    {
+      "profile": "bon",
+      "state": "won",
+      "cpuSeconds": 15.45034408569336,
+      "maps": [
+        {
+          "map": 1,
+          "duration": 170.63333333332622,
+          "result": {
+            "performance": {
+              "frames": 5119,
+              "cpuSeconds": 0.8074781894683838,
+              "meanStepMs": 0.1454391524204404,
+              "p95StepMs": 0.4620552062988281,
+              "maxStepMs": 3.9908885955810547,
+              "peakEnemies": 8,
+              "cap": 8,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 451,
+                "expanded": 44,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 8,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 9
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 1,
+                "weapon": "COLT .45"
+              },
+              {
+                "time": 61.2,
+                "level": 1,
+                "weapon": "DOUBLE COLT"
+              },
+              {
+                "time": 118.1,
+                "level": 3,
+                "weapon": "MP44"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "flame",
+                "rank": 1,
+                "remaining": 1.483333333333352,
+                "cooldown": 7.85,
+                "ready": false,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 85,
+            "droppedXp": 99,
+            "progression": {
+              "empRank": 0,
+              "empClock": -170.09999999999292,
+              "equippedSecondary": "flame",
+              "level": 5,
+              "xp": 19,
+              "collectedXp": 85,
+              "maxHealth": 100,
+              "health": 100,
+              "damageRank": 1,
+              "hasteRank": 1,
+              "magnetRank": 1,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 1,
+              "rocketRank": 0,
+              "pulseClock": 1,
+              "flameCooldownClock": 1.483333333333352,
+              "rocketClock": 3,
+              "score": 27359,
+              "kills": 44,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 1.5,
+              "time": 170.63333333332622,
+              "flameActive": 0,
+              "flameTickClock": 0.1199999999999999,
+              "scheduler": {
+                "queue": [],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "bon",
+            "seed": 33771,
+            "result": "won",
+            "time": 170.6,
+            "wave": 3,
+            "level": 5,
+            "weapon": "MP44",
+            "health": 100,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 140,
+                "xpTotal": 45,
+                "wave": 3,
+                "level": 4,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 161.5,
+                "xpTotal": 70,
+                "wave": 3,
+                "level": 5,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 167.6,
+                "xpTotal": 70,
+                "wave": 3,
+                "level": 5,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 170.6,
+                "xpTotal": 85,
+                "wave": 3,
+                "level": 5,
+                "weapon": "MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 100,
+            "kills": 44,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 113,
+              "y": 0.25,
+              "z": 17,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 11,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 161.43333333332674,
+            "player": [
+              111.36985591866184,
+              0.6990007324218762,
+              17.483631735508343
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 2,
+          "duration": 346.93333333352706,
+          "result": {
+            "performance": {
+              "frames": 10408,
+              "cpuSeconds": 2.4664177894592285,
+              "meanStepMs": 0.2160136696011355,
+              "p95StepMs": 0.5981922149658203,
+              "maxStepMs": 7.8830718994140625,
+              "peakEnemies": 8,
+              "cap": 12,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 1350,
+                "expanded": 114,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 6,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 10
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 5,
+                "weapon": "MP44"
+              },
+              {
+                "time": 393,
+                "level": 6,
+                "weapon": "DOUBLE MP44"
+              },
+              {
+                "time": 486.3,
+                "level": 10,
+                "weapon": "BAR"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "artillery",
+                "rank": 1,
+                "remaining": 0,
+                "cooldown": 7.6,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 322,
+            "droppedXp": 237,
+            "progression": {
+              "empRank": 0,
+              "empClock": -517.0000000001871,
+              "equippedSecondary": "artillery",
+              "level": 12,
+              "xp": 25,
+              "collectedXp": 322,
+              "maxHealth": 100,
+              "health": 100,
+              "damageRank": 3,
+              "hasteRank": 2,
+              "magnetRank": 2,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": 1,
+              "flameCooldownClock": -2.583333333333334,
+              "rocketClock": 3,
+              "score": 88596,
+              "kills": 132,
+              "sniperRank": 0,
+              "artilleryRank": 1,
+              "sniperClock": 1,
+              "artilleryClock": -9.166666666666629,
+              "time": 517.5666666668533,
+              "flameActive": 0,
+              "flameTickClock": 0.013333333333333211,
+              "scheduler": {
+                "queue": [
+                  "artillery"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "bon",
+            "seed": 4262,
+            "result": "won",
+            "time": 517.6,
+            "wave": 4,
+            "level": 12,
+            "weapon": "BAR",
+            "health": 100,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 483.7,
+                "xpTotal": 247,
+                "wave": 4,
+                "level": 10,
+                "weapon": "DOUBLE MP44",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 501,
+                "xpTotal": 262,
+                "wave": 4,
+                "level": 11,
+                "weapon": "BAR",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 504.9,
+                "xpTotal": 262,
+                "wave": 4,
+                "level": 11,
+                "weapon": "BAR",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 517.6,
+                "xpTotal": 322,
+                "wave": 4,
+                "level": 12,
+                "weapon": "BAR",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 100,
+            "kills": 132,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 205,
+              "y": 2.95,
+              "z": 29,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 19,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 500.9666666668496,
+            "player": [
+              203.37663473877697,
+              3.3990007324218756,
+              29.471762001370635
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 3,
+          "duration": 434.86666666627116,
+          "result": {
+            "performance": {
+              "frames": 13046,
+              "cpuSeconds": 3.117917060852051,
+              "meanStepMs": 0.22185791786985676,
+              "p95StepMs": 0.7059574127197266,
+              "maxStepMs": 12.597084045410156,
+              "peakEnemies": 16,
+              "cap": 16,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 1341,
+                "expanded": 234,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 6,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 29
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 12,
+                "weapon": "BAR"
+              },
+              {
+                "time": 891.8,
+                "level": 16,
+                "weapon": "GATLING"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "rockets",
+                "rank": 3,
+                "remaining": 0,
+                "cooldown": 3.04,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 713,
+            "droppedXp": 430,
+            "progression": {
+              "empRank": 0,
+              "empClock": -951.833333333125,
+              "equippedSecondary": "rockets",
+              "level": 19,
+              "xp": 38,
+              "collectedXp": 713,
+              "maxHealth": 100,
+              "health": 100,
+              "damageRank": 3,
+              "hasteRank": 3,
+              "magnetRank": 5,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 0,
+              "rocketRank": 3,
+              "pulseClock": 1,
+              "flameCooldownClock": -2.583333333333334,
+              "rocketClock": -0.6599999999999991,
+              "score": 257991,
+              "kills": 284,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 6.5000000000000036,
+              "time": 952.4333333331244,
+              "flameActive": 0,
+              "flameTickClock": 0.013333333333333211,
+              "scheduler": {
+                "queue": [
+                  "rockets"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "bon",
+            "seed": 40273,
+            "result": "won",
+            "time": 952.4,
+            "wave": 5,
+            "level": 19,
+            "weapon": "GATLING",
+            "health": 100,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 932.1,
+                "xpTotal": 636,
+                "wave": 5,
+                "level": 18,
+                "weapon": "GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 948.8,
+                "xpTotal": 677,
+                "wave": 5,
+                "level": 19,
+                "weapon": "GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 951.3,
+                "xpTotal": 705,
+                "wave": 5,
+                "level": 19,
+                "weapon": "GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 952.4,
+                "xpTotal": 713,
+                "wave": 5,
+                "level": 19,
+                "weapon": "GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 100,
+            "kills": 284,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 62,
+              "y": 2.95,
+              "z": 288,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 29,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 948.7333333331278,
+            "player": [
+              61.97246901877523,
+              3.399000732421875,
+              286.23198358996257
+            ],
+            "stalledEnemies": []
+          }
+        },
+        {
+          "map": 4,
+          "duration": 769.0666666659672,
+          "result": {
+            "performance": {
+              "frames": 23072,
+              "cpuSeconds": 9.014804124832153,
+              "meanStepMs": 0.3576208520861505,
+              "p95StepMs": 1.1439323425292969,
+              "maxStepMs": 23.051977157592773,
+              "peakEnemies": 20,
+              "cap": 20,
+              "peakPhpBytes": 6291456,
+              "navigation": {
+                "searches": 3320,
+                "expanded": 551,
+                "failed": 0,
+                "budgetExhausted": 0,
+                "recoveries": 40,
+                "maxSearchesPerFrame": 3,
+                "maxExpansionsPerFrame": 82
+              }
+            },
+            "arsenalTimeline": [
+              {
+                "time": 0,
+                "level": 19,
+                "weapon": "GATLING"
+              },
+              {
+                "time": 1472.3,
+                "level": 21,
+                "weapon": "DOUBLE GATLING"
+              }
+            ],
+            "secondaries": [
+              {
+                "id": "emp",
+                "rank": 3,
+                "remaining": 0,
+                "cooldown": 10,
+                "ready": true,
+                "active": false,
+                "flash": false
+              }
+            ],
+            "xpModel": "2-3-4-6",
+            "xpTotal": 1409,
+            "droppedXp": 734,
+            "progression": {
+              "empRank": 3,
+              "empClock": -2.9666666666666406,
+              "equippedSecondary": "emp",
+              "level": 28,
+              "xp": 32,
+              "collectedXp": 1409,
+              "maxHealth": 100,
+              "health": 100,
+              "damageRank": 4,
+              "hasteRank": 6,
+              "magnetRank": 7,
+              "pulseRank": 0,
+              "pulseUnlocked": false,
+              "flameRank": 0,
+              "rocketRank": 0,
+              "pulseClock": 1,
+              "flameCooldownClock": -2.583333333333334,
+              "rocketClock": 1.8400000000000032,
+              "score": 589733,
+              "kills": 520,
+              "sniperRank": 0,
+              "artilleryRank": 0,
+              "sniperClock": 1,
+              "artilleryClock": 6.5000000000000036,
+              "time": 1721.4999999990916,
+              "flameActive": 0,
+              "flameTickClock": 0.013333333333333211,
+              "scheduler": {
+                "queue": [
+                  "emp"
+                ],
+                "gap": 0
+              }
+            },
+            "scenario": "route",
+            "profile": "bon",
+            "seed": 10764,
+            "result": "won",
+            "time": 1721.5,
+            "wave": 6,
+            "level": 28,
+            "weapon": "DOUBLE GATLING",
+            "health": 100,
+            "lowestHealth": 100,
+            "lowestHealthRatio": 1,
+            "checkpoints": {
+              "finalRoom": {
+                "time": 1657.1,
+                "xpTotal": 1343,
+                "wave": 6,
+                "level": 27,
+                "weapon": "DOUBLE GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "boss": {
+                "time": 1716.7,
+                "xpTotal": 1401,
+                "wave": 6,
+                "level": 28,
+                "weapon": "DOUBLE GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "bossDefeated": {
+                "time": 1720.2,
+                "xpTotal": 1409,
+                "wave": 6,
+                "level": 28,
+                "weapon": "DOUBLE GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              },
+              "treasure": {
+                "time": 1721.5,
+                "xpTotal": 1409,
+                "wave": 6,
+                "level": 28,
+                "weapon": "DOUBLE GATLING",
+                "health": 100,
+                "maxHealth": 100,
+                "healthRatio": 1
+              }
+            },
+            "maxHealth": 100,
+            "kills": 520,
+            "wave7": null,
+            "finalRoom": true,
+            "bossReached": true,
+            "bossDefeated": true,
+            "objective": "complete",
+            "remaining": 0,
+            "liveEnemies": 0,
+            "routeTarget": {
+              "x": 92,
+              "y": 0.25,
+              "z": 426,
+              "tags": [
+                "treasure"
+              ],
+              "roomId": 43,
+              "roomType": "BOSS_ROOM"
+            },
+            "lastKillAt": 1716.699999999096,
+            "player": [
+              92.6769657472137,
+              0.6990007324218762,
+              424.44499116441335
+            ],
+            "stalledEnemies": []
+          }
+        }
+      ]
+    }
+  ],
+  "baseHead": "6b05027c80deed8134c3aa30558cb20fbd834b20"
+}

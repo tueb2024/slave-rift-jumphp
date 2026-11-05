@@ -1,0 +1,126 @@
+{
+  "scope": "Stationary invulnerable density fixture in real daily maps, not a player win-rate benchmark.",
+  "runs": [
+    {
+      "date": "2026-11-04",
+      "map": 1,
+      "spawned15s": 4,
+      "peak": 4,
+      "cap": 4,
+      "waveBudget": 10,
+      "waves": 3,
+      "cpuMs": 78.48
+    },
+    {
+      "date": "2026-11-04",
+      "map": 2,
+      "spawned15s": 8,
+      "peak": 8,
+      "cap": 8,
+      "waveBudget": 16,
+      "waves": 4,
+      "cpuMs": 130.22
+    },
+    {
+      "date": "2026-11-04",
+      "map": 3,
+      "spawned15s": 12,
+      "peak": 12,
+      "cap": 12,
+      "waveBudget": 24,
+      "waves": 5,
+      "cpuMs": 237.26
+    },
+    {
+      "date": "2026-11-04",
+      "map": 4,
+      "spawned15s": 16,
+      "peak": 16,
+      "cap": 16,
+      "waveBudget": 32,
+      "waves": 6,
+      "cpuMs": 358.08
+    },
+    {
+      "date": "2026-11-05",
+      "map": 1,
+      "spawned15s": 4,
+      "peak": 4,
+      "cap": 4,
+      "waveBudget": 10,
+      "waves": 3,
+      "cpuMs": 98.92
+    },
+    {
+      "date": "2026-11-05",
+      "map": 2,
+      "spawned15s": 8,
+      "peak": 8,
+      "cap": 8,
+      "waveBudget": 16,
+      "waves": 4,
+      "cpuMs": 128.32
+    },
+    {
+      "date": "2026-11-05",
+      "map": 3,
+      "spawned15s": 12,
+      "peak": 12,
+      "cap": 12,
+      "waveBudget": 24,
+      "waves": 5,
+      "cpuMs": 224.63
+    },
+    {
+      "date": "2026-11-05",
+      "map": 4,
+      "spawned15s": 16,
+      "peak": 16,
+      "cap": 16,
+      "waveBudget": 32,
+      "waves": 6,
+      "cpuMs": 306.03
+    },
+    {
+      "date": "2026-11-06",
+      "map": 1,
+      "spawned15s": 4,
+      "peak": 4,
+      "cap": 4,
+      "waveBudget": 10,
+      "waves": 3,
+      "cpuMs": 75.49
+    },
+    {
+      "date": "2026-11-06",
+      "map": 2,
+      "spawned15s": 8,
+      "peak": 8,
+      "cap": 8,
+      "waveBudget": 16,
+      "waves": 4,
+      "cpuMs": 146.32
+    },
+    {
+      "date": "2026-11-06",
+      "map": 3,
+      "spawned15s": 12,
+      "peak": 12,
+      "cap": 12,
+      "waveBudget": 24,
+      "waves": 5,
+      "cpuMs": 254.99
+    },
+    {
+      "date": "2026-11-06",
+      "map": 4,
+      "spawned15s": 16,
+      "peak": 16,
+      "cap": 16,
+      "waveBudget": 32,
+      "waves": 6,
+      "cpuMs": 347.34
+    }
+  ],
+  "baseHead": "6b05027c80deed8134c3aa30558cb20fbd834b20"
+}

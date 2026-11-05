@@ -1,6 +1,8 @@
-# Slave Rift — Mecha combat overhaul
+# Slave Rift — Test jouable : poursuite et difficulté progressive
 
-FPS PHP/JumPHP : méchas industriels originaux, tirs automatiques rythmiques, progression à sept paliers, secondaires séquencées et musique procédurale. Branche de travail : **`feature/mecha-combat-overhaul`**, issue de `main` **`ec4f45d920a70810a5c878f8cf8fcb3a2787e89c`**. Aucune fusion ni publication automatique depuis cette branche.
+FPS PHP/JumPHP : méchas industriels, sprites d’armes et de pouvoirs animés, tirs automatiques rythmiques et musique échantillonnée. Version de test intégrant dans `main` la branche `feature/808-sampled-score`, la poursuite persistante et un nouvel équilibrage du Défi du jour.
+
+Pour essayer la progression sur quatre maps : choisir **DÉFI DU JOUR**. Le départ comporte 10 ennemis, avec au plus 4 survivants simultanés ; la cadence accélère après le double Colt. Le budget complet est de 520 ennemis. Les nouveaux réglages concernent le Défi du jour ; les règles de JOUER et HORDE restent conservées. Les rapports sont dans [la note de version](docs/progressive-difficulty.md).
 
 ## Jouer
 
@@ -27,9 +29,9 @@ Le siège possède trois modules protecteurs. Détruisez-les pour ouvrir le cœu
 
 Le bazooka est une secondaire ; il ne remplace pas la double Gatling. Les roquettes voyagent jusqu’à leur point d’impact puis infligent des dégâts de zone avec contrôle des murs. L’artillerie ajoute une charge plus lente et une explosion plus large. Le sniper privilégie un enforcer ou une brute visible, jusqu’à 40 unités, et matérialise son tir par un rayon cyan. Le lance-flammes dessine un jet continu, limité par la géométrie, pendant ses dégâts progressifs.
 
-Les cinq secondaires restent en haut à droite. Le scheduler FIFO espace leurs départs d’au moins une croche ; une arme prête attend sans perdre sa recharge, et un jet déjà actif continue. Les paliers, barème XP **2/3/4/6** et +2 BPM par niveau sont conservés. Les soins sont moins généreux : +4 entre vagues, 14 PV tous les 14 kills, vitalité proposée tous les trois niveaux seulement (+15 maximum, soin de 25).
+Les cinq secondaires restent en haut à droite. Le scheduler FIFO espace leurs départs d’au moins une croche ; une arme prête attend sans perdre sa recharge, et un jet déjà actif continue. Le barème XP **2/3/4/6** et +2 BPM par niveau sont conservés. Dans le Défi du jour, les armes avancent aux seuils de kills cumulés **0 / 8 / 26 / 63 / 125 / 218 / 354** ; le tableau de niveaux ci-dessus concerne la progression XP normale / campagne historique. Les soins sont moins généreux : +4 entre vagues, 14 PV tous les 14 kills, vitalité proposée tous les trois niveaux seulement (+15 maximum, soin de 25).
 
-`RhythmClock` reste le transport commun aux tirs et à la musique. Le sampler utilise le mixer existant et une petite banque de notes synthétiques. Un RNG musical séparé choisit tonique, mode et motif. Des phrases reconnaissables se répètent, varient et passent sur une basse harmonique simple ; une seconde voix utilise un registre inférieur, des attaques complémentaires et des consonances vérifiées aux temps structurels. Percussions et tension augmentent au combat ; une cadence signale la victoire.
+`RhythmClock` reste le transport commun aux tirs et à la musique. Le sampler utilise le mixer existant et une banque de 53 fichiers PCM : percussions TR-808 échantillonnées, lead, contrepoint et basse. Les samples et leurs provenances sont fournis dans le dépôt ; aucune génération n’est requise pour jouer. Un RNG musical séparé choisit tonique, mode et motif. Des phrases reconnaissables se répètent, varient et passent sur une basse harmonique simple ; une seconde voix utilise un registre inférieur, des attaques complémentaires et des consonances vérifiées aux temps structurels. Percussions et tension augmentent au combat ; une cadence signale la victoire.
 
 ## Générer les modèles et sprites sur Windows
 
@@ -51,7 +53,7 @@ Le pipeline crée les modèles `.blend`, PNG transparents, atlas et icônes puis
 
 Quatre seeds indépendantes sont dérivées de `slave-rift/daily/v2/map/{stage}/{date}` par un hash borné identique en PHP 32/64 bits. `CampaignRun::daily(date, serverSeeds, id)` accepte aussi quatre seeds fournies à l’avenir par un serveur. Aucun backend n’est nécessaire. Une campagne conserve sa date au replay, même après minuit.
 
-Les parcours comptent **12, 20, 30 et 44 salles principales**. La borne du générateur passe à 48 ; les salles et escaliers ne sont pas étirés. Les boss ont 1 000 / 1 200 / 1 450 / 1 750 PV ; la composition, le budget, la cadence des rencontres et les dégâts portent l’essentiel de la difficulté. Cible : 8–12 minutes pour un profil moyen performant. Les bots sont des politiques imparfaites, pas une prédiction des taux de victoire humains.
+Les parcours comptent **12, 20, 30 et 44 salles principales**. La borne du générateur passe à 48 ; les salles et escaliers ne sont pas étirés. Les boss ont 1 000 / 1 200 / 1 450 / 1 750 PV ; la composition, le budget, la cadence des rencontres et les dégâts portent l’essentiel de la difficulté. La cible de 12–18 minutes pour le Défi du jour reste à éprouver par des essais humains ; les durées des bots sont publiées séparément. Les bots sont des politiques imparfaites, pas une prédiction des taux de victoire humains.
 
 ## Vérifier
 
@@ -71,3 +73,4 @@ La CI teste PHP 8.2/8.5, le runtime natif SDL/OpenGL et WASM, les clics/taps des
 Code et assets procéduraux originaux : GPL-3.0-or-later. Provenances historiques : [assets/ASSETS.md](assets/ASSETS.md).
 
 La croissance de surface est vérifiée à chaque transition : si le tirage contient trop de couloirs étroits, des modules sont remplacés, dans un ordre déterministe, par des salles standards plus grandes. Les dimensions des modules ne changent jamais. Les quatre seeds restent fixées avant la partie.
+

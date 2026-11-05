@@ -9,6 +9,14 @@ final class GameMode
     public const DAILY = 'daily';
     public const HORDE = 'horde';
 
+    private const DAILY_WAVES = [
+        [10, 12, 14],
+        [16, 18, 20, 22],
+        [24, 26, 28, 28, 30],
+        [32, 34, 36, 36, 38, 40],
+    ];
+    private const DAILY_WEAPON_KILLS = [8, 26, 63, 125, 218, 354];
+
     private function __construct(
         public readonly string $kind,
         public readonly int $seed,
@@ -64,7 +72,7 @@ final class GameMode
     private static function stageRules(string $kind,int $seed,int $stage,?string $id): self
     {
         return new self($kind,$seed,$stage,$id,depth:[6,10,15,22][$stage-1],intensity:[1,1.1,1.2,1.3][$stage-1],
-            finalWaveSize:$kind===self::DAILY?[24,36,48,64][$stage-1]:[12,15,18,22][$stage-1],bossHealth:[1000,1200,1450,1750][$stage-1],campaignStage:$stage);
+            finalWaveSize:$kind===self::DAILY?[8,12,16,20][$stage-1]:[12,15,18,22][$stage-1],bossHealth:[1000,1200,1450,1750][$stage-1],campaignStage:$stage);
     }
 
     public function compositionWave(int $wave): int
@@ -103,27 +111,42 @@ final class GameMode
 
     public function enemyLimit(int $wave): int
     {
-        if($this->kind===self::DAILY)return [24,40,64,88][$this->campaignStage-1];
+        if($this->kind===self::DAILY)return [4,8,12,16][$this->campaignStage-1]+min(2,max(0,$wave-1))*2;
         return $this->kind === self::HORDE ? min(200, 20 + max(1, $wave) * 4) : Run::MAX_ENEMIES;
     }
 
     public function waveBudget(int $wave): int
     {
-        if($this->kind===self::DAILY)return [24,32,40,48][$this->campaignStage-1]+max(0,$wave-1)*6;
+        if($this->kind===self::DAILY){
+            $waves=self::DAILY_WAVES[$this->campaignStage-1];
+            return $waves[max(0,min(count($waves)-1,$wave-1))];
+        }
         return $this->kind === self::HORDE ? 14 + max(1, $wave) * 6
             : (int)ceil(min(34, 10 + $wave * 2) * $this->intensity);
     }
 
     public function spawnBatch(int $wave): int
     {
-        if($this->kind===self::DAILY)return [3,4,5,6][$this->campaignStage-1];
+        if($this->kind===self::DAILY)return match($this->campaignStage){
+            1=>1, 2=>$wave===1?1:2, 3=>2, default=>$wave<=3?2:3,
+        };
         return $this->kind === self::HORDE ? min(6, 1 + intdiv($wave, 3)) : min(2, 1 + intdiv($wave, 4));
     }
 
-    public function spawnInterval(int $wave): float
+    public function spawnInterval(int $wave, int $kills = 0): float
     {
-        if($this->kind===self::DAILY)return [.65,.55,.45,.38][$this->campaignStage-1];
+        if($this->kind===self::DAILY){
+            // The opening teaches movement; the first weapon upgrade raises the pace.
+            if($this->campaignStage===1)return $kills<self::DAILY_WEAPON_KILLS[0]?1.15:max(.65,.85-max(0,$wave-1)*.08);
+            return max([0,.75,.65,.55][$this->campaignStage-1],
+                [0,.95,.8,.7][$this->campaignStage-1]-max(0,$wave-1)*.05);
+        }
         return $this->kind === self::HORDE ? max(0.12, 1.2 - $wave * 0.035) : max(0.85, 1.4 - $wave * 0.04) / (1+max(0,$this->campaignStage-1)*0.08);
+    }
+
+    public function intermissionSeconds(): float
+    {
+        return $this->kind===self::DAILY?[4.0,3.5,3.0,2.5][$this->campaignStage-1]:4.0;
     }
 
     public function enemyHealthScale(int $wave): float
@@ -134,10 +157,10 @@ final class GameMode
 
     public function waveCount(): int{return $this->kind===self::DAILY?[3,4,5,6][$this->campaignStage-1]:PHP_INT_MAX;}
     public function xpThreshold(int $level): int{return $this->kind===self::DAILY?12+max(0,$level-1)*3:XpCurve::threshold($level);}
-    /** The four-map budget is fixed: 114 + 200 + 308 + 442 = 1064 enemies. */
+    /** Fixed daily budget: 44 + 88 + 152 + 236 = 520; all seven weapons remain reachable. */
     public function primaryStageForKills(int $kills): int
     {
-        $stage=0;foreach([16,53,128,255,447,724]as$threshold)if($kills>=$threshold)$stage++;return $stage;
+        $stage=0;foreach(self::DAILY_WEAPON_KILLS as$threshold)if($kills>=$threshold)$stage++;return $stage;
     }
     public function label(): string
     {
@@ -152,3 +175,4 @@ final class GameMode
         if ($seed < 1 || $seed > 65520) throw new \InvalidArgumentException('Seed must be 1..65520');
     }
 }
+

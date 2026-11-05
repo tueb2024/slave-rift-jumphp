@@ -1,5 +1,7 @@
 # Poursuite persistante — validation du 5 novembre 2026
 
+Ces mesures précèdent le nouvel équilibrage : voir [la version de test progressive](progressive-difficulty.md) pour les réglages et résultats actuels.
+
 Base distante : `81daa940fb8cac4620d0d5c06e9c69add0cef209`, branche `feature/808-sampled-score`. Aucun changement de statistiques de dégâts, PV, XP, budgets, plafonds ou progression des armes. Les quatre maps, boss et pouvoir exclusif sont conservés.
 
 ## Audit et correction

@@ -18,24 +18,23 @@ Damaging powers were strengthened to compensate for the removal of stacked power
 
 ## Daily rules
 
-| Map | Exploration waves | First-wave budget | Added per wave | Final-wave budget | Spawn batch | Interval | Active cap | HP scale, wave 1 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 3 | 24 | 6 | 24 | 3 | .65 s | 24 | 1.0 |
-| 2 | 4 | 32 | 6 | 36 | 4 | .55 s | 40 | 1.25 |
-| 3 | 5 | 40 | 6 | 48 | 5 | .45 s | 64 | 1.55 |
-| 4 | 6 | 48 | 6 | 64 | 6 | .38 s | 88 | 1.9 |
+| Map | Exploration budgets | Final wave | Total | Batch | Interval | Active cap | Intermission |
+|---|---|---:|---:|---|---|---|---:|
+| 1 | 10 / 12 / 14 | 8 | 44 | 1 | 1.15 s before kill 8, then .85 / .77 / .69 s | 4 / 6 / 8 | 4 s |
+| 2 | 16 / 18 / 20 / 22 | 12 | 88 | 1 then 2 | .95 → .80 s | 8 → 12 | 3.5 s |
+| 3 | 24 / 26 / 28 / 28 / 30 | 16 | 152 | 2 | .80 → .65 s | 12 → 16 | 3 s |
+| 4 | 32 / 34 / 36 / 36 / 38 / 40 | 20 | 236 | 2 then 3 | .70 → .55 s | 16 → 20 | 2.5 s |
 
-Each map additionally ends with its boss. The complete fixed campaign budget is 1064 ordinary enemies (114/200/308/442 per map), excluding boss modules. Rushing the final room cannot skip the exploration waves. The final-room trigger waits for them to be cleared. The simulation does not spawn further exploration waves beyond its count.
+The complete campaign budget is **520 ordinary enemies**, excluding bosses and their modules. Primary weapons advance at **0 / 8 / 26 / 63 / 125 / 218 / 354 cumulative kills**. XP still controls upgrades and tempo, with costs `12 + 3×(level−1)`. Normal and Horde retain their existing rules.
 
-Daily HP increases another 3.5% of the map base per wave; the four class HP weights remain exactly 1:2:3:6. Primary upgrades do not cause enemy HP to increase. Intermissions last 1.5 seconds. Failed placements retry after .12 seconds with a bounded search. Daily fallback placements follow the player's current room rather than sampling distant map anchors. They still require valid ground, free space, geometry visibility and separation; a .55-second activation delay and visible marker telegraph newly spawned enemies.
+HP scales remain 1 / 1.25 / 1.55 / 1.9 by map, plus the existing 3.5% per wave. Class ratios, damage, healing, boss rules and exclusive powers are unchanged. Spawn placement still checks support, collision, visibility and separation, with a .55 s activation delay. Full caps defer appearances rather than deleting survivors or forgetting the remaining budget. Every exploration wave must be cleared before the final encounter can start.
 
-Daily XP costs are `12 + 3×(level−1)`; XP drops and collection still matter for power upgrades, but the seven primary weapons advance at cumulative kill counts 0/16/53/128/255/447/724, across maps. This separates weapon access from a flood of XP levels while making it proportional to the larger enemy budget. Normal/horde retain their original primary XP milestones.
 
 ## Evidence and limitations
 
-`tools/daily-pressure-report.php` tests three real daily dates and four generated maps per date with an invulnerable stationary player for 15 simulated seconds. Initial observed peaks were 24 on map 1, 27–32 on map 2, 33–34 on map 3 and 30–35 on map 4. These are geometry-limited observations, not a promise that all 88 allowed enemies appear simultaneously or all fit on screen. The report runs in CI and is uploaded separately.
+`tools/daily-pressure-report.php` tests three real daily dates and four generated maps per date with an invulnerable stationary player for 15 simulated seconds. Before the progressive update, observed peaks were 24 on map 1, 27–32 on map 2, 33–34 on map 3 and 30–35 on map 4. These are geometry-limited observations, not a promise that all 88 allowed enemies appear simultaneously or all fit on screen. The report runs in CI and is uploaded separately.
 
-Tests cover asset dimensions and PNG transparency, the 1064-enemy budget, primary kill thresholds, sustained bounded spawns, final-wave gating, power replacement/save migration, EMP immobilization/recovery and homing target updates. Native SDL tests capture every primary stage and five power effects. Browser tests verify replacement of flame by EMP and a single selected HUD power.
+Tests cover asset dimensions and PNG transparency, the 520-enemy budget, primary kill thresholds, sustained bounded spawns, final-wave gating, power replacement/save migration, EMP immobilization/recovery and homing target updates. Native SDL tests capture every primary stage and five power effects. Browser tests verify replacement of flame by EMP and a single selected HUD power.
 
 The previous survival simulation guard assumed stacked powers. With the exclusive slot, the current deterministic medium policy reaches wave 7 for one of three representative seeds; the other two runs end in combat deaths, not stalls. Its acceptance threshold now requires a reachable late-game path rather than the old two-of-three result. The input policy retains an upgraded power instead of randomly replacing it with rank one; it still uses only legal offered choices and never injects health/XP. These policy results do not estimate human win rates.
 
