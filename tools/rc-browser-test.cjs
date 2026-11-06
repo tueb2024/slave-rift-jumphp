@@ -36,6 +36,8 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await tap(160,60); await expect('mode','normal'); await expect('screen','play');
     const first=(await state()).seed;
     assert.equal((await state()).gates.filter(g=>!g.open).length,3,'Normal procedural encounters must start gated');
+    await php("$g=$rcRun->encounters->gates[0];[$x,$y,$z]=$g['position'];if(!$rcRun->collides($x,$y+.7,$z,.28,.7))throw new \\RuntimeException('Gate must block actors');$rcRun->x=$x-$g['normal'][0]*2.2;$rcRun->y=$y+.7;$rcRun->z=$z-$g['normal'][2]*2.2;$rcRun->yaw=atan2($g['normal'][0],$g['normal'][2]);");
+    await delay(150);await page.screenshot({path:`${out}/${name}-gate-closed.png`});
     // Verify all packaged PCM paths after the first user gesture, including reserved bass channels.
     await php("$rcMusic=(new \\ReflectionProperty($rcScene,'music'))->getValue($rcScene); $rcMusic->register(); $rcSampler=(new \\ReflectionProperty($rcMusic,'sampler'))->getValue($rcMusic); $rcMusic->playSteps([0],1); file_put_contents('/tmp/music-state.json',json_encode(['notes'=>count((new \\ReflectionProperty($rcSampler,'chunks'))->getValue($rcSampler)),'files'=>count(glob(JUMPHP_ROOT.'/assets/audio/*.wav')),'bass'=>Mix_Playing(0)||Mix_Playing(1)]));");
     const musicState=await page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/music-state.json',{encoding:'utf8'})));

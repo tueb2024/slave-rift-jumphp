@@ -4,7 +4,7 @@ use App\Game\{CampaignRun,GameMode,Run};
 $rows=[];
 foreach([25,50] as $population){
     $c=CampaignRun::daily('2026-11-05');$r=new Run($c->level->map,33771,GameMode::horde(33771));
-    $r->setObjective($c->level);$r->objective=null;$r->remaining=0;$r->intermission=3600;$r->health=100000;
+    $r->setObjective($c->level);$r->encounters->clear(PHP_INT_MAX);$r->navigation->setBlockers([]);$r->objective=null;$r->remaining=0;$r->intermission=3600;$r->health=100000;
     $spawn=new ReflectionMethod(Run::class,'spawnEnemyAt');
     // Real collision-safe positions across the first rooms. Weapons disabled only in this CPU fixture.
     foreach($c->level->rooms as $room){
@@ -35,4 +35,4 @@ foreach([25,50] as $population){
         'failedSearches'=>$r->navigation->failed,'recoveries'=>$r->navigationRecoveries,'peakPhpBytes'=>memory_get_peak_usage(true),
         'positions'=>array_map(static fn($e)=>array_intersect_key($e,array_flip(['id','type','x','y','z','pursuing'])) ,array_values($r->enemies))];
 }
-echo json_encode(['scope'=>'90s pursuit across real daily rooms, doors and stairs; fixed population, no weapons, high-health stationary target. CPU only, not difficulty or GPU benchmark.','seed'=>33771,'runs'=>$rows],JSON_PRETTY_PRINT)."\n";
+echo json_encode(['scope'=>'90s pursuit across real daily rooms, doors and stairs; fixed population, no weapons, high-health stationary target. Gates opened explicitly to isolate traversal after encounter clearance. CPU only, not difficulty or GPU benchmark.','seed'=>33771,'runs'=>$rows],JSON_PRETTY_PRINT)."\n";
