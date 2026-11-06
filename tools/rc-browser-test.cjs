@@ -21,7 +21,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
    await page.waitForFunction(()=>typeof window.JumPHP?.php==='function');
    const php=code=>page.evaluate(code=>window.JumPHP.php(code),prefix+code);
    const state=async()=>{
-    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'shotgunShots'=>$rcRun?->shotgunSerial,'bossHp'=>$rcRun?->boss?->health,'gates'=>$rcRun?->encounters?->gates,'bossShots'=>$rcRun?->bossShots,'bossProjectiles'=>count($rcRun?->bossProjectiles??[]),'secondaries'=>$rcRun?->secondaryInventory(),'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
+    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'melodies'=>\\JumPHP\\Kernel\\Engine::get()->storage->readJson('music-contours.json',[]),'shotgunShots'=>$rcRun?->shotgunSerial,'bossHp'=>$rcRun?->boss?->health,'gates'=>$rcRun?->encounters?->gates,'bossShots'=>$rcRun?->bossShots,'bossProjectiles'=>count($rcRun?->bossProjectiles??[]),'secondaries'=>$rcRun?->secondaryInventory(),'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
     return page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/rc-state.json',{encoding:'utf8'})));
    };
    const tap=async(x,y)=>{
@@ -35,6 +35,8 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await page.screenshot({path:`${out}/${name}-main.png`});
     await tap(160,60); await expect('mode','normal'); await expect('screen','play');
     const first=(await state()).seed;
+    const firstMelody=(await state()).melodies.at(-1);
+    assert.equal(typeof firstMelody,'string');
     assert.equal((await state()).gates.filter(g=>!g.open).length,3,'Normal procedural encounters must start gated');
     await php("$g=$rcRun->encounters->gates[0];[$x,$y,$z]=$g['position'];if(!$rcRun->collides($x,$y+.7,$z,.28,.7))throw new \\RuntimeException('Gate must block actors');$rcRun->x=$x-$g['normal'][0]*2.2;$rcRun->y=$y+.7;$rcRun->z=$z-$g['normal'][2]*2.2;$rcRun->yaw=atan2($g['normal'][0],$g['normal'][2]);");
     await delay(150);await page.screenshot({path:`${out}/${name}-gate-closed.png`});
@@ -48,6 +50,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await php("$rcRun->state='dead';"); await delay(100);
     await page.screenshot({path:`${out}/${name}-dead.png`});
     await tap(160,90); await expect('seed',first); await expect('state','play');
+    assert.notEqual((await state()).melodies.at(-1),firstMelody,'Replay must compose a different contour');
     await php("$rcRun->state='dead';"); await delay(100);
     await tap(160,118); assert.notEqual((await state()).seed,first,'new random map reused seed');
     await php("$rcRun->state='won';"); await delay(100);

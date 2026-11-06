@@ -14,6 +14,8 @@ final class ProceduralScore
         $this->root=48+$rng->nextInt(5);
         $this->scale=$rng->chance(.5)?[0,2,3,5,7,8,10]:[0,2,3,5,7,9,10];
         $this->motif=$rng->chance(.5)?[0,2,4,3,2,0]:[0,1,3,4,2,1];
+        // Keep the harmonic anchors, compose the intervening notes independently.
+        foreach([1,2,4,5] as $i)$this->motif[$i]=$rng->nextInt(7);
     }
     /** One four-beat phrase, repeated with controlled variation every four bars. */
     public function phrase(int $bar): array

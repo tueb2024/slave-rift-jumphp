@@ -125,7 +125,14 @@ final class PlayScene extends AbstractScene
             $this->music = new RiftMusic($this->sound());
             $this->music->register();
         }
-        $this->music->reset($this->campaign?->seed??$this->levelSeed);
+        $musicSeed=$this->campaign?->seed??$this->levelSeed;
+        if(!$this->demo){
+            $recent=$this->engine->storage->readJson('music-contours.json',[]);
+            $session=\App\Audio\SessionMelody::choose(random_int(1,65520),is_array($recent)?$recent:[]);
+            $musicSeed=$session['seed'];
+            $this->engine->storage->writeJson('music-contours.json',$session['recent']);
+        }
+        $this->music->reset($musicSeed);
     }
 
     private function loadAssetLayer(): void

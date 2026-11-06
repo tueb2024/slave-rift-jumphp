@@ -24,6 +24,23 @@ final class ProceduralMusicTest extends TestCase
             self::assertLessThan(3,count(array_intersect(array_keys($p['lead']),array_keys($p['counter']))));
         }
     }
+    public function testSessionMelodiesDoNotRepeatRecentContoursEvenWithRepeatedCandidate(): void
+    {
+        $recent=[];$seen=[];
+        for($i=0;$i<100;$i++){
+            $session=\App\Audio\SessionMelody::choose(42,$recent);
+            $signature=\App\Audio\SessionMelody::signature($session['seed']);
+            self::assertNotContains($signature,$recent);
+            $recent=json_decode(json_encode($session['recent']),true); // persisted/reloaded state
+            self::assertLessThanOrEqual(32,count($recent));$seen[$signature]=true;
+        }
+        self::assertGreaterThanOrEqual(33,count($seen));
+    }
+    public function testMelodicVocabularyHasMoreThanTwoShapes(): void
+    {
+        $shapes=[];foreach(range(1,256) as $seed)$shapes[\App\Audio\SessionMelody::signature($seed)]=true;
+        self::assertGreaterThan(100,count($shapes));
+    }
     public function testLeadStartsAtTwoAndCounterpointAtSix(): void
     {
         $s=new ProceduralScore(42);
