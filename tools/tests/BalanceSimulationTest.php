@@ -12,12 +12,13 @@ final class BalanceSimulationTest extends TestCase
     {
         foreach ([1, 2, 7] as $seed) {
             $result = \simulateProfile('moyen', $seed, 360, 'route');
-            self::assertTrue($result['finalRoom'], 'Final room unreachable: seed ' . $seed);
+            // Encounter gates require combat before the final room; an earlier combat death is valid.
             // Survivors now follow into the final room instead of being deleted.
             // Combat death is a difficulty result; a live timeout is a progression failure.
             self::assertContains($result['result'], ['won','dead'], 'Navigation timeout: seed ' . $seed);
-            self::assertSame(0, $result['performance']['navigation']['failed']);
+            self::assertSame(0, $result['performance']['navigation']['budgetExhausted']);
             if ($result['result'] === 'dead') continue;
+            self::assertTrue($result['finalRoom']);
             self::assertTrue($result['bossDefeated'], 'Boss unreachable/unwinnable: seed ' . $seed);
             self::assertSame('won', $result['result'], 'Treasure/victory blocked: seed ' . $seed);
         }

@@ -72,6 +72,38 @@ final class EncounterOverhaulTest extends TestCase
         $r->bossStun=0;$this->invoke($r,'updateBossCombat',.05);self::assertNotSame($p,$r->bossProjectiles);
         $r->boss->phase=3;for($i=0;$i<30;$i++)$this->invoke($r,'launchBossProjectiles',['x'=>0.,'y'=>.7,'z'=>0.]);self::assertCount(Run::MAX_BOSS_PROJECTILES,$r->bossProjectiles);
     }
+    public function testGatesUseRealSeededConnectorsBlockCollisionAndOpenMonotonically(): void
+    {
+        $signatures=[];
+        foreach([1,42,1337,65520] as $seed){
+            $l=(new LevelAssembler())->assemble(new LevelGraph($seed,10));
+            $g=new EncounterGates($l->rooms,4);$same=new EncounterGates($l->rooms,4);self::assertSame($g->gates,$same->gates);
+            self::assertCount(4,$g->gates);$nav=new Navigation($l->map);$nav->setRooms($l->rooms);$nav->setBlockers($g->blockers());
+            $last=-1;
+            foreach($g->gates as $gate){
+                self::assertGreaterThan($last,$gate['depth']);$last=$gate['depth'];[$x,$y,$z]=$gate['position'];
+                self::assertTrue($nav->collides($x,$y+.7,$z,.28,.7));
+                $room=array_values(array_filter($l->rooms,static fn($r)=>$r['id']===$gate['roomId']))[0];
+                self::assertTrue($room['mainPath']);self::assertNotSame(LevelGraph::BOSS_ROOM,$room['type']);
+                self::assertTrue($g->clear($gate['wave']));$nav->setBlockers($g->blockers());
+                self::assertFalse($nav->collides($x,$y+.7,$z,.28,.7));
+                self::assertFalse($g->clear($gate['wave']));
+            }
+            self::assertSame([],$g->blockers());$signatures[]=array_column($g->gates,'position');
+        }
+        self::assertNotSame($signatures[0],$signatures[1]);
+    }
+    public function testDailySpawnsRemainOnAccessibleSideAndCapRetainsBudget(): void
+    {
+        foreach(['2026-11-05','2026-11-06','2026-11-07'] as $date){
+            $r=CampaignRun::daily($date)->run;$r->health=100000;
+            for($i=0;$i<400;$i++)$r->step(.05,0,0,0);
+            self::assertNotEmpty($r->enemies);self::assertLessThanOrEqual(4,count($r->enemies));
+            self::assertSame(10,$r->remaining+count($r->enemies));
+            foreach($r->enemies as $e)self::assertTrue($r->encounters->inZone($e['x'],$e['y'],$e['z'],1));
+            self::assertSame(0,$r->encounters->opened);
+        }
+    }
     public function testFastAndTankThreatsAreDistinctAndTelegraphed(): void
     {
         $fast=DifficultyDirector::enemyBaseProfile('runner');$medium=DifficultyDirector::enemyBaseProfile('guardian');$tank=DifficultyDirector::enemyBaseProfile('brute');

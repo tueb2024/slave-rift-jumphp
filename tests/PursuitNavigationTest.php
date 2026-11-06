@@ -15,7 +15,7 @@ final class PursuitNavigationTest extends TestCase
     private function enemy(Run $r,float $x,float $z,string $type='runner',float $y=.55): int
     {
         (new \ReflectionMethod(Run::class,'spawnEnemyAt'))->invoke($r,$x,$y,$z,$type);
-        return array_key_last($r->enemies);
+        $id=array_key_last($r->enemies);$r->enemies[$id]['spawnDelay']=0;return $id;
     }
     private function tick(Run $r,int $frames): void
     {
@@ -69,7 +69,7 @@ final class PursuitNavigationTest extends TestCase
     }
     public function testFinalRoomKeepsSurvivorsAndWaitsForTheirElimination(): void
     {
-        $level=(new LevelAssembler)->assemble(new LevelGraph(33771,6));$r=new Run($level->map);$r->setObjective($level,1);
+        $level=(new LevelAssembler)->assemble(new LevelGraph(33771,6));$r=new Run($level->map);$r->setObjective($level,1);$r->encounters->clear(PHP_INT_MAX);$r->navigation->setBlockers([]);
         $p=$level->map->spawnPoints[0];$id=$this->enemy($r,$p[0],$p[2],'runner',$p[1]-.2);
         $r->enemies[$id]['pursuing']=true;
         $anchor=$level->bossAnchor;$r->x=$anchor['x'];$r->y=$anchor['y'];$r->z=$anchor['z'];
@@ -82,7 +82,7 @@ final class PursuitNavigationTest extends TestCase
     {
         $c=CampaignRun::daily('2026-11-05');
         for($stage=1;$stage<=4;$stage++){
-            $r=$c->run;$start=$r->map->spawnPoints[0];$end=$c->level->bossAnchor;
+            $r=$c->run;$r->encounters->clear(PHP_INT_MAX);$r->navigation->setBlockers([]);$start=$r->map->spawnPoints[0];$end=$c->level->bossAnchor;
             foreach([[[$start[0],$start[1]-.75,$start[2]],[$end['x'],$end['y']-.75,$end['z']]],
                      [[$end['x'],$end['y']-.75,$end['z']],[$start[0],$start[1]-.75,$start[2]]]] as [$from,$to]){
                 $visited=0;
@@ -121,7 +121,7 @@ final class PursuitNavigationTest extends TestCase
     {
         $c=CampaignRun::daily('2026-11-05');
         for($stage=1;$stage<=4;$stage++){
-            $r=$c->run;$r->objective=null;$start=$r->map->spawnPoints[0];
+            $r=$c->run;$r->encounters->clear(PHP_INT_MAX);$r->navigation->setBlockers([]);$r->objective=null;$start=$r->map->spawnPoints[0];
             $id=$this->enemy($r,$start[0],$start[2],'runner',$start[1]-.2);$r->enemies[$id]['pursuing']=true;
             $end=$c->level->bossAnchor;$r->x=$end['x'];$r->y=$end['y'];$r->z=$end['z'];
             $step=new \ReflectionMethod(Run::class,'stepEnemies');

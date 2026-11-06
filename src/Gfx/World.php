@@ -50,7 +50,11 @@ final class World
                 }));
                 return $m;
             };
+            $gateModule=new \App\Game\RoomModule('gate');
+            $gateModule->addBox(-.5,-.5,-.5,.5,.5,.5,'metal');
+            $gateMap=new BrushMap();$gateMap->solids=$gateModule->solids;
             $ids = [
+                'gateCube'=>$gl->buffer(Meshes::world($gateMap),true),
                 'program' => $gl->program(Meshes::VERTEX, Meshes::FRAGMENT),
                 'worldStone' => $gl->buffer(Meshes::world($materialMap('stone')), true),
                 'worldMetal' => $gl->buffer(Meshes::world($materialMap('metal')), true),
@@ -146,6 +150,11 @@ final class World
         }
         if (isset($this->ids['posterAd'], $this->ids['posterAdTex'])) {
             $draw($this->ids['posterAd'], Mat4::identity(), 0.0, true, 'posterAdTex');
+        }
+        foreach($run->encounters?->blockers()??[] as $gate){
+            $a=$gate['min'];$b=$gate['max'];
+            $model=Mat4::multiply(Mat4::translate(($a[0]+$b[0])/2,($a[1]+$b[1])/2,($a[2]+$b[2])/2),Mat4::scale($b[0]-$a[0],$b[1]-$a[1],$b[2]-$a[2]));
+            $draw($this->ids['gateCube'],$model,.2,true,'metalTex');
         }
         if ($run->pulse > 0) {
             $size = (1 - $run->pulse / 0.25) * 4.2;
@@ -537,6 +546,9 @@ final class World
     {
         $r->clear([18, 14, 22]);
         $scale = 5.6; $cx = $r->getWidth() / 2 - $run->x * $scale; $cy = $r->getHeight() / 2 - $run->z * $scale;
+        foreach($run->encounters?->blockers()??[] as $g){
+            $r->fillRect((int)($cx+$g['min'][0]*$scale),(int)($cy+$g['min'][2]*$scale),max(2,(int)(($g['max'][0]-$g['min'][0])*$scale)),max(2,(int)(($g['max'][2]-$g['min'][2])*$scale)),[255,90,40]);
+        }
         foreach($run->bossProjectiles as $p)$r->fillCircle((int)($cx+$p['x']*$scale),(int)($cy+$p['z']*$scale),3,[255,160,40]);
         foreach ($run->map->solids as $solid) {
             [$x0, , $z0] = $solid['min']; [$x1, , $z1] = $solid['max'];

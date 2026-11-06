@@ -49,7 +49,7 @@ final class ArsenalDailyTest extends TestCase
         $c=CampaignRun::daily('2026-11-04');$r=$c->run;$b=$r->objective->finalRoomBounds;
         $r->x=($b['min'][0]+$b['max'][0])/2;$r->z=($b['min'][2]+$b['max'][2])/2;$r->y=$b['min'][1]+.75;
         $this->invoke($r,'stepObjective',.05);self::assertSame(TreasureDirector::EXPLORING,$r->objective->state);
-        $r->remaining=0;$r->enemies=[];$r->wave=$r->mode->waveCount();
+        $r->remaining=0;$r->enemies=[];$r->wave=$r->mode->waveCount();$r->encounters->clear($r->wave);$r->navigation->setBlockers([]);
         $this->invoke($r,'stepObjective',.05);self::assertSame(TreasureDirector::FINAL_WAVE,$r->objective->state);self::assertSame(8,$r->remaining);
     }
     public function testHomingRocketUpdatesTargetAndHitsGeometry(): void

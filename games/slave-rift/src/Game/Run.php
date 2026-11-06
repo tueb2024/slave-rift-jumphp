@@ -106,6 +106,7 @@ final class Run
     public float $messageTime = 4.0;
 
     public ?TreasureDirector $objective = null;
+    public ?EncounterGates $encounters = null;
     public ?BossController $boss = null;
     public ?array $bossPosition = null;
     public ?array $bossWarning = null;
@@ -245,6 +246,9 @@ final class Run
     {
         $this->objective = TreasureDirector::fromLevel($level, $finalWaveSize);
         $this->navigation->setRooms($level->rooms);
+        $waveCount=$this->mode->kind===GameMode::DAILY?$this->mode->waveCount():3;
+        $this->encounters=new EncounterGates($level->rooms,$waveCount);
+        $this->navigation->setBlockers($this->encounters->blockers());
         $this->route = [];
         foreach ($level->rooms as $room) {
             if (!$room['mainPath']) continue;
@@ -275,14 +279,22 @@ final class Run
     {
         while (isset($this->route[$this->routeIndex + 1])) {
             $p = $this->route[$this->routeIndex];
-            if (hypot($p['x'] - $this->x, $p['z'] - $this->z) > 0.65) break;
+            $closed=false;
+            foreach($this->encounters?->blockers()??[] as $g)if(hypot($p['x']-$g['position'][0],$p['z']-$g['position'][2])<.1)$closed=true;
+            if ($closed || hypot($p['x'] - $this->x, $p['z'] - $this->z) > 0.65) break;
             $this->routeIndex++;
         }
     }
 
     public function routeTarget(): ?array
     {
-        return $this->route[$this->routeIndex] ?? null;
+        $target=$this->route[$this->routeIndex]??null;
+        if($target!==null)foreach($this->encounters?->blockers()??[] as $g){
+            if(hypot($target['x']-$g['position'][0],$target['z']-$g['position'][2])<.1){
+                $target['x']-=$g['normal'][0]*.95;$target['z']-=$g['normal'][2]*.95;
+            }
+        }
+        return $target;
     }
 
     private function stepObjective(float $dt): void
@@ -290,7 +302,7 @@ final class Run
         $this->advanceRoute();
         $objective = $this->objective;
         if ($objective === null) return;
-        $wavesComplete=$this->mode->kind!==GameMode::DAILY || ($this->wave >= $this->mode->waveCount() && $this->remaining===0 && $this->enemies===[]);
+        $wavesComplete=($this->encounters===null && $this->mode->kind!==GameMode::DAILY) || ($this->encounters!==null && $this->encounters->blockers()===[]) || ($this->wave >= $this->mode->waveCount() && $this->remaining===0 && $this->enemies===[]);
         if ($wavesComplete && $objective->updatePlayer($this->x, $this->y, $this->z)) {
             // Survivors retain their target and path across the final-room transition.
             $this->remaining = $objective->finalWaveSize;
@@ -634,6 +646,13 @@ final class Run
             return;
         }
         if ($this->remaining === 0 && $this->enemies === [] && !($this->boss?->active && !$this->boss->defeated)) {
+            if($this->encounters?->clear($this->wave)){
+                $this->navigation->setBlockers($this->encounters->blockers());
+                $this->botPath=[];
+                $this->combatAudio[]='gate_open';
+                $this->message='PORTE OUVERTE : AVANCEZ';$this->messageTime=3.0;
+            }
+            if($this->encounters!==null && $this->wave>=count($this->encounters->gates))return;
             if($this->mode->kind===GameMode::DAILY && $this->wave >= $this->mode->waveCount())return;
             $waveBonus = (int)round(($this->wave * 150 + $this->combo * 50) * $this->multiplier);
             $this->score += $waveBonus;
@@ -643,6 +662,8 @@ final class Run
             $this->messageTime = 3.0;
             return;
         }
+        if($this->encounters!==null && $this->objective?->state===TreasureDirector::EXPLORING
+            && !$this->encounters->inZone($this->x,$this->y,$this->z,$this->wave))return;
         $this->spawnClock -= $dt;
         if ($this->remaining <= 0 || $this->spawnClock > 0 || count($this->enemies) >= $this->mode->enemyLimit($this->wave)) return;
         $batch = min($this->remaining, $this->mode->spawnBatch($this->wave));
@@ -663,6 +684,7 @@ final class Run
                 [$x, $mapY, $z] = $point;
                 $y = $mapY - 0.20;
                 if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
+                if(!$this->spawnInEncounter($x,$y,$z))continue;
                 $distance = hypot($x - $this->x, $z - $this->z);
                 if ($distance < ($type === 'brute' ? 8.0 : 4.5) || $distance > 34.0) continue;
                 // DM1 has stacked floors. A spawn directly above the player
@@ -713,6 +735,7 @@ final class Run
             $ground = $this->supportHeight($x, $z, 0.42, $baseY + 2.0);
             if ($ground === null) continue;
             $y = $ground + 0.55;
+            if(!$this->spawnInEncounter($x,$y,$z))continue;
             if (abs($y - $this->y) > 1.5) continue;
             if ($this->collides($x, $y, $z, 0.42, 0.55)) continue;
             [$occupied, $nearby] = $this->spawnCrowding($x, $y, $z, $radius, $type);
@@ -799,6 +822,12 @@ final class Run
         $b = $this->objective->finalRoomBounds;
         return $x >= $b['min'][0] + 0.6 && $x <= $b['max'][0] - 0.6
             && $z >= $b['min'][2] + 0.6 && $z <= $b['max'][2] - 0.6;
+    }
+
+    private function spawnInEncounter(float $x,float $y,float $z): bool
+    {
+        if($this->encounters===null || $this->objective?->state!==TreasureDirector::EXPLORING)return true;
+        return $this->encounters->inZone($x,$y,$z,$this->wave);
     }
 
     private function spawnEnemyAt(float $x, float $y, float $z, string $type): bool
@@ -1558,7 +1587,7 @@ final class Run
     public function lineClear(array $a, array $b): bool
     {
         $this->losTests++;
-        foreach ($this->map->solids as $solid) {
+        foreach (array_merge($this->map->solids,$this->encounters?->blockers()??[]) as $solid) {
             $lo = 0.001; $hi = 0.999;
             for ($axis = 0; $axis < 3; $axis++) {
                 $d = $b[$axis] - $a[$axis];

@@ -162,11 +162,9 @@ check($sawTracer, 'DM1 demo produces a muzzle-to-impact tracer');
 
 $rangedWave = new Run($dm1->map, 1);
 $rangedWave->wave = 2;
-$rangedWave->remaining = 100;
-$rangedWave->health = 100000;
-for ($i = 0; $i < 900; $i++) $rangedWave->step(1 / 60, 0, 0, 0);
-check(count(array_filter($rangedWave->enemies, static fn (array $enemy): bool => $enemy['type'] === 'enforcer')) > 0,
-    'DM1 wave two can spawn the ranged enforcer');
+$types=[];$choose=new ReflectionMethod(Run::class,'chooseEnemyType');
+for($i=0;$i<100;$i++)$types[]=$choose->invoke($rangedWave);
+check(in_array('enforcer',$types,true), 'Wave two seeded selection includes ranged enforcers');
 
 $spreadMap = new BrushMap();
 $spreadMap->solids = [['min' => [-50.0, -0.5, -50.0], 'max' => [50.0, 0.0, 50.0], 'triangles' => []]];

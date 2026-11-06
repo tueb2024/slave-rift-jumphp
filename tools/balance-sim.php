@@ -92,7 +92,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             }
             // Search visually for leftover threats instead of staring at the route's
             // endpoint forever. This scans the camera; it does not reveal hidden targets.
-            $scanning=$aim===null && $run->remaining===0 && $run->enemies!==[] && $run->time-$lastCombatProgress>8;
+            $scanning=$aim===null && $run->enemies!==[] && $run->time-$lastCombatProgress>2;
             $pickupDistance = $collection;
             foreach ($run->pickups as $pickup) {
                 $attentionToXp = match ($profile) {'faible'=>50, 'bon'=>95, default=>80};
@@ -107,15 +107,17 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             if ($run->boss?->active && !($run->boss?->defeated ?? false)) {
                 $aim = $run->bossPosition;
                 if (!$run->boss->vulnerable) foreach ($run->boss->orbs as $orb) if ($orb['alive']) { $aim = $orb; break; }
-                $treasure = $run->objective->treasureAnchor;
+                $treasure = $run->objective?->treasureAnchor??['x'=>0.,'z'=>0.];
                 $bx = $run->bossPosition['x'] - $treasure['x']; $bz = $run->bossPosition['z'] - $treasure['z'];
                 $length = max(0.001, hypot($bx, $bz));
-                $goal = ['x' => $run->bossPosition['x'] - $bx / $length * 7,
-                    'z' => $run->bossPosition['z'] - $bz / $length * 7];
+                $goal = ['x' => $run->bossPosition['x'] - $bx / $length * 5,
+                    'z' => $run->bossPosition['z'] - $bz / $length * 5];
             }
             if ($run->bossWarning !== null) {
                 // Reaction delay and imperfect escape speed can still leave weaker profiles in the blast.
-                $goal = ['x' => $run->bossWarning['x'] + 2.5, 'z' => $run->bossWarning['z']];
+                $p=$run->bossPosition;$w=$run->bossWarning;$d=max(.01,hypot($w['x']-$p['x'],$w['z']-$p['z']));
+                $side=((int)floor($run->time/8)%2)*2-1;
+                $goal=['x'=>$w['x']+($w['z']-$p['z'])/$d*2.5*$side,'z'=>$w['z']-($w['x']-$p['x'])/$d*2.5*$side];
             }
             if($scanning && !($run->boss?->active??false))$goal=['x'=>$run->x,'y'=>$run->y,'z'=>$run->z];
             else $scanning=false;
@@ -143,7 +145,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             $strafe = (-cos($run->yaw) * $dx + sin($run->yaw) * $dz) / $norm * $speed;
         }
         $stepStarted=microtime(true);
-        $run->step($dt, $forward, $strafe, $turn, false, false, false, $rhythm->advance($dt, $run->level));
+        $run->step($dt, $forward, $strafe, $turn, $run->shotgunAvailable() && $run->boss->vulnerable, false, false, $rhythm->advance($dt, $run->level));
         $stepTimes[]=(microtime(true)-$stepStarted)*1000;
         $peakEnemies=max($peakEnemies,count($run->enemies));
         $maxSearches=max($maxSearches,$run->navigation->searches-$searchesBefore);
@@ -165,7 +167,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         'peakEnemies'=>$peakEnemies,'cap'=>$run->mode->enemyLimit($run->wave),'peakPhpBytes'=>memory_get_peak_usage(true),
         'navigation'=>['searches'=>$run->navigation->searches,'expanded'=>$run->navigation->expansions,'failed'=>$run->navigation->failed,
             'budgetExhausted'=>$run->navigation->budgetExhausted,'recoveries'=>$run->navigationRecoveries,'maxSearchesPerFrame'=>$maxSearches,'maxExpansionsPerFrame'=>$maxExpansions]];
-    return ['performance'=>$performance,'arsenalTimeline'=>$arsenalTimeline,'secondaries'=>$run->secondaryInventory(),'xpModel'=>$run->xpCurve->model,'xpTotal'=>$run->collectedXp,'droppedXp'=>$run->droppedXp,'progression'=>$run->progressionSnapshot(), 'scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
+    return ['gates'=>$run->encounters?->gates??[],'shotgunShots'=>$run->shotgunSerial,'bossShots'=>$run->bossShots,'bossProjectileHits'=>$run->bossProjectileHits,'performance'=>$performance,'arsenalTimeline'=>$arsenalTimeline,'secondaries'=>$run->secondaryInventory(),'xpModel'=>$run->xpCurve->model,'xpTotal'=>$run->collectedXp,'droppedXp'=>$run->droppedXp,'progression'=>$run->progressionSnapshot(), 'scenario' => $scenario, 'profile' => $profile, 'seed' => $seed, 'result' => $run->state, 'time' => round($run->time, 1),
         'wave' => $run->wave, 'level' => $run->level, 'weapon' => $run->primaryWeaponLabel(), 'health' => $run->health,
         'lowestHealth' => $lowestHealth, 'lowestHealthRatio'=>$lowestHealthRatio,'checkpoints'=>$checkpoints,'maxHealth'=>$run->maxHealth, 'kills' => $run->kills, 'wave7' => $wave7,
         'finalRoom' => ($run->objective?->finalRoomReached ?? false), 'bossReached' => ($run->boss?->active ?? false),

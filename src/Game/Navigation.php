@@ -9,6 +9,7 @@ final class Navigation
     public const CELL = 0.6;
     public const MAX_EXPANSIONS = 2048;
     private array $buckets = [];
+    private array $blockers = [];
     private array $rooms = [];
     private array $links = [];
     private array $roomRoutes = [];
@@ -43,6 +44,12 @@ final class Navigation
         }
     }
 
+    public function setBlockers(array $blockers): void
+    {
+        $this->blockers=$blockers;
+        $this->roomRoutes=$this->jobs=$this->ready=$this->queue=[];
+    }
+
     private function solids(float $x,float $z,float $radius): array
     {
         $ids=[];
@@ -54,8 +61,9 @@ final class Navigation
 
     public function collides(float $x,float $y,float $z,float $radius,float $half): bool
     {
-        foreach($this->solids($x,$z,$radius) as $id=>$_){
-            $s=$this->map->solids[$id];
+        $solids=$this->blockers;
+        foreach($this->solids($x,$z,$radius) as $id=>$_)$solids[]=$this->map->solids[$id];
+        foreach($solids as $s){
             if($y+$half<=$s['min'][1]+.001||$y-$half>=$s['max'][1]-.001)continue;
             $dx=$x-max($s['min'][0],min($s['max'][0],$x));$dz=$z-max($s['min'][2],min($s['max'][2],$z));
             if($dx*$dx+$dz*$dz<$radius*$radius)return true;
@@ -101,6 +109,16 @@ final class Navigation
         return $best;
     }
 
+    private function blockedPortal(array $p): bool
+    {
+        foreach($this->blockers as $g){
+            if($p[0]>=$g['min'][0]-.01&&$p[0]<=$g['max'][0]+.01
+                && $p[2]>=$g['min'][2]-.01&&$p[2]<=$g['max'][2]+.01
+                && $p[1]+.5>$g['min'][1]&&$p[1]+.5<$g['max'][1])return true;
+        }
+        return false;
+    }
+
     private function portal(array $from,array $to): array
     {
         $a=$this->roomAt($from);$b=$this->roomAt($to);
@@ -109,7 +127,7 @@ final class Navigation
         if(!array_key_exists($key,$this->roomRoutes)){
             $q=[$a];$previous=[$a=>null];
             for($i=0;$i<count($q)&&!array_key_exists($b,$previous);$i++)foreach($this->links[$q[$i]]??[] as $next=>$_){
-                if(array_key_exists($next,$previous))continue;$previous[$next]=$q[$i];$q[]=$next;
+                if(array_key_exists($next,$previous)||$this->blockedPortal($_))continue;$previous[$next]=$q[$i];$q[]=$next;
             }
             $next=$b;
             if(!array_key_exists($b,$previous))$next=null;
