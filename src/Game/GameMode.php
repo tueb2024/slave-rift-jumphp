@@ -72,7 +72,7 @@ final class GameMode
     private static function stageRules(string $kind,int $seed,int $stage,?string $id): self
     {
         return new self($kind,$seed,$stage,$id,depth:[6,10,15,22][$stage-1],intensity:[1,1.1,1.2,1.3][$stage-1],
-            finalWaveSize:$kind===self::DAILY?[8,12,16,20][$stage-1]:[12,15,18,22][$stage-1],bossHealth:[1000,1200,1450,1750][$stage-1],campaignStage:$stage);
+            finalWaveSize:$kind===self::DAILY?[8,12,16,20][$stage-1]:[12,15,18,22][$stage-1],bossHealth:[2200,2800,3500,4300][$stage-1],campaignStage:$stage);
     }
 
     public function compositionWave(int $wave): int

@@ -16,6 +16,9 @@ final class RiftSfx
         if (!$sound->hasSfx('rift_snare')) $sound->synth('rift_snare', self::snare());
         if (!$sound->hasSfx('rift_clap')) $sound->synth('rift_clap', self::clap());
         if (!$sound->hasSfx('rift_hat')) $sound->synth('rift_hat', self::hat());
+        foreach(['shotgun_fire','boss_charge','boss_launch','boss_impact','gate_open'] as $id){
+            $sound->synth($id,(string)file_get_contents(__DIR__.'/../../assets/audio/combat/'.$id.'.wav'));
+        }
         $sound->synth('colt_fire', self::gun(0.22, 0.62, 0.52));
         $sound->synth('sten_fire', self::gun(0.12, 0.42, 0.50));
         $sound->synth('heavy_fire', self::gun(0.16, 0.72, 0.46));

@@ -77,9 +77,9 @@ final class BossController
         $this->phase = $ratio <= 0.25 ? 3 : ($ratio <= 0.55 ? 2 : 1);
     }
 
-    public function damage(int $amount): int
+    public function damage(int $amount, string $source = 'primary'): int
     {
-        if (!$this->active || $this->defeated || $amount <= 0) return 0;
+        if ($source !== 'shotgun' || !$this->active || $this->defeated || $amount <= 0) return 0;
         if ($this->kind === self::WALL && !$this->vulnerable) return 0;
 
         $before = $this->health;

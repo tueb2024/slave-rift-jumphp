@@ -5,6 +5,7 @@ actions:
   strafe_right: [D]
   turn_left: [Left, pad0:left]
   turn_right: [Right, pad0:right]
+  shotgun_fire: [F, pad0:a]
   jump: [Space, pad0:b]
   restart: [Return, pad0:start]
   upgrade_prev: [Up, pad0:up]

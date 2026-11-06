@@ -13,7 +13,7 @@ final class WeaponRenderer
     private int $lastSerial=-1;
     public static function textures(): array
     {
-        $out=[];foreach(['pistol','dual_pistol','smg','dual_smg','machinegun','minigun','dual_minigun']as$id)$out['weapon_'.$id]='assets/sprites/arsenal/'.$id.'.png';return $out;
+        $out=[];foreach(['pistol','dual_pistol','smg','dual_smg','machinegun','minigun','dual_minigun']as$id)$out['weapon_'.$id]='assets/sprites/arsenal/'.$id.'.png';$out['weapon_shotgun']='assets/sprites/arsenal/shotgun.png';return $out;
     }
     public function textureKey(int $stage): string{return array_keys(self::textures())[max(0,min(6,$stage))];}
     public function reset(float $time=0): void{$this->state=self::READY;$this->stateStarted=$time;$this->lastMuzzle=0;$this->lastSerial=-1;}
@@ -36,6 +36,14 @@ final class WeaponRenderer
     }
     public function render(Renderer $r,Run $run,array $texture): void
     {
+        if($run->shotgunAvailable()){
+            $age=Run::SHOTGUN_RELOAD-$run->shotgunReload;
+            $frame=$run->shotgunReload<=0?0:($age<.06?1:($age<.18?2:($age<.65?3:0)));
+            $h=(int)round($r->getHeight()*.72);$w=(int)round($h*.75);
+            $kick=$run->shotgunFlash>0?(int)round($run->shotgunFlash*45):0;
+            $r->copy($texture['texture'],[$frame*96,0,96,128],($r->getWidth()-$w)/2,$r->getHeight()-$h+$kick,$w,$h);
+            return;
+        }
         if($this->lastSerial!==$run->primaryShotSerial){$this->lastSerial=$run->primaryShotSerial;$this->stateStarted=$run->time;}
         $age=$run->time-$this->stateStarted;$dual=in_array($run->primaryStage,[1,3,6],true);
         $phase=match(true){$run->primaryShotSerial===0||$age>=.23=>0,$age<.025=>1,$age<.06=>2,$age<.1=>3,$age<.145=>4,$age<.185=>5,default=>6};

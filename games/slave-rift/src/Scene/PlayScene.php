@@ -215,7 +215,7 @@ final class PlayScene extends AbstractScene
             $forward = $this->actions()->axis('move_back', 'move_forward');
             $strafe = $this->actions()->axis('strafe_left', 'strafe_right');
             $turn = $this->actions()->axis('turn_left', 'turn_right');
-            $fire = false;
+            $fire = $this->actions()->isHeld('shotgun_fire') || ($tap !== null && $tap[0] >= $this->width()-75 && $tap[1] >= $this->height()-58 && $tap[1] < $this->height()-24);
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
         }
 
@@ -240,6 +240,8 @@ final class PlayScene extends AbstractScene
 
     private function playAudioEvents(string $beforeState, int $beforeXp, float $dt): void
     {
+        foreach ($this->run->combatAudio as $event) $this->sound()->playSfx($event, 0, true);
+        $this->run->combatAudio=[];
         foreach ($this->run->drainPrimaryAudioEvents() as $stage) {
             $this->sound()->playSfx('rift_hat', 0, false);
             $name = $stage <= 1 ? 'colt_fire' : ($stage <= 3 ? 'sten_fire' : 'heavy_fire');
@@ -283,7 +285,7 @@ final class PlayScene extends AbstractScene
         $r->drawLine($cx - 4, $cy, $cx - 2, $cy, $cross); $r->drawLine($cx + 2, $cy, $cx + 4, $cy, $cross);
         $r->drawLine($cx, $cy - 4, $cx, $cy - 2, $cross); $r->drawLine($cx, $cy + 2, $cx, $cy + 4, $cross);
 
-        $weaponKey = $this->weaponRenderer->textureKey($run->primaryStage);
+        $weaponKey = $run->shotgunAvailable() ? 'weapon_shotgun' : $this->weaponRenderer->textureKey($run->primaryStage);
         $weapon = $this->sdl()->getTexture($weaponKey);
         $this->weaponRenderer->render($r, $run, $weapon);
         \App\Gfx\PowerRenderer::foreground($r,$this->sdl(),$run);
@@ -299,10 +301,14 @@ final class PlayScene extends AbstractScene
         if ($run->boss !== null && $run->boss->active && !$run->boss->defeated) {
             $boss = $run->boss;
             $liveOrbs = count(array_filter($boss->orbs, static fn(array $orb): bool => $orb['alive']));
-            $label = $boss->vulnerable ? 'COEUR OUVERT '.(int)ceil($boss->vulnerableTimer).' S : TIREZ !' : 'MODULES RESTANTS : '.$liveOrbs.'/3';
+            $label = $boss->vulnerable ? 'COEUR '.(int)ceil($boss->vulnerableTimer).' S : CANON SCIE !' : 'MODULES RESTANTS : '.$liveOrbs.'/3';
             $font->draw($r, $label . ' / PHASE ' . $boss->phase, $objectiveCx, 40, 1, $boss->vulnerable ? [100,255,130] : [255,160,90], 'center');
             Hud::bar($r, $hasSecondaries ? 30 : 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
-            if ($run->bossWarning !== null) $font->draw($r, 'DANGER AU SOL : BOUGEZ !', $objectiveCx, 61, 1, [255,100,65], 'center');
+            if ($run->bossWarning !== null) $font->draw($r, 'TIR ANNONCE : DECALEZ-VOUS !', $objectiveCx, 61, 1, [255,100,65], 'center');
+        }
+        if($run->shotgunAvailable()){
+            $r->fillRect($w-75,$h-58,72,30,$run->shotgunReload>0?[70,55,50]:[130,70,30]);
+            $font->draw($r,$run->shotgunReload>0?'RECHARGE':'TIR [F]',$w-39,$h-47,1,$cream,'center');
         }
         $messageY = $run->boss?->active && !$run->boss->defeated ? 84 : 38;
         if ($this->procedural && $this->assembledLevel !== null && $this->assembledLevel->treasureAnchor !== null && $run->state === 'play') {

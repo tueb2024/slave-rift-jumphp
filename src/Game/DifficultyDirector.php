@@ -28,10 +28,10 @@ final class DifficultyDirector
     public static function enemyBaseProfile(string $type): array
     {
         return match ($type) {
-            'runner' => ['health' => 18, 'speed' => 3.80, 'damage' => 10, 'radius' => 0.23, 'threat' => 0.70],
-            'enforcer' => ['health' => 72, 'speed' => 1.30, 'damage' => 13, 'radius' => 0.27, 'threat' => 1.45],
-            'brute' => ['health' => 216, 'speed' => 0.95, 'damage' => 32, 'radius' => 0.40, 'threat' => 2.80],
-            default => ['health' => 54, 'speed' => 1.55, 'damage' => 14, 'radius' => 0.34, 'threat' => 1.00],
+            'runner' => ['health' => 18, 'speed' => 3.80, 'damage' => 7, 'radius' => 0.23, 'threat' => 0.70],
+            'enforcer' => ['health' => 72, 'speed' => 1.30, 'damage' => 10, 'radius' => 0.27, 'threat' => 1.45],
+            'brute' => ['health' => 216, 'speed' => 0.95, 'damage' => 24, 'radius' => 0.40, 'threat' => 2.80],
+            default => ['health' => 54, 'speed' => 1.55, 'damage' => 12, 'radius' => 0.34, 'threat' => 1.00],
         };
     }
 

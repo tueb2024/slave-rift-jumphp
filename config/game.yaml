@@ -12,7 +12,7 @@ game:
   background: [8, 7, 10]
   start_scene: App\Scene\PlayScene
   lang: fr
-  controls: "Z/S ou flèches : avancer, Q/D : déplacement latéral, gauche/droite : tourner, espace : saut. Tir automatique. P : pause, entrée : jouer/rejouer. Tactile : joystick et boutons."
+  controls: "Z/S ou flèches : avancer, Q/D : déplacement latéral, gauche/droite : tourner, espace : saut. Tir principal automatique. Boss : F ou bouton TIR pour le canon scié. P : pause, entrée : jouer/rejouer. Tactile : joystick et boutons."
   pwa: { short_name: SLAVE RIFT, theme_color: '#08070a' }
   smoke:
     scene: App\Scene\PlayScene

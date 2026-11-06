@@ -16,12 +16,12 @@ final class BossControllerTest extends TestCase
         ], 40);
         $boss->activate();
 
-        self::assertSame(0, $boss->damage(200));
+        self::assertSame(0, $boss->damage(200, 'shotgun'));
         self::assertSame(40, $boss->damageOrb(0, 99));
         self::assertFalse($boss->vulnerable);
         self::assertSame(40, $boss->damageOrb(1, 99));
         self::assertTrue($boss->vulnerable);
-        self::assertSame(200, $boss->damage(200));
+        self::assertSame(200, $boss->damage(200, 'shotgun'));
         self::assertSame(800, $boss->health);
     }
 
@@ -44,10 +44,10 @@ final class BossControllerTest extends TestCase
     {
         $boss = new BossController(BossController::DYNAMIC, 1000);
         $boss->activate();
-        $boss->damage(500);
+        $boss->damage(500, 'shotgun');
         $boss->update(0.01);
         self::assertSame(2, $boss->phase);
-        $boss->damage(300);
+        $boss->damage(300, 'shotgun');
         $boss->update(0.01);
         self::assertSame(3, $boss->phase);
     }

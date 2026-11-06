@@ -6,13 +6,13 @@ use PHPUnit\Framework\TestCase;
 final class ArsenalDailyTest extends TestCase
 {
     private function invoke($run,$method,...$args): mixed{return (new \ReflectionMethod($run,$method))->invoke($run,...$args);}
-    public function testEveryRuntimeSpriteHasEightTransparentFrames(): void
+    public function testRuntimeSpritesHaveDeclaredTransparentFrames(): void
     {
         foreach(WeaponRenderer::textures()+PowerRenderer::textures()as$path){
-            $p=dirname(__DIR__).'/'.$path;self::assertFileExists($p);$info=getimagesize($p);self::assertSame([768,128],array_slice($info,0,2));
+            $p=dirname(__DIR__).'/'.$path;self::assertFileExists($p);$info=getimagesize($p);self::assertSame([str_ends_with($path,'shotgun.png')?384:768,128],array_slice($info,0,2));
             $bytes=file_get_contents($p);self::assertContains(ord($bytes[25]),[3,6]);if(ord($bytes[25])===3)self::assertStringContainsString('tRNS',$bytes);
         }
-        self::assertCount(7,WeaponRenderer::textures());self::assertCount(5,PowerRenderer::textures());
+        self::assertCount(8,WeaponRenderer::textures());self::assertCount(5,PowerRenderer::textures());
     }
     public function testDailyHasFiniteIncreasingBudgetsAndKillBasedWeapons(): void
     {

@@ -1,0 +1,1 @@
+Original deterministic mono 44.1 kHz PCM effects and canon-scié artwork, GPL-3.0-or-later like this repository. Generated at development time by tools/build_shotgun_assets.py. All playable files are committed; no network, image generation, Python or audio synthesis is required at runtime for these assets.

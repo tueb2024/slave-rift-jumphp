@@ -310,6 +310,13 @@ final class World
             $point = Mat4::project($vp, $world, $r->getWidth(), $r->getHeight());
             return $point !== null && $point[2] >= 0 && $point[2] <= 1 ? $point : null;
         };
+        foreach($run->bossProjectiles as $p){
+            if(!$run->lineClear(self::eye($run),[$p['x'],$p['y'],$p['z']]))continue;
+            if(($point=$project($p))===null)continue;
+            $size=(int)max(2,min(15,100*$p['radius']/max(.1,hypot($p['x']-$run->x,$p['z']-$run->z))));
+            $r->fillCircle((int)$point[0],(int)$point[1],$size+2,[255,80,45]);
+            $r->fillCircle((int)$point[0],(int)$point[1],$size,[255,240,155]);
+        }
         $boss = $run->boss;
         if ($boss !== null && $boss->active && !$boss->defeated && $run->bossPosition !== null) {
             $p = $run->bossPosition;
@@ -530,6 +537,7 @@ final class World
     {
         $r->clear([18, 14, 22]);
         $scale = 5.6; $cx = $r->getWidth() / 2 - $run->x * $scale; $cy = $r->getHeight() / 2 - $run->z * $scale;
+        foreach($run->bossProjectiles as $p)$r->fillCircle((int)($cx+$p['x']*$scale),(int)($cy+$p['z']*$scale),3,[255,160,40]);
         foreach ($run->map->solids as $solid) {
             [$x0, , $z0] = $solid['min']; [$x1, , $z1] = $solid['max'];
             $r->fillRect((int)round($cx + $x0 * $scale), (int)round($cy + $z0 * $scale), max(1, (int)round(($x1 - $x0) * $scale)), max(1, (int)round(($z1 - $z0) * $scale)), $solid['color']);

@@ -80,6 +80,18 @@ final class Run
     private float $empClock = .5;
     public float $empFx = 0.0;
     public float $bossStun = 0.0;
+    public const SHOTGUN_PELLETS = 8;
+    public const SHOTGUN_DAMAGE = 70;
+    public const SHOTGUN_RANGE = 7.0;
+    public const SHOTGUN_RELOAD = 1.15;
+    public const MAX_BOSS_PROJECTILES = 24;
+    public float $shotgunReload = 0.0;
+    public float $shotgunFlash = 0.0;
+    public int $shotgunSerial = 0;
+    public int $bossShots = 0;
+    public int $bossProjectileHits = 0;
+    public array $bossProjectiles = [];
+    public array $combatAudio = [];
     public int $primaryShotSerial = 0;
     public int $primaryShotSide = 0;
     public array $projectiles = [];
@@ -148,7 +160,7 @@ final class Run
         $this->losTests = $this->collisionTests = $this->neighborChecks = 0;
         $this->time += $dt;
         $this->waveTime += $dt;
-        foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible','empFx','bossStun'] as $field) {
+        foreach (['muzzle', 'hurt', 'pulse', 'specialFlash', 'messageTime', 'invincible','empFx','bossStun','shotgunReload','shotgunFlash'] as $field) {
             $this->$field = max(0.0, $this->$field - $dt);
         }
         if ($this->comboTime > 0) {
@@ -194,6 +206,7 @@ final class Run
             return;
         }
 
+        if ($fire) $this->fireShotgun();
         $this->stepPrimaryBursts($dt);
         foreach ($rhythmSteps as $rhythmStep) $this->triggerPrimaryRhythmStep((int)$rhythmStep);
         $this->stepSecondaries($dt);
@@ -201,6 +214,7 @@ final class Run
         $this->updateFlameSegments();
 
         $this->stepPickups($dt);
+        $this->combatAudio=array_slice($this->combatAudio,-16);
     }
 
     public function progressionSnapshot(): array
@@ -288,13 +302,13 @@ final class Run
         if ($objective->state === TreasureDirector::BOSS_READY && $this->boss !== null) {
             $objective->startBoss();
             $this->boss->activate();
-            $this->message = 'DETRUISEZ LES 3 MODULES, PUIS VISEZ LE COEUR';
+            $this->message = 'MODULES PUIS COEUR : CANON SCIE [F] / TAP TIR';
             $this->messageTime = 6.0;
         }
         if ($objective->state === TreasureDirector::BOSS && $this->boss !== null) {
             $this->updateBossCombat($dt);
             if ($this->boss->defeated) {
-                $objective->notifyBossDefeated();$this->bossWarning=null;
+                $objective->notifyBossDefeated();$this->bossWarning=null;$this->bossProjectiles=[];
                 if($this->bossPosition!==null)$this->explode([$this->bossPosition['x'],$this->bossPosition['y'],$this->bossPosition['z']],0,3.0);
                 $this->message='SIEGE DÉTRUIT : RECUPEREZ LE TRESOR';$this->messageTime=6;
             }
@@ -310,37 +324,105 @@ final class Run
         if($this->mode->kind!==GameMode::HORDE)return;
         if($this->wave%5===0 && $this->hordeBossWave!==$this->wave && !($this->boss?->active&&!$this->boss->defeated)){
             $this->hordeBossWave=$this->wave;$tier=min(6,intdiv($this->wave,5));
-            $this->boss=new BossController(BossController::WALL,900+min(900,($tier-1)*180),max(3.5,6-$tier*.35));
+            $this->boss=new BossController(BossController::WALL,2200+min(2500,($tier-1)*500),max(3.5,6-$tier*.35));
             $this->bossPosition=['x'=>0.0,'y'=>1.3,'z'=>$this->z>0?-13.0:13.0];$positions=[];
             foreach([-2.5,0,2.5]as$x)$positions[]=['x'=>$x,'y'=>1.2,'z'=>$this->bossPosition['z']];
             $this->boss->armOrbs($positions,48);$this->boss->activate();$this->bossAttackClock=1.8;
             $this->message='SIEGE : MODULES PUIS COEUR / VAGUE '.$this->wave;$this->messageTime=4;
         }
         if($this->boss?->active&&!$this->boss->defeated)$this->updateBossCombat($dt);
-        if($this->boss?->defeated)$this->bossWarning=null;
+        if($this->boss?->defeated){$this->bossWarning=null;$this->bossProjectiles=[];}
     }
 
+    /** Telegraph fixes the aim before launch; projectiles never home. EMP freezes the whole encounter. */
     private function updateBossCombat(float $dt): void
     {
-        if($this->bossStun>0)return;
+        if ($this->bossStun > 0) return;
         $this->boss->update($dt);
-                $this->bossAttackClock -= $dt;
-                if ($this->bossWarning !== null) {
-                    $this->bossWarning['time'] -= $dt;
-                    if ($this->bossWarning['time'] <= 0.0) {
-                        if (hypot($this->x - $this->bossWarning['x'], $this->z - $this->bossWarning['z']) < 1.8 && $this->invincible <= 0) {
-                            $this->health -= (int)round((10 + $this->boss->phase * 4) * (1+max(0,$this->mode->campaignStage-1)*0.18+($this->mode->kind===GameMode::HORDE?min(.6,$this->wave*.02):0)));
-                            $this->hurt = 0.35; $this->invincible = 0.4;
-                        }
-                        $this->bossWarning = null;
-                    }
-                } elseif ($this->bossAttackClock <= 0.0) {
-                    $this->bossWarning = ['x' => $this->x, 'y' => $this->y - 0.6, 'z' => $this->z, 'time' => 1.1];
-                    $this->bossAttackClock = (3.8 - $this->boss->phase * 0.45) / ($this->mode->bossPressure() * ($this->mode->kind===GameMode::HORDE ? 1+min(1.2,$this->wave*.025):1));
-                }
+        $this->stepBossProjectiles($dt);
+        $this->bossAttackClock -= $dt;
+        if ($this->bossWarning !== null) {
+            $this->bossWarning['time'] -= $dt;
+            if ($this->bossWarning['time'] <= 0) {
+                $this->launchBossProjectiles($this->bossWarning);
+                $this->bossWarning = null;
+            }
+        } elseif ($this->bossAttackClock <= 0) {
+            $this->bossWarning = ['x'=>$this->x, 'y'=>$this->y+.2, 'z'=>$this->z, 'time'=>.9];
+            $this->combatAudio[] = 'boss_charge';
+            $this->bossAttackClock = max(1.6, (3.8-$this->boss->phase*.45)/$this->mode->bossPressure());
+        }
     }
 
-    private function fireAtBoss(int $damage, int $stage, float $range = 24.0, float $cone = 1.05, ?string $traceType = null): bool
+    private function launchBossProjectiles(array $target): void
+    {
+        $p = $this->bossPosition;
+        $dx=$target['x']-$p['x']; $dz=$target['z']-$p['z'];
+        $distance=max(.001,hypot($dx,$dz)); $angle=atan2($dx,$dz);
+        $speed=5.0+$this->boss->phase*.65;
+        $fan=match($this->boss->phase){1=>[0.0],2=>[-.22,0.0,.22],default=>[-.42,-.21,0.0,.21,.42]};
+        foreach($fan as $offset){
+            if(count($this->bossProjectiles)>=self::MAX_BOSS_PROJECTILES)break;
+            $a=$angle+$offset;
+            $this->bossProjectiles[]=['x'=>$p['x'], 'y'=>$p['y'], 'z'=>$p['z'],
+                'vx'=>sin($a)*$speed, 'vy'=>($target['y']-$p['y'])/$distance*$speed,
+                'vz'=>cos($a)*$speed, 'life'=>6.0, 'radius'=>.18, 'damage'=>12+$this->boss->phase*3];
+            $this->bossShots++;
+        }
+        $this->combatAudio[]='boss_launch';
+    }
+
+    /** Substeps sweep the collision volume through walls and the player's vertical body. */
+    private function stepBossProjectiles(float $dt): void
+    {
+        foreach($this->bossProjectiles as $id=>&$p){
+            $p['life']-=$dt;
+            $n=max(1,(int)ceil(hypot($p['vx'],$p['vz'])*$dt/.08));
+            for($i=0;$i<$n;$i++){
+                $p['x']+=$p['vx']*$dt/$n; $p['y']+=$p['vy']*$dt/$n; $p['z']+=$p['vz']*$dt/$n;
+                if($p['life']<=0 || $this->collides($p['x'],$p['y'],$p['z'],$p['radius'],$p['radius'])){
+                    unset($this->bossProjectiles[$id]); break;
+                }
+                if(hypot($p['x']-$this->x,$p['z']-$this->z)<self::PLAYER_RADIUS+$p['radius']
+                    && abs($p['y']-$this->y)<self::PLAYER_HALF_HEIGHT+$p['radius']){
+                    if($this->invincible<=0){
+                        $this->health-=(int)round($p['damage']*$this->mode->damageScale($this->wave));
+                        $this->hurt=.3; $this->invincible=.35; $this->bossProjectileHits++; $this->resetCombo();
+                        $this->combatAudio[]='boss_impact';
+                    }
+                    unset($this->bossProjectiles[$id]); break;
+                }
+            }
+        }
+        unset($p);
+        $this->bossProjectiles=array_values($this->bossProjectiles);
+    }
+
+    public function shotgunAvailable(): bool
+    {
+        return $this->boss !== null && $this->boss->active && !$this->boss->defeated;
+    }
+
+    /** Dedicated encounter tool: unlimited shells, manual aim, fixed spread and automatic reload. */
+    public function fireShotgun(): bool
+    {
+        if($this->state!=='play' || !$this->shotgunAvailable() || $this->shotgunReload>0)return false;
+        $this->shotgunReload=self::SHOTGUN_RELOAD; $this->shotgunFlash=.22; $this->shotgunSerial++;
+        $this->combatAudio[]='shotgun_fire';
+        $yaw=$this->yaw;
+        for($pellet=0;$pellet<self::SHOTGUN_PELLETS;$pellet++){
+            $this->yaw=$yaw+($pellet-3.5)*.022;
+            $id=$this->findTarget(self::SHOTGUN_RANGE,.045);
+            if($id!==null){
+                $e=$this->enemies[$id]; $this->addVisualTrace($e,0.0,'shotgun');
+                $this->damage($id,self::SHOTGUN_DAMAGE); $this->hits++;
+            } else $this->fireAtBoss(self::SHOTGUN_DAMAGE,0,self::SHOTGUN_RANGE,.13,'shotgun','shotgun');
+        }
+        $this->yaw=$yaw;
+        return true;
+    }
+
+    private function fireAtBoss(int $damage, int $stage, float $range = 24.0, float $cone = 1.05, ?string $traceType = null, string $source = 'primary'): bool
     {
         if ($this->boss === null || !$this->boss->active || $this->boss->defeated) return false;
         $targets = $this->boss->vulnerable ? [-1 => $this->bossPosition] : $this->boss->orbs;
@@ -350,7 +432,7 @@ final class Run
             if (abs(self::angleDelta(atan2($target['x'] - $this->x, $target['z'] - $this->z), $this->yaw)) > $cone) continue;
             if (!$this->lineClear([$this->x, $this->y + 0.35, $this->z], [$target['x'], $target['y'], $target['z']])) continue;
             $this->addVisualTrace($target, 0.0, $traceType ?? ($stage <= 1 ? 'pistol' : 'auto'));
-            if ($index < 0) $this->boss->damage($damage);
+            if ($index < 0) $this->boss->damage($damage, $source);
             else $this->boss->damageOrb($index, $damage);
             return true;
         }
@@ -582,7 +664,7 @@ final class Run
                 $y = $mapY - 0.20;
                 if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
                 $distance = hypot($x - $this->x, $z - $this->z);
-                if ($distance < 4.5 || $distance > 34.0) continue;
+                if ($distance < ($type === 'brute' ? 8.0 : 4.5) || $distance > 34.0) continue;
                 // DM1 has stacked floors. A spawn directly above the player
                 // reads as an enemy walking on the ceiling from below.
                 if (abs($y - $this->y) > 1.5) continue;
@@ -592,7 +674,7 @@ final class Run
                 $angle = abs(self::angleDelta(atan2($x - $this->x, $z - $this->z), $this->yaw));
                 $visible = $this->lineClear([$this->x, $this->y + 0.35, $this->z], [$x, $y + 0.25, $z]);
                 if ($this->objective !== null && !$visible) continue;
-                $distanceScore = abs($distance - 12.0) * 0.28;
+                $distanceScore = abs($distance - ($type === 'brute' ? 14.0 : 8.0)) * 0.28;
                 $frontPenalty = $angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0;
                 $visibilityPenalty = $visible ? 2.4 : -1.3;
                 $recentPenalty = 0.0;
@@ -621,12 +703,12 @@ final class Run
                 $r = 2.5 + $this->random() * 3.5;
             } else {
                 [$baseX, $baseY, $baseZ] = [$this->x, $this->y, $this->z];
-                $r = ($this->mode->kind===GameMode::DAILY?3.0:6.0) + $this->random() * ($this->mode->kind===GameMode::DAILY?6.0:4.0);
+                $r = ($type === 'brute' ? 8.0 : ($this->mode->kind===GameMode::DAILY?4.5:6.0)) + $this->random() * ($this->mode->kind===GameMode::DAILY?6.0:4.0);
             }
             $x = $baseX + sin($a) * $r;
             $z = $baseZ + cos($a) * $r;
             $distance = hypot($x - $this->x, $z - $this->z);
-            if ($distance < ($this->mode->kind===GameMode::DAILY?2.8:5.0) || $distance > 34.0) continue;
+            if ($distance < ($type === 'brute' ? 8.0 : 4.5) || $distance > 34.0) continue;
             if ($this->objective?->state === TreasureDirector::FINAL_WAVE && !$this->insideFinalArena($x, $z)) continue;
             $ground = $this->supportHeight($x, $z, 0.42, $baseY + 2.0);
             if ($ground === null) continue;
@@ -644,7 +726,7 @@ final class Run
             }
             $fallbackCandidates[] = ['x' => $x, 'y' => $y, 'z' => $z,
                 'index' => $anchorIndex,
-                'score' => abs($distance - 12.0) * 0.28 + ($angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0)
+                'score' => abs($distance - ($type === 'brute' ? 14.0 : 8.0)) * 0.28 + ($angle < 1.05 ? (1.05 - $angle) * 5.5 : 0.0)
                     + ($visible ? 2.4 : -1.3) + $nearby * 1.5 + $recentPenalty + $this->random() * 0.55];
         }
         if ($fallbackCandidates !== []) {
@@ -678,9 +760,9 @@ final class Run
     public static function enemyWeightsForWave(int $wave): array
     {
         return match (true) {
-            $wave <= 1 => ['runner' => 0.68, 'guardian' => 0.32, 'enforcer' => 0.00, 'brute' => 0.00],
-            $wave <= 3 => ['runner' => 0.54, 'guardian' => 0.34, 'enforcer' => 0.12, 'brute' => 0.00],
-            $wave <= 6 => ['runner' => 0.42, 'guardian' => 0.34, 'enforcer' => 0.18, 'brute' => 0.06],
+            $wave <= 1 => ['runner' => 0.44, 'guardian' => 0.44, 'enforcer' => 0.04, 'brute' => 0.08],
+            $wave <= 3 => ['runner' => 0.40, 'guardian' => 0.38, 'enforcer' => 0.12, 'brute' => 0.10],
+            $wave <= 6 => ['runner' => 0.35, 'guardian' => 0.33, 'enforcer' => 0.18, 'brute' => 0.14],
             $wave <= 10 => ['runner' => 0.32, 'guardian' => 0.33, 'enforcer' => 0.23, 'brute' => 0.12],
             default => ['runner' => 0.22, 'guardian' => 0.30, 'enforcer' => 0.28, 'brute' => 0.20],
         };
@@ -735,7 +817,7 @@ final class Run
             'health' => $hp, 'maxHealth' => $hp, 'speed' => $speed, 'damage' => $damage,
             'radius' => $radius, 'flash' => 0.0, 'cooldown' => 0.6, 'age' => 0.0,
             'pursuing'=>$this->objective !== null || $this->lineClear([$x,$y+.28,$z],[$this->x,$this->y+.35,$this->z]),
-            'spawnDelay'=>$this->mode->kind===GameMode::DAILY?.55:0.0,'stun'=>0.0,
+            'spawnDelay'=>.75,'stun'=>0.0,
             'yaw' => $yaw, 'attackTime' => 0.0, 'moving' => false, 'animState' => 'idle', 'windup'=>0.0, 'aimX'=>$this->x, 'aimZ'=>$this->z];
         return true;
     }
@@ -786,8 +868,8 @@ final class Run
                     $enemy['cooldown'] = $ranged ? 1.9 : 1.65;
                 }
             } elseif ($attackRange && $enemy['cooldown']<=0 && $this->lineClear([$enemy['x'],$enemy['y']+.28,$enemy['z']],[$this->x,$this->y+.35,$this->z])) {
-                if ($ranged || $heavy) {
-                    $enemy['windup']=$ranged ? .65 : .8;
+                if ($ranged || $heavy || $enemy['type'] === 'runner') {
+                    $enemy['windup']=$ranged ? .65 : ($heavy ? 1.0 : .4);
                     $enemy['aimX']=$this->x; $enemy['aimZ']=$this->z;$enemy['attackTime']=.2;
                 } else {
                     if($this->invincible<=0){$this->health-=$enemy['damage'];$this->hurt=.25;$this->invincible=.25;$this->resetCombo();}

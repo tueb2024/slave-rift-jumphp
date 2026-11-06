@@ -7,7 +7,7 @@ final class MechaCombatTest extends TestCase
 {
     private function fixture(): Run{$r=new Run(HordeArena::build(),42);$r->remaining=0;$r->intermission=1000;$r->yaw=0;return $r;}
     private function invoke(object $r,string $m,...$args): mixed{return (new \ReflectionMethod($r,$m))->invoke($r,...$args);}
-    private function spawn(Run $r,string $type,float $x,float $z): int{$this->invoke($r,'spawnEnemyAt',$x,.55,$z,$type);return array_key_last($r->enemies);}
+    private function spawn(Run $r,string $type,float $x,float $z): int{$this->invoke($r,'spawnEnemyAt',$x,.55,$z,$type);$id=array_key_last($r->enemies);$r->enemies[$id]['spawnDelay']=0;return $id;}
     public function testAllClassesHaveOriginalOrientedAnimatedSheets(): void
     {
         foreach(['runner','guardian','enforcer','brute','siege']as$t){$sheet=EnemyAtlas::SHEETS[$t];self::assertStringStartsWith('assets/generated/',$sheet['path']);
@@ -27,7 +27,7 @@ final class MechaCombatTest extends TestCase
     {
         $r=$this->fixture();$id=$this->spawn($r,'brute',0,1);$r->enemies[$id]['cooldown']=0;$r->step(.05,0,0,0);
         self::assertSame(100,$r->health);self::assertGreaterThan(0,$r->enemies[$id]['windup']);
-        $runner=$this->spawn($r,'runner',4,4);$before=$r->enemies[$runner]['x'];for($i=0;$i<18;$i++)$r->step(.05,0,0,0);
+        $runner=$this->spawn($r,'runner',4,4);$before=$r->enemies[$runner]['x'];for($i=0;$i<24;$i++)$r->step(.05,0,0,0);
         self::assertLessThan(100,$r->health);self::assertLessThan($before,$r->enemies[$runner]['x']);
     }
     public function testSniperPrioritisesVisibleEnforcerAndCreatesLaser(): void
@@ -75,7 +75,7 @@ final class MechaCombatTest extends TestCase
         $r=new Run(HordeArena::build(),42,GameMode::horde(42));$r->wave=5;$r->remaining=0;$r->step(.05,0,0,0);$boss=$r->boss;
         self::assertNotNull($boss);self::assertTrue($boss->active);for($i=0;$i<20;$i++)$r->step(.05,0,0,0);
         self::assertSame($boss,$r->boss);self::assertSame(0.0,$r->intermission);
-        foreach([0,1,2]as$i)$boss->damageOrb($i,999);$boss->damage(99999);$r->step(.05,0,0,0);self::assertGreaterThan(0,$r->intermission);
+        foreach([0,1,2]as$i)$boss->damageOrb($i,999);$boss->damage(99999,'shotgun');$r->step(.05,0,0,0);self::assertGreaterThan(0,$r->intermission);
         $r->wave=10;$r->intermission=0;$r->step(.05,0,0,0);self::assertNotSame($boss,$r->boss);self::assertGreaterThan($boss->maxHealth,$r->boss->maxHealth);
     }
     public function testDailyCampaignHasFourFixedSeedsAndPreservesProgression(): void

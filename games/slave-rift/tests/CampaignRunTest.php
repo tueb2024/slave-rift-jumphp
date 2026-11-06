@@ -38,7 +38,7 @@ final class CampaignRunTest extends TestCase
         foreach(range(1,4)as$stage){
             $mode=\App\Game\GameMode::campaignStage(42,$stage);
             self::assertLessThanOrEqual(1.4,$mode->enemyHealthScale(1));
-            self::assertLessThanOrEqual(4000,$mode->bossHealth);
+            self::assertLessThanOrEqual(5000,$mode->bossHealth);
             if($previous!==null){
                 self::assertGreaterThan($previous->compositionWave(1),$mode->compositionWave(1));
                 self::assertGreaterThan($previous->waveBudget(1),$mode->waveBudget(1));
