@@ -44,7 +44,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
     $checkpoints = ['finalRoom'=>null,'boss'=>null,'bossDefeated'=>null,'treasure'=>null];
     $snapshot = static fn () => ['time'=>round($run->time,1),'xpTotal'=>$run->collectedXp,'wave'=>$run->wave,'level'=>$run->level,
         'weapon'=>$run->primaryWeaponLabel(),'health'=>$run->health,'maxHealth'=>$run->maxHealth,'healthRatio'=>$run->health/$run->maxHealth];
-    $lastKills=$run->kills;$lastCombatProgress=$run->time;
+    $lastKills=$run->kills;$lastCombatProgress=$run->time;$dodgeUntil=0.0;$dodgeGoal=null;
     $cpuStarted=microtime(true);$stepTimes=[];$peakEnemies=count($run->enemies);$maxSearches=0;$maxExpansions=0;
     for ($frame = 0; $frame < (int)($limit / $dt); $frame++) {
         if ($run->state === 'dead' || $run->state === 'won') break;
@@ -113,12 +113,14 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
                 $goal = ['x' => $run->bossPosition['x'] - $bx / $length * 5,
                     'z' => $run->bossPosition['z'] - $bz / $length * 5];
             }
-            if ($run->bossWarning !== null) {
-                // Reaction delay and imperfect escape speed can still leave weaker profiles in the blast.
+            if ($run->bossWarning !== null && $run->time>=$dodgeUntil) {
+                // Keep the sidestep through projectile arrival; immediately returning to the locked aim is unsafe.
                 $p=$run->bossPosition;$w=$run->bossWarning;$d=max(.01,hypot($w['x']-$p['x'],$w['z']-$p['z']));
                 $side=((int)floor($run->time/8)%2)*2-1;
-                $goal=['x'=>$w['x']+($w['z']-$p['z'])/$d*2.5*$side,'z'=>$w['z']-($w['x']-$p['x'])/$d*2.5*$side];
+                $dodgeGoal=['x'=>$w['x']+($w['z']-$p['z'])/$d*2.5*$side,'z'=>$w['z']-($w['x']-$p['x'])/$d*2.5*$side];
+                $dodgeUntil=$run->time+2.2;
             }
+            if($run->time<$dodgeUntil && $dodgeGoal!==null)$goal=$dodgeGoal;
             if($scanning && !($run->boss?->active??false))$goal=['x'=>$run->x,'y'=>$run->y,'z'=>$run->z];
             else $scanning=false;
             // Route movement through doors and stairs; aiming remains the profile's own policy.
@@ -151,7 +153,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         $maxSearches=max($maxSearches,$run->navigation->searches-$searchesBefore);
         $maxExpansions=max($maxExpansions,$run->navigation->expansions-$expansionsBefore);
         $rhythm->drain();
-        if($run->kills!==$lastKills){$lastKills=$run->kills;$lastCombatProgress=$run->time;}
+        if($run->kills!==$lastKills){$lastKills=$run->kills;$lastCombatProgress=$run->time;$dodgeUntil=0.0;$dodgeGoal=null;}
         if ($run->primaryWeaponLabel() !== $arsenalTimeline[array_key_last($arsenalTimeline)]['weapon']) $arsenalTimeline[]=['time'=>round($run->time,1),'level'=>$run->level,'weapon'=>$run->primaryWeaponLabel()];
         $lowestHealth = min($lowestHealth, $run->health);
         $lowestHealthRatio = min($lowestHealthRatio, $run->health/$run->maxHealth);

@@ -303,7 +303,7 @@ final class Run
         $objective = $this->objective;
         if ($objective === null) return;
         $wavesComplete=($this->encounters===null && $this->mode->kind!==GameMode::DAILY) || ($this->encounters!==null && $this->encounters->blockers()===[]) || ($this->wave >= $this->mode->waveCount() && $this->remaining===0 && $this->enemies===[]);
-        if ($wavesComplete && $objective->updatePlayer($this->x, $this->y, $this->z)) {
+        if (($objective->state !== TreasureDirector::EXPLORING || $wavesComplete) && $objective->updatePlayer($this->x, $this->y, $this->z)) {
             // Survivors retain their target and path across the final-room transition.
             $this->remaining = $objective->finalWaveSize;
             $this->intermission = 0.0;

@@ -2,7 +2,8 @@ name: Desktop playtest
 
 on:
   push:
-    branches: [main, feature/mecha-combat-overhaul]
+    branches: [feature/shotgun-bosses-procedural-gates, main, feature/mecha-combat-overhaul]
+    paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
 
 permissions:

@@ -21,7 +21,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
    await page.waitForFunction(()=>typeof window.JumPHP?.php==='function');
    const php=code=>page.evaluate(code=>window.JumPHP.php(code),prefix+code);
    const state=async()=>{
-    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'secondaries'=>$rcRun?->secondaryInventory(),'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
+    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'shotgunShots'=>$rcRun?->shotgunSerial,'bossHp'=>$rcRun?->boss?->health,'gates'=>$rcRun?->encounters?->gates,'bossShots'=>$rcRun?->bossShots,'bossProjectiles'=>count($rcRun?->bossProjectiles??[]),'secondaries'=>$rcRun?->secondaryInventory(),'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
     return page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/rc-state.json',{encoding:'utf8'})));
    };
    const tap=async(x,y)=>{
@@ -35,6 +35,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await page.screenshot({path:`${out}/${name}-main.png`});
     await tap(160,60); await expect('mode','normal'); await expect('screen','play');
     const first=(await state()).seed;
+    assert.equal((await state()).gates.filter(g=>!g.open).length,3,'Normal procedural encounters must start gated');
     // Verify all packaged PCM paths after the first user gesture, including reserved bass channels.
     await php("$rcMusic=(new \\ReflectionProperty($rcScene,'music'))->getValue($rcScene); $rcMusic->register(); $rcSampler=(new \\ReflectionProperty($rcMusic,'sampler'))->getValue($rcMusic); $rcMusic->playSteps([0],1); file_put_contents('/tmp/music-state.json',json_encode(['notes'=>count((new \\ReflectionProperty($rcSampler,'chunks'))->getValue($rcSampler)),'files'=>count(glob(JUMPHP_ROOT.'/assets/audio/*.wav')),'bass'=>Mix_Playing(0)||Mix_Playing(1)]));");
     const musicState=await page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/music-state.json',{encoding:'utf8'})));
@@ -102,7 +103,17 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await page.screenshot({path:`${out}/${name}-boss-orbs.png`});
     await php("foreach($rcRun->boss->orbs as $i=>$_) $rcRun->boss->damageOrb($i,10000);");
     await delay(100); await page.screenshot({path:`${out}/${name}-boss-vulnerable.png`});
-    await php("$rcRun->boss->damage(10000);"); await delay(100); await expect('objective','treasure_ready');
+    await php("$b=$rcRun->bossPosition;$p=$rcRun->objective->treasureAnchor;$d=max(.001,hypot($b['x']-$p['x'],$b['z']-$p['z']));$rcRun->x=$b['x']-($b['x']-$p['x'])/$d*5;$rcRun->z=$b['z']-($b['z']-$p['z'])/$d*5;$rcRun->yaw=atan2($b['x']-$rcRun->x,$b['z']-$rcRun->z);$rcRun->shotgunReload=0;");
+    const beforeShot=(await state()).bossHp;
+    await delay(600);assert.equal((await state()).bossHp,beforeShot,'Rhythmic primary must not damage core');
+    if(mobile)await tap(280,137);else{await page.keyboard.down('f');await delay(180);await page.keyboard.up('f');await delay(100);}
+    assert.ok((await state()).shotgunShots>0,`${name}: intentional shotgun input was ignored`);
+    assert.ok((await state()).bossHp<beforeShot,`${name}: shotgun did not damage exposed core`);
+    await page.screenshot({path:`${out}/${name}-shotgun-manual.png`});
+    await php("(new \\ReflectionMethod($rcRun,'launchBossProjectiles'))->invoke($rcRun,['x'=>$rcRun->x,'y'=>$rcRun->y,'z'=>$rcRun->z]);");
+    await delay(70);assert.ok((await state()).bossShots>0,`${name}: boss projectile pipeline did not launch`);
+    await page.screenshot({path:`${out}/${name}-boss-projectiles.png`});
+    await php("$rcRun->boss->damage(10000,'shotgun');"); await delay(100); await expect('objective','treasure_ready');
     await page.screenshot({path:`${out}/${name}-treasure.png`});
     await php("$rcRun->x=$rcRun->objective->treasureAnchor['x'];$rcRun->z=$rcRun->objective->treasureAnchor['z'];");
     await delay(100); await expect('state','won');

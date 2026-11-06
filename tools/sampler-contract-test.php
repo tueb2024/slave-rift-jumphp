@@ -38,8 +38,10 @@ namespace {
     foreach(range(1,128)as$seed){$s=new \App\Audio\ProceduralScore($seed);
         foreach(range(0,15)as$b)foreach(range(0,15)as$t)foreach($s->events($t,$b,16,true,24)as[$v,$n])check(is_file(\App\Audio\Sampler::path($v,$n)),'Every event in bank');
         check(in_array(['bass',$s->phrase(0)['bass']],$s->events(0,0,1),true),'Bass level 1');
-        check(!in_array('lead',array_column($s->events(0,0,7),0),true),'Lead threshold');
-        check(!in_array('counter',array_column($s->events(0,0,15),0),true),'Counter threshold');
+        check(!in_array('lead',array_column($s->events(0,0,1),0),true),'Lead threshold');
+        check(!in_array('counter',array_column($s->events(0,0,5),0),true),'Counter threshold');
+        check(in_array('lead',array_column($s->events(0,0,2),0),true),'Lead at level 2');
+        check(in_array('counter',array_column($s->events(0,0,6),0),true),'Counter at level 6');
     }
     $sound->enabled=false;$before=count($calls);unset($sampler);
     check(count($calls)===$before,'No SDL calls after audio shutdown');

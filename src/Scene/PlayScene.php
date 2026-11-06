@@ -51,6 +51,7 @@ final class PlayScene extends AbstractScene
     private bool $paused = false;
     private bool $welcome = true;
     private bool $jumpPending = false;
+    private bool $shotgunPending = false;
     private float $restartDelay = 0.0;
     private float $pitch = 0.0;
     private float $prevMuzzle = 0.0;
@@ -110,6 +111,7 @@ final class PlayScene extends AbstractScene
         $this->paused = false;
         $this->welcome = !$this->demo && !($params['playing'] ?? false);
         $this->jumpPending = false;
+        $this->shotgunPending = false;
         $this->pitch = 0.0;
         $this->prevMuzzle = $this->prevPulse = $this->prevSpecial = 0.0;
         $this->weaponSfxCooldown = 0.0;
@@ -215,7 +217,8 @@ final class PlayScene extends AbstractScene
             $forward = $this->actions()->axis('move_back', 'move_forward');
             $strafe = $this->actions()->axis('strafe_left', 'strafe_right');
             $turn = $this->actions()->axis('turn_left', 'turn_right');
-            $fire = $this->actions()->isHeld('shotgun_fire') || ($tap !== null && $tap[0] >= $this->width()-75 && $tap[1] >= $this->height()-58 && $tap[1] < $this->height()-24);
+            $this->shotgunPending = $this->shotgunPending || ($tap !== null && $tap[0] >= $this->width()-75 && $tap[1] >= $this->height()-58 && $tap[1] < $this->height()-24);
+            $fire = $this->actions()->isHeld('shotgun_fire') || $this->shotgunPending;
             $this->jumpPending = $this->jumpPending || $this->actions()->isPressed('jump');
         }
 
@@ -229,6 +232,7 @@ final class PlayScene extends AbstractScene
             $this->run->step($h, $forward, $strafe, $turn, $fire, $this->jumpPending, false, $rhythmSteps);
             $this->difficulty->afterStep($this->run);
             $this->jumpPending = false;
+            $this->shotgunPending = false;
         });
 
         $this->simulationTimes[]=(microtime(true)-$simulationStarted)*1000;
@@ -441,7 +445,7 @@ final class PlayScene extends AbstractScene
             $font->draw($r, 'VAGUE '.$this->run->wave.' / '.$this->run->kills.' ÉLIMINATIONS', $cx, 54, 1, [240,215,170], 'center');
         }
         if ($this->menu->screen === 'controls') {
-            foreach (['Z/W, S : AVANCER / RECULER','Q/A, D : DÉPLACEMENT LATÉRAL','FLÈCHES : TOURNER / ESPACE : SAUT','TIRS AUTOMATIQUES : VISEZ DEVANT','TACTILE : JOYSTICK / SAUT / PAUSE','MANETTE : CROIX / A : VALIDER','MENUS : TOUCHER OU FLÈCHES + ENTRÉE'] as $i=>$line) $font->draw($r,$line,$cx,40+$i*12,1,[240,215,170],'center');
+            foreach (['Z/W, S : AVANCER / RECULER','Q/A, D : DÉPLACEMENT LATÉRAL','FLÈCHES : TOURNER / ESPACE : SAUT','TIRS AUTOMATIQUES : VISEZ DEVANT','TACTILE : JOYSTICK / SAUT / PAUSE','BOSS : F / TAP TIR = CANON SCIE','MENUS : TOUCHER OU FLÈCHES + ENTRÉE'] as $i=>$line) $font->draw($r,$line,$cx,40+$i*12,1,[240,215,170],'center');
         }
         foreach (array_values($this->menu->items()) as $i=>$label) {
             [$x,$y,$bw,$bh] = $this->menu->rect($i,$w);

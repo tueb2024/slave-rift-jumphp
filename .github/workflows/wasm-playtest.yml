@@ -2,7 +2,8 @@ name: WASM playtest
 
 on:
   push:
-    branches: [main, release/playable-rc, feature/mecha-combat-overhaul, feature/808-sampled-score]
+    branches: [feature/shotgun-bosses-procedural-gates, main, release/playable-rc, feature/mecha-combat-overhaul, feature/808-sampled-score]
+    paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
 
 concurrency:

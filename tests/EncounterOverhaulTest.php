@@ -104,6 +104,25 @@ final class EncounterOverhaulTest extends TestCase
             self::assertSame(0,$r->encounters->opened);
         }
     }
+    public function testGateNeverOpensBeforeBothSpawnBudgetAndSurvivorsAreCleared(): void
+    {
+        $r=CampaignRun::daily('2026-11-06')->run;$r->health=100000;
+        for($i=0;$i<60;$i++)$r->step(.05,0,0,0);
+        self::assertNotEmpty($r->enemies);
+        $r->remaining=0;$this->invoke($r,'stepWaves',.05);self::assertSame(0,$r->encounters->opened);
+        foreach(array_keys($r->enemies) as $id)$this->invoke($r,'damage',$id,100000);
+        $r->remaining=1;$this->invoke($r,'stepWaves',.05);self::assertSame(0,$r->encounters->opened);
+        foreach(array_keys($r->enemies) as $id)$this->invoke($r,'damage',$id,100000);
+        $r->remaining=0;$this->invoke($r,'stepWaves',.05);self::assertSame(1,$r->encounters->opened);
+        $fresh=CampaignRun::daily('2026-11-06')->run;self::assertSame(0,$fresh->encounters->opened);
+        self::assertFalse($fresh->encounters->gates[0]['open']);
+    }
+    public function testProceduralEncounterInputsRemainDeterministic(): void
+    {
+        $a=CampaignRun::daily('2026-11-07')->run;$b=CampaignRun::daily('2026-11-07')->run;
+        foreach([$a,$b] as $r){$r->health=100000;for($i=0;$i<240;$i++)$r->step(.05,.4,.1,.03);}
+        self::assertSame([$a->x,$a->y,$a->z,$a->enemies,$a->remaining,$a->encounters->gates],[$b->x,$b->y,$b->z,$b->enemies,$b->remaining,$b->encounters->gates]);
+    }
     public function testFastAndTankThreatsAreDistinctAndTelegraphed(): void
     {
         $fast=DifficultyDirector::enemyBaseProfile('runner');$medium=DifficultyDirector::enemyBaseProfile('guardian');$tank=DifficultyDirector::enemyBaseProfile('brute');
