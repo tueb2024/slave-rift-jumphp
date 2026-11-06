@@ -1,4 +1,6 @@
-# Issue #5 — version complète à tester
+# Issue #5 — qualification initiale de la version complète
+
+Ce rapport décrit la livraison sur la branche réservée avant intégration. L’intégration dans `main` est ensuite autorisée le 6 novembre 2026 ; voir [la variation musicale par session](session-melodies.md) pour la modification et les vérifications supplémentaires.
 
 Branche : `feature/shotgun-bosses-procedural-gates`. Aucune fusion, aucun push forcé, aucune modification de `main`.
 

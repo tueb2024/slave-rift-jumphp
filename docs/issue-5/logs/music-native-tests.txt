@@ -1,0 +1,32 @@
+PHPUnit 10.5.66 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.2.35
+
+.....................................[jumphp-test] start App\Tests\GameSmokeTest::testAnimatedArsenalAndPowerAtlasesRender
+[jumphp-test] frame App\Tests\GameSmokeTest::testAnimatedArsenalAndPowerAtlasesRender /app/var/screenshots/tests/App.Tests.GameSmokeTest-testAnimatedArsenalAndPowerAtlasesRender.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testInjectedInputManagerMatchesEngineContract
+[jumphp-test] frame App\Tests\GameSmokeTest::testInjectedInputManagerMatchesEngineContract /app/var/screenshots/tests/App.Tests.GameSmokeTest-testInjectedInputManagerMatchesEngineContract.png
+[jumphp-test] start App\Tests\GameSmokeTest::testDemoSpawnsAndFires
+.[jumphp-test] frame App\Tests\GameSmokeTest::testDemoSpawnsAndFires /app/var/screenshots/tests/App.Tests.GameSmokeTest-testDemoSpawnsAndFires.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testUpgradeInputAndRestart
+[jumphp-test] frame App\Tests\GameSmokeTest::testUpgradeInputAndRestart /app/var/screenshots/tests/App.Tests.GameSmokeTest-testUpgradeInputAndRestart.png
+[jumphp-test] start App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm
+.[jumphp-test] frame App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm /app/var/screenshots/tests/App.Tests.GameSmokeTest-testWelcomeFreezesCombatAndAcceptsConfirm.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload
+[jumphp-test] frame App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload /app/var/screenshots/tests/App.Tests.GameSmokeTest-testMouseAndRawTouchRestartDeathAndVictoryWithoutReload.png
+[jumphp-test] start App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput
+.[jumphp-test] frame App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput /app/var/screenshots/tests/App.Tests.GameSmokeTest-testPauseAndUpgradeAcceptPointerInput.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde
+[jumphp-test] frame App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde /app/var/screenshots/tests/App.Tests.GameSmokeTest-testModeMenuNormalReplayNewMapDailyAndHorde.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testExplicitLegacyFixtureKeepsItsMapOnReplay
+[jumphp-test] frame App\Tests\GameSmokeTest::testExplicitLegacyFixtureKeepsItsMapOnReplay /app/var/screenshots/tests/App.Tests.GameSmokeTest-testExplicitLegacyFixtureKeepsItsMapOnReplay.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testFrameMetricsRetainStallsBeyondPhysicsDeltaCap
+[jumphp-test] frame App\Tests\GameSmokeTest::testFrameMetricsRetainStallsBeyondPhysicsDeltaCap /app/var/screenshots/tests/App.Tests.GameSmokeTest-testFrameMetricsRetainStallsBeyondPhysicsDeltaCap.png
+.................  63 / 120 ( 52%)
+............[jumphp-test] start App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld
+[jumphp-test] frame App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld /app/var/screenshots/tests/App.Tests.ProceduralSceneSmokeTest-testProceduralSceneBootsThroughRunAndWorld.png
+.............................................       120 / 120 (100%)
+
+Time: 00:06.977, Memory: 55.04 MB
+
+OK (120 tests, 132772 assertions)

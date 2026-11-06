@@ -1,8 +1,8 @@
 # Slave Rift — Canon scié, boss et portes procédurales
 
-FPS PHP/JumPHP : méchas industriels, sprites d’armes et de pouvoirs animés, tirs automatiques rythmiques et musique échantillonnée. Version de test de l’issue #5 sur `feature/shotgun-bosses-procedural-gates`, sans intégration dans `main`. [Rapport, mesures et captures](docs/issue-5/REPORT.md).
+FPS PHP/JumPHP : méchas industriels, sprites d’armes et de pouvoirs animés, tirs automatiques rythmiques et musique échantillonnée. Version de l’issue #5 intégrée dans `main` avec l’autorisation explicite du 6 novembre 2026. [Variation musicale par session](docs/issue-5/session-melodies.md). [Rapport, mesures et captures](docs/issue-5/REPORT.md).
 
-Pour essayer la progression sur quatre maps : choisir **DÉFI DU JOUR**. Le départ comporte 10 ennemis, avec au plus 4 survivants simultanés ; la cadence accélère après le double Colt. Le budget complet est de 520 ennemis. Les archétypes et les boss évoluent dans tous les modes ; les portes séquencent les rencontres procédurales. La Horde garde son arène ouverte. [Windows prêt à tester](https://github.com/tueb2024/slave-rift-jumphp/actions/runs/42227730426/artifacts/13507315316) · [Build WASM](https://github.com/tueb2024/slave-rift-jumphp/actions/runs/42227730528/artifacts/13506906737).
+Pour essayer la progression sur quatre maps : choisir **DÉFI DU JOUR**. Le départ comporte 10 ennemis, avec au plus 4 survivants simultanés ; la cadence accélère après le double Colt. Le budget complet est de 520 ennemis. Les archétypes et les boss évoluent dans tous les modes ; les portes séquencent les rencontres procédurales. La Horde garde son arène ouverte. [Windows prêt à tester](https://github.com/tueb2024/slave-rift-jumphp/actions/workflows/desktop-playtest.yml?query=branch%3Amain) · [Build WASM](https://github.com/tueb2024/slave-rift-jumphp/actions/workflows/wasm-playtest.yml?query=branch%3Amain).
 
 ## Jouer
 
