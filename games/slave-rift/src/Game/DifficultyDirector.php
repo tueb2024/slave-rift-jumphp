@@ -28,18 +28,17 @@ final class DifficultyDirector
     public static function enemyBaseProfile(string $type): array
     {
         return match ($type) {
-            'runner' => ['health' => 24, 'speed' => 2.38, 'damage' => 10, 'radius' => 0.23, 'threat' => 0.70],
-            'enforcer' => ['health' => 72, 'speed' => 1.02, 'damage' => 13, 'radius' => 0.27, 'threat' => 1.45],
-            'brute' => ['health' => 144, 'speed' => 0.84, 'damage' => 32, 'radius' => 0.40, 'threat' => 2.80],
-            default => ['health' => 48, 'speed' => 1.25, 'damage' => 14, 'radius' => 0.34, 'threat' => 1.00],
+            'runner' => ['health' => 18, 'speed' => 3.80, 'damage' => 10, 'radius' => 0.23, 'threat' => 0.70],
+            'enforcer' => ['health' => 72, 'speed' => 1.30, 'damage' => 13, 'radius' => 0.27, 'threat' => 1.45],
+            'brute' => ['health' => 216, 'speed' => 0.95, 'damage' => 32, 'radius' => 0.40, 'threat' => 2.80],
+            default => ['health' => 54, 'speed' => 1.55, 'damage' => 14, 'radius' => 0.34, 'threat' => 1.00],
         };
     }
 
-    /** Round the shared HP unit once so the 1:2:3:6 weights remain exact. */
+    /** Apply map/wave scaling once; archetype durability is independent of weapon rank. */
     public static function enemyHealthFor(string $type, float $scale): int
     {
-        $unit = max(1, (int)round(24 * $scale));
-        return $unit * intdiv(self::enemyBaseProfile($type)['health'], 24);
+        return max(1, (int)round(self::enemyBaseProfile($type)['health'] * $scale));
     }
 
     public static function primaryDpsEstimate(int $level, int $manualDamageRank = 0, ?int $stage = null): float

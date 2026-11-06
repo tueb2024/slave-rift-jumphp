@@ -52,8 +52,8 @@ final class ProceduralScore
         if(($pressure>=12||$boss)&&$step%2===1)$events[]=['hat',null];
         if(($pressure>=20||$boss)&&$step===14)$events[]=['openhat',null];
         if($step%8===0)$events[]=['bass',$p['bass']];
-        if($level>=8&&isset($p['lead'][$step]))$events[]=['lead',$p['lead'][$step]];
-        if($level>=16 && isset($p['counter'][$step]))$events[]=['counter',$p['counter'][$step]];
+        if($level>=2&&isset($p['lead'][$step]))$events[]=['lead',$p['lead'][$step]];
+        if($level>=6 && isset($p['counter'][$step]))$events[]=['counter',$p['counter'][$step]];
         if($boss&&$step===15)$events[]=['bass',$this->root-12+7];
         return $events;
     }

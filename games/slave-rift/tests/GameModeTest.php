@@ -44,13 +44,13 @@ final class GameModeTest extends TestCase
         self::assertSame('server/challenge', GameMode::daily('2026-11-02', 2, 42, 'server/challenge')->dailyId);
     }
 
-    public function testClassWeightsRemainExactAfterWaveAndDailyMultipliers(): void
+    public function testArchetypeHealthScalesOnceWithMapAndWave(): void
     {
         foreach (range(1,4) as $tier) foreach ([1,6,7,15,30] as $wave) {
             $scale = GameMode::daily('2026-11-02',$tier)->enemyHealthScale($wave);
-            $unit = \App\Game\DifficultyDirector::enemyHealthFor('runner',$scale);
-            foreach (['runner'=>1,'guardian'=>2,'enforcer'=>3,'brute'=>6] as $type=>$weight) {
-                self::assertSame($unit*$weight,\App\Game\DifficultyDirector::enemyHealthFor($type,$scale));
+            foreach (['runner','guardian','enforcer','brute'] as $type) {
+                $base=\App\Game\DifficultyDirector::enemyBaseProfile($type)['health'];
+                self::assertSame((int)round($base*$scale),\App\Game\DifficultyDirector::enemyHealthFor($type,$scale));
             }
         }
     }

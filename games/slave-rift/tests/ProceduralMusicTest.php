@@ -24,6 +24,14 @@ final class ProceduralMusicTest extends TestCase
             self::assertLessThan(3,count(array_intersect(array_keys($p['lead']),array_keys($p['counter']))));
         }
     }
+    public function testLeadStartsAtTwoAndCounterpointAtSix(): void
+    {
+        $s=new ProceduralScore(42);
+        self::assertNotContains('lead',array_column($s->events(0,0,1),0));
+        self::assertContains('lead',array_column($s->events(0,0,2),0));
+        self::assertNotContains('counter',array_column($s->events(0,0,5),0));
+        self::assertContains('counter',array_column($s->events(0,0,6),0));
+    }
     public function testSamplerFrequencyAndArrangementProgression(): void
     {
         self::assertEqualsWithDelta(440,Sampler::frequency(69),.001);self::assertEqualsWithDelta(220,Sampler::frequency(57),.001);
