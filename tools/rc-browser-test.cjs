@@ -123,6 +123,13 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await php("$rcRun->x=$rcRun->objective->treasureAnchor['x'];$rcRun->z=$rcRun->objective->treasureAnchor['z'];");
     await delay(100); await expect('state','won');
     await tap(160,90); await expect('state','play');
+    const savedMelodies=(await state()).melodies;
+    await page.evaluate(()=>window.saveUserFiles());
+    await page.reload({waitUntil:'load'});
+    await page.waitForFunction(()=>document.getElementById('loader')?.style.display==='none',{timeout:60000});
+    assert.deepEqual((await state()).melodies,savedMelodies,'Musical history must survive a browser restart');
+    await tap(160,60);await expect('state','play');
+    assert.ok(!savedMelodies.includes((await state()).melodies.at(-1)),'Fresh browser session reused a remembered contour');
    }catch(e){await page.screenshot({path:`${out}/${name}-failure.png`});console.error(await state());throw e;}
    await page.close();
   }
