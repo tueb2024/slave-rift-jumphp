@@ -1,0 +1,46 @@
+{
+    "scope": "PHP CPU simulation only; no rendering\/GPU measurement. Fixed-population fixture, not a human run.",
+    "cap": 200,
+    "results": [
+        {
+            "enemies": 25,
+            "frames": 300,
+            "totalMs": 107.78,
+            "meanStepMs": 0.358,
+            "maxStepMs": 11.885,
+            "p95StepMs": 0.681,
+            "peakPhpBytes": 2097152,
+            "state": "play"
+        },
+        {
+            "enemies": 50,
+            "frames": 300,
+            "totalMs": 205.98,
+            "meanStepMs": 0.686,
+            "maxStepMs": 17.489,
+            "p95StepMs": 0.993,
+            "peakPhpBytes": 2097152,
+            "state": "play"
+        },
+        {
+            "enemies": 100,
+            "frames": 300,
+            "totalMs": 443.06,
+            "meanStepMs": 1.476,
+            "maxStepMs": 14.028,
+            "p95StepMs": 2.349,
+            "peakPhpBytes": 4194304,
+            "state": "play"
+        },
+        {
+            "enemies": 200,
+            "frames": 300,
+            "totalMs": 1242.07,
+            "meanStepMs": 4.14,
+            "maxStepMs": 38.574,
+            "p95StepMs": 8.006,
+            "peakPhpBytes": 4194304,
+            "state": "play"
+        }
+    ]
+}

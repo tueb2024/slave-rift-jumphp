@@ -1,0 +1,79 @@
+[
+    {
+        "stage": 0,
+        "level": 1,
+        "dpsEstimate": 73.47,
+        "ttkEstimateSeconds": {
+            "runner": 0.245,
+            "guardian": 0.735,
+            "enforcer": 0.98,
+            "brute": 2.94
+        }
+    },
+    {
+        "stage": 1,
+        "level": 4,
+        "dpsEstimate": 154.53,
+        "ttkEstimateSeconds": {
+            "runner": 0.116,
+            "guardian": 0.349,
+            "enforcer": 0.466,
+            "brute": 1.398
+        }
+    },
+    {
+        "stage": 2,
+        "level": 8,
+        "dpsEstimate": 172.9,
+        "ttkEstimateSeconds": {
+            "runner": 0.104,
+            "guardian": 0.312,
+            "enforcer": 0.416,
+            "brute": 1.249
+        }
+    },
+    {
+        "stage": 3,
+        "level": 12,
+        "dpsEstimate": 367.08,
+        "ttkEstimateSeconds": {
+            "runner": 0.049,
+            "guardian": 0.147,
+            "enforcer": 0.196,
+            "brute": 0.588
+        }
+    },
+    {
+        "stage": 4,
+        "level": 16,
+        "dpsEstimate": 452.6,
+        "ttkEstimateSeconds": {
+            "runner": 0.04,
+            "guardian": 0.119,
+            "enforcer": 0.159,
+            "brute": 0.477
+        }
+    },
+    {
+        "stage": 5,
+        "level": 20,
+        "dpsEstimate": 533.87,
+        "ttkEstimateSeconds": {
+            "runner": 0.034,
+            "guardian": 0.101,
+            "enforcer": 0.135,
+            "brute": 0.405
+        }
+    },
+    {
+        "stage": 6,
+        "level": 24,
+        "dpsEstimate": 786.24,
+        "ttkEstimateSeconds": {
+            "runner": 0.023,
+            "guardian": 0.069,
+            "enforcer": 0.092,
+            "brute": 0.275
+        }
+    }
+]

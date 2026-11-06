@@ -1,0 +1,7 @@
+jumphp	JumPHP integration tests and 600-frame software smoke	2026-11-06T13:44:46.5697720Z OK (118 tests, 131541 assertions)
+jumphp	JumPHP integration tests and 600-frame software smoke	2026-11-06T13:44:47.5123270Z [jumphp] smoke test OK: 600 frames, scene App\Scene\PlayScene
+simulation (8.5)	Simulation regressions	2026-11-06T13:43:15.2696133Z     "checks": 94,
+simulation (8.5)	Pure PHPUnit regressions	2026-11-06T13:44:19.3704730Z OK (110 tests, 132444 assertions)
+simulation (8.2)	Simulation regressions	2026-11-06T13:43:18.5027481Z     "checks": 94,
+simulation (8.2)	Pure PHPUnit regressions	2026-11-06T13:44:25.6398860Z OK (110 tests, 132444 assertions)
+wasm	Test desktop and mobile browser UI	2026-11-06T13:48:12.9783800Z PASS: desktop + mobile/HiDPI menus, normal replay/new seed, one daily campaign, maps 1..4, horde, controls, upgrades, pause, boss/treasure/victory fixtures.

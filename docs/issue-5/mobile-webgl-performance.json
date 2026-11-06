@@ -1,0 +1,41 @@
+{
+  "scope": "Headless Chromium SwiftShader; rendered frame time includes CPU, browser and software GPU. Not physical phone performance.",
+  "results": [
+    {
+      "population": 25,
+      "visible": 24,
+      "webgl": true,
+      "samples": 19,
+      "meanFrameMs": 136.57894887422262,
+      "p95FrameMs": 157.00006484985352,
+      "meanSimulationPerRenderFrameMs": 2.421040284006219
+    },
+    {
+      "population": 50,
+      "visible": 49,
+      "webgl": true,
+      "samples": 18,
+      "meanFrameMs": 145.27777830759683,
+      "p95FrameMs": 172.00016975402832,
+      "meanSimulationPerRenderFrameMs": 5.444447199503581
+    },
+    {
+      "population": 100,
+      "visible": 99,
+      "webgl": true,
+      "samples": 15,
+      "meanFrameMs": 168.3333396911621,
+      "p95FrameMs": 196.0000991821289,
+      "meanSimulationPerRenderFrameMs": 7.6666514078776045
+    },
+    {
+      "population": 200,
+      "visible": 199,
+      "webgl": true,
+      "samples": 16,
+      "meanFrameMs": 169.06249523162842,
+      "p95FrameMs": 200.99997520446777,
+      "meanSimulationPerRenderFrameMs": 8.812502026557922
+    }
+  ]
+}
