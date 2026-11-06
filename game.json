@@ -23,12 +23,12 @@
         }
     },
     "thumbnail": null,
-    "controls": "Z/S ou flèches : avancer, Q/D : déplacement latéral, gauche/droite : tourner, espace : saut. Tir automatique. P : pause, entrée : jouer/rejouer. Tactile : joystick et boutons.",
+    "controls": "Z/S ou flèches : avancer, Q/D : déplacement latéral, gauche/droite : tourner, espace : saut. Tir principal automatique. Boss : F ou bouton TIR pour le canon scié. P : pause, entrée : jouer/rejouer. Tactile : joystick et boutons.",
     "engine": {
         "name": "JumPHP",
         "php": "8.5",
         "network": "a898904e58d445501dc98e5d2cf029632c449618"
     },
-    "built": "2026-11-05T08:17:13+00:00",
+    "built": "2026-11-06T14:08:24+00:00",
     "pwa": true
 }
