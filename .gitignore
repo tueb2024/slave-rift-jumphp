@@ -2,3 +2,6 @@
 
 /vendor/
 /var/
+
+# Blender authoring backups; editable sources and source plates are versioned.
+*.blend1

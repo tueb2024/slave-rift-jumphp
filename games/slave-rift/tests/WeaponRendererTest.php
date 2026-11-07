@@ -7,6 +7,19 @@ use PHPUnit\Framework\TestCase;
 
 final class WeaponRendererTest extends TestCase
 {
+    public function testSawnOffShowsEveryPoseDuringTheUnchangedReload(): void
+    {
+        $renderer = new WeaponRenderer();
+        self::assertSame(0, $renderer->shotgunFrame(0.0));
+        foreach ([[.01,1],[.04,2],[.12,3],[.30,4],[.60,5],[.90,6],[1.10,7]] as [$age,$frame]) {
+            self::assertSame($frame, $renderer->shotgunFrame(\App\Game\Run::SHOTGUN_RELOAD-$age));
+        }
+        self::assertSame(0, $renderer->shotgunFrame(-.01));
+        [$width,$height] = getimagesize(dirname(__DIR__).'/assets/sprites/arsenal/shotgun.png');
+        self::assertSame(8 * WeaponRenderer::FRAME_W, $width);
+        self::assertSame(WeaponRenderer::FRAME_H, $height);
+    }
+
     public function testCurrentLogicalResolutionKeepsWeaponFullyOnScreen(): void
     {
         $renderer = new WeaponRenderer();

@@ -1,0 +1,33 @@
+{
+  "producer": "Blender Cycles, original procedural model",
+  "frame": [
+    96,
+    128
+  ],
+  "atlas": [
+    768,
+    128
+  ],
+  "poses": [
+    "ready",
+    "ignition",
+    "fire",
+    "recoil",
+    "open",
+    "insert",
+    "close",
+    "settle"
+  ],
+  "files": {
+    "tools/blender/shotgun-source/shotgun.blend": "6123d84db557f05faa5f327f78c816f5677a3cade93f3f1796cb33bad8dc12cf",
+    "tools/blender/shotgun-source/pose-0.png": "5a7b17c733aee50262c5c3990f3c7bce3b2bc1566902ded2c9c8c9f5fb74234c",
+    "tools/blender/shotgun-source/pose-1.png": "b3ac5e9bc58a59fe7f4add37483503297fbc24177312d9f46dd7fc7d130ee309",
+    "tools/blender/shotgun-source/pose-2.png": "f75ed627df57c907809de8c68726ae4336182149b975566b1d350803a59ea481",
+    "tools/blender/shotgun-source/pose-3.png": "5cbcc515432852c4965196dee9c824056d154bf04266159ae486ce3ce05af0cf",
+    "tools/blender/shotgun-source/pose-4.png": "ad7f5d95df1c6c5d8f4f60469202a2f44da4b07ea18a93efdfb864ac88887f37",
+    "tools/blender/shotgun-source/pose-5.png": "0711d9020729765a8d3180a9c7c67b53c439c41154bb26edfa53b4e4a5e42c1d",
+    "tools/blender/shotgun-source/pose-6.png": "b8b7d2690f8e19e627b41f2947698ab42f4996a0835cb5953d7300c83e31ffce",
+    "tools/blender/shotgun-source/pose-7.png": "cafc8306e80dbd63fddcc4dd01bb1588e6a39f8e7f6901e747c1ea68654a9e41",
+    "assets/sprites/arsenal/shotgun.png": "c412e242a55ff2b6a54c4290990107aed25899ef2edc70bf70e6be5db8db3a52"
+  }
+}
