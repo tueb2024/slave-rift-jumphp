@@ -9,7 +9,7 @@ final class DifficultyDirectorTest extends TestCase
 {
     public function testWeaponMilestonesHaveStrictlyIncreasingEffectiveDps(): void
     {
-        $levels = [1, 4, 8, 12, 16, 20, 24];
+        $levels = \App\Game\Run::PRIMARY_LEVELS;
         $previous = 0.0;
         foreach ($levels as $level) {
             $dps = DifficultyDirector::primaryDpsEstimate($level);

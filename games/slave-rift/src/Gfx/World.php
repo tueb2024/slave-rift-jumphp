@@ -330,16 +330,15 @@ final class World
         if ($boss !== null && $boss->active && !$boss->defeated && $run->bossPosition !== null) {
             $p = $run->bossPosition;
             $point = $project($p);
-            if ($point !== null) {
-                // The siege chassis keeps its magenta family across all phases.
+            if ($point !== null && $run->lineClear(self::eye($run),[$p['x'],$p['y'],$p['z']])) {
+                // The mobile chassis keeps its magenta family across all phases.
                 $sheet = EnemyAtlas::SHEETS['siege'];
-                $source = EnemyAtlas::frame('siege', $boss->vulnerable ? 'pain' : ($run->bossWarning!==null?'attack':'idle'), (int)($boss->time * 5), 0);
+                $source = EnemyAtlas::frame('siege', $boss->attackState==='barrage'?'attack':($boss->attackState==='windup'?'pain':'walk'), (int)($boss->time * 12), ((int)round((atan2($run->x-$p['x'],$run->z-$p['z'])-$run->bossFacing+M_PI*4)/(M_PI/4)))%8);
                 if ($source !== null) {
                     $tex = $engine->sdl->getTexture($sheet['texture']);
                     $size = (int)min(120, max(20, 1000 / max(1, hypot($p['x'] - $run->x, $p['z'] - $run->z))));
                     $width = (int)round($size * $source[2] / $source[3]);
                     $r->copy($tex['texture'], $source, (int)$point[0] - intdiv($width, 2), (int)$point[1] - intdiv($size, 2), $width, $size);
-                    if($boss->vulnerable)$r->fillCircle((int)$point[0],(int)$point[1],max(3,(int)($size*.1)),[145,255,210]);
                     $r->drawRect((int)$point[0] - intdiv($width, 2), (int)$point[1] - intdiv($size, 2), $width, $size,
                         $boss->vulnerable ? [100,255,130] : [245,70,85], 2);
                 }

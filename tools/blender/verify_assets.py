@@ -35,3 +35,11 @@ if flame_manifest.exists():
         assert repo.resolve() in path.parents,name
         assert hashlib.sha256(path.read_bytes()).hexdigest()==digest,name
     print('Verified flowing flame source and runtime atlas')
+
+raider_manifest=repo/'tools/blender/raider-source/manifest.json'
+if raider_manifest.exists():
+    for name,digest in json.loads(raider_manifest.read_text())['files'].items():
+        path=(repo/name).resolve()
+        assert repo.resolve() in path.parents,name
+        assert hashlib.sha256(path.read_bytes()).hexdigest()==digest,name
+    print('Verified agile raider model and active boss atlas')

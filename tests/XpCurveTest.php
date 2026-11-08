@@ -45,9 +45,9 @@ final class XpCurveTest extends TestCase
         self::assertSame(6,$campaign->stageForLevel(17));
         $run=new Run(HordeArena::build(),42,null,$campaign);
         $run->restoreProgression(['level'=>11],0);
-        self::assertSame(4,$run->primaryStage);
+        self::assertSame(-1,$run->primaryStage);self::assertTrue($run->canUpgradePrimary());
         $d=new \App\Game\DifficultyDirector;
-        self::assertSame(\App\Game\DifficultyDirector::primaryDpsEstimate(11,0,4),$d->snapshot($run)['primaryDps']);
+        self::assertSame(\App\Game\DifficultyDirector::primaryDpsEstimate(11,0,-1),$d->snapshot($run)['primaryDps']);
         foreach(range(1,30)as$level)self::assertLessThanOrEqual(1,$campaign->stageForLevel($level+1)-$campaign->stageForLevel($level));
     }
 }

@@ -25,7 +25,7 @@ final class GameMode
         public readonly int $depth = 7,
         public readonly float $intensity = 1.0,
         public readonly int $finalWaveSize = 12,
-        public readonly int $bossHealth = 1200,
+        public readonly int $bossHealth = 9000,
         public readonly int $campaignStage = 0,
     ) {}
 
@@ -72,7 +72,7 @@ final class GameMode
     private static function stageRules(string $kind,int $seed,int $stage,?string $id): self
     {
         return new self($kind,$seed,$stage,$id,depth:[6,10,15,22][$stage-1],intensity:[1,1.1,1.2,1.3][$stage-1],
-            finalWaveSize:$kind===self::DAILY?[8,12,16,20][$stage-1]:[12,15,18,22][$stage-1],bossHealth:[2200,2800,3500,4300][$stage-1],campaignStage:$stage);
+            finalWaveSize:$kind===self::DAILY?[8,12,16,20][$stage-1]:[12,15,18,22][$stage-1],bossHealth:[9000,24000,64000,150000][$stage-1],campaignStage:$stage);
     }
 
     public function compositionWave(int $wave): int
@@ -176,7 +176,7 @@ final class GameMode
     }
 
     public function waveCount(): int{return $this->hasFiniteEncounters()?[3,4,5,6][$this->campaignStage-1]:PHP_INT_MAX;}
-    public function xpThreshold(int $level): int{return $this->kind===self::DAILY?12+max(0,$level-1)*3:XpCurve::threshold($level);}
+    public function xpThreshold(int $level): int{return XpCurve::threshold($level);}
     /** Fixed daily budget: 44 + 88 + 152 + 236 = 520; all seven weapons remain reachable. */
     public function primaryStageForKills(int $kills): int
     {

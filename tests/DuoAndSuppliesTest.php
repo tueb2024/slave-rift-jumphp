@@ -19,7 +19,7 @@ final class DuoAndSuppliesTest extends TestCase
         for($i=0;$i<25;$i++){
             $run->state='play';$run->xp=$run->nextXp;$this->call($run,'checkLevel');
             self::assertCount(3,$run->choices);
-            foreach($run->choices as $choice)self::assertContains($choice,['POWER','HASTE','MAGNET','VITALITY']);
+            foreach($run->choices as $choice)self::assertContains($choice,['POWER','HASTE','MAGNET','VITALITY','PRIMARY']);
             self::assertTrue($run->chooseUpgrade(0));self::assertCount(2,$run->secondaryInventory());
         }
     }

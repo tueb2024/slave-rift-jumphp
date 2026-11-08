@@ -1,0 +1,11 @@
+PHPUnit 11.5.57 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.5.12
+Configuration: /work/normal-progression/phpunit.pure.xml
+
+...............................................................  63 / 124 ( 50%)
+.............................................................   124 / 124 (100%)
+
+Time: 00:07.826, Memory: 31.52 MB
+
+OK (124 tests, 139433 assertions)

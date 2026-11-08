@@ -5,6 +5,7 @@ from pathlib import Path
 import math,json,hashlib
 from PIL import Image,ImageDraw
 from art_spec import mecha,weapon,WEAPONS,PALETTE
+from raider_parts import raider
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'assets/generated'
 
@@ -29,7 +30,7 @@ def main():
         for row in range(10):
             for direction in range(8):
                 # Direction zero faces the viewer; death columns are time frames.
-                im=render(mecha(kind,row,direction),(96,112),0 if row==9 else direction*math.pi/4)
+                im=render(raider(row,direction) if kind=='siege' else mecha(kind,row,direction),(96,112),0 if row==9 else direction*math.pi/4)
                 atlas.paste(im,(direction*96,row*112))
         folder=OUT/('bosses' if kind=='siege' else 'mechas');folder.mkdir(parents=True,exist_ok=True);atlas.quantize(colors=128,method=Image.Quantize.FASTOCTREE).save(folder/(kind+'.png'),optimize=True)
     for kind in WEAPONS:

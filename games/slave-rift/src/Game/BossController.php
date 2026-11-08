@@ -5,9 +5,8 @@ namespace App\Game;
 /**
  * Deterministic boss state machine, independent from rendering.
  *
- * The first implementation supports the intended wall boss: destroy every orb,
- * exploit a short vulnerability window, then repeat until the boss is dead.
- * A dynamic boss can use the same health/phase contract later.
+ * Mobile bosses alternate recovery, warning and suppressive barrage.
+ * WALL preserves the legacy orb encounter contract for compatibility.
  */
 final class BossController
 {
@@ -22,6 +21,8 @@ final class BossController
     public float $vulnerableTimer = 0.0;
     public float $time = 0.0;
     public float $ultimateCooldown = 0.0;
+    public string $attackState='recover';
+    public float $attackTimer=6.0;
 
     /** @var list<array{x:float,y:float,z:float,hp:int,maxHp:int,alive:bool}> */
     public array $orbs = [];
@@ -55,6 +56,7 @@ final class BossController
     {
         if ($this->defeated) return;
         $this->active = true;
+        if($this->kind===self::DYNAMIC)$this->vulnerable=true;
         if ($this->kind === self::WALL && $this->orbs !== []) $this->vulnerable = false;
     }
 
@@ -65,7 +67,16 @@ final class BossController
         $this->time += $dt;
         $this->ultimateCooldown = max(0.0, $this->ultimateCooldown - $dt);
 
-        if ($this->vulnerable) {
+        if($this->kind===self::DYNAMIC){
+            $this->attackTimer-=$dt;
+            if($this->attackTimer<=0){
+                [$this->attackState,$this->attackTimer]=match($this->attackState){
+                    'recover'=>['windup',1.2],'windup'=>['barrage',2.2],default=>['recover',3.2],
+                };
+            }
+            $this->vulnerable=$this->attackState!=='barrage';
+        }
+        if ($this->vulnerable && $this->kind===self::WALL) {
             $this->vulnerableTimer = max(0.0, $this->vulnerableTimer - $dt);
             if ($this->vulnerableTimer <= 0.0 && !$this->defeated) {
                 $this->vulnerable = false;
@@ -79,9 +90,10 @@ final class BossController
 
     public function damage(int $amount, string $source = 'primary'): int
     {
-        if ($source !== 'shotgun' || !$this->active || $this->defeated || $amount <= 0) return 0;
+        if (($this->kind===self::WALL && $source !== 'shotgun') || !$this->active || $this->defeated || $amount <= 0) return 0;
         if ($this->kind === self::WALL && !$this->vulnerable) return 0;
 
+        if($this->kind===self::DYNAMIC && $this->attackState==='barrage')$amount=max(1,(int)round($amount*.35));
         $before = $this->health;
         $this->health = max(0, $this->health - $amount);
         if ($this->health === 0) {

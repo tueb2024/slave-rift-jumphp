@@ -316,11 +316,10 @@ final class PlayScene extends AbstractScene
 
         if ($run->boss !== null && $run->boss->active && !$run->boss->defeated) {
             $boss = $run->boss;
-            $liveOrbs = count(array_filter($boss->orbs, static fn(array $orb): bool => $orb['alive']));
-            $label = $boss->vulnerable ? 'COEUR '.(int)ceil($boss->vulnerableTimer).' S : CANON SCIE !' : 'MODULES RESTANTS : '.$liveOrbs.'/3';
-            $font->draw($r, $label . ' / PHASE ' . $boss->phase, $objectiveCx, 40, 1, $boss->vulnerable ? [100,255,130] : [255,160,90], 'center');
+            $label = match($boss->attackState){'windup'=>'ABRI : SALLE ADJACENTE !','barrage'=>'BARRAGE : RESTEZ A COUVERT',default=>'RECUPERATION : ATTAQUEZ !'};
+            $font->draw($r, $label . ' / PHASE ' . $boss->phase, $objectiveCx, 40, 1, $boss->attackState==='recover' ? [100,255,130] : [255,100,65], 'center');
             Hud::bar($r, $hasSecondaries ? 30 : 60, 51, $w - 120, 5, $boss->health / $boss->maxHealth);
-            if ($run->bossWarning !== null) $font->draw($r, 'TIR ANNONCE : DECALEZ-VOUS !', $objectiveCx, 61, 1, [255,100,65], 'center');
+            if ($run->bossWarning !== null) $font->draw($r, 'REPLIEZ-VOUS AVANT LE BARRAGE !', $objectiveCx, 61, 1, [255,100,65], 'center');
         }
         if($run->shotgunAvailable()){
             $r->fillRect($w-75,$h-58,72,30,$run->shotgunReload>0?[70,55,50]:[130,70,30]);
@@ -462,7 +461,7 @@ final class PlayScene extends AbstractScene
             $font->draw($r, 'VAGUE '.$this->run->wave.' / '.$this->run->kills.' ÉLIMINATIONS', $cx, 54, 1, [240,215,170], 'center');
         }
         if ($this->menu->screen === 'controls') {
-            foreach (['Z/W, S : AVANCER / RECULER','Q/A, D : DÉPLACEMENT LATÉRAL','FLÈCHES : TOURNER / ESPACE : SAUT','TIRS AUTOMATIQUES : VISEZ DEVANT','TACTILE : JOYSTICK / SAUT / PAUSE','BOSS : F / TAP TIR = CANON SCIE','MENUS : TOUCHER OU FLÈCHES + ENTRÉE'] as $i=>$line) $font->draw($r,$line,$cx,40+$i*12,1,[240,215,170],'center');
+            foreach (['Z/W, S : AVANCER / RECULER','Q/A, D : DÉPLACEMENT LATÉRAL','FLÈCHES : TOURNER / ESPACE : SAUT','DEPART : CANON SCIE / F OU CLIC','TACTILE : JOYSTICK / SAUT / PAUSE','ARMES ACQUISES : TIRS RYTHMIQUES','MENUS : TOUCHER OU FLÈCHES + ENTRÉE'] as $i=>$line) $font->draw($r,$line,$cx,40+$i*12,1,[240,215,170],'center');
         }
         foreach (array_values($this->menu->items()) as $i=>$label) {
             [$x,$y,$bw,$bh] = $this->menu->rect($i,$w);

@@ -15,7 +15,7 @@
     96
   ],
   "files": {
-    "bosses/siege.png": "351ec249a275911b47ae873d20bf3da6f8c1b3c87f0b6e3a48c2b648647c5830",
+    "bosses/siege.png": "1d43856e3aea0379538a50f42835bacfa81ea586a8e0f67beb354609ff146d13",
     "mechas/brute.png": "0881b97d9690e54f900c2648f67f7e61979cac877a01129550b11581e5bdf1f7",
     "mechas/enforcer.png": "007a3973ba83353004bc4559cc7f50fc587525fb4a77ffbf88a8cffc052cd4bd",
     "mechas/guardian.png": "b462b384ee150985cf8a69ca54911a6fdcb5256ef9b3aebf04c5cadfe422a490",
@@ -61,5 +61,6 @@
     "weapons/sniper-hud-dim.png": "9cafe11608a8ddafa862d8a3e5299ef01511a5eaf510123546fe5c927f8b5fca",
     "weapons/sniper-hud.png": "67d8e911a15490cfcce81831e4c94243875b705a45c591d9e46728703b6cceb9",
     "weapons/sniper.png": "992ef78f5b4da24680d22d77d235647032051ad2782adf7caa59ff95e095bf66"
-  }
+  },
+  "bossProducer": "Original Blender Cycles agile raider, 2026-11-08"
 }

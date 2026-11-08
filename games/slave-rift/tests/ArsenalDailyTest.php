@@ -14,7 +14,7 @@ final class ArsenalDailyTest extends TestCase
         }
         self::assertCount(8,WeaponRenderer::textures());self::assertCount(5,PowerRenderer::textures());
     }
-    public function testDailyHasFiniteIncreasingBudgetsAndKillBasedWeapons(): void
+    public function testDailyKeepsItsBudgetsButKillsDoNotAutomaticallyGrantWeapons(): void
     {
         $total=0;
         foreach(range(1,4)as$stage){$m=GameMode::daily('2026-11-04',$stage);self::assertSame($stage+2,$m->waveCount());
@@ -22,8 +22,8 @@ final class ArsenalDailyTest extends TestCase
             for($w=1;$w<=$m->waveCount();$w++)$total+=$m->waveBudget($w);$total+=$m->finalWaveSize;
         }
         self::assertSame(520,$total);$m=GameMode::daily('2026-11-04');$r=new Run(HordeArena::build(),42,$m);
-        foreach([0=>0,8=>1,26=>2,63=>3,125=>4,218=>5,354=>6]as$kills=>$stage){$r->restoreProgression(['kills'=>$kills,'level'=>1],0);self::assertSame($stage,$r->primaryStage);}
-        self::assertSame(12,$r->nextXp);self::assertSame(69,$m->xpThreshold(20));
+        foreach([0=>0,8=>1,26=>2,63=>3,125=>4,218=>5,354=>6]as$kills=>$stage){$r->restoreProgression(['kills'=>$kills,'level'=>1],0);self::assertSame(-1,$r->primaryStage);}
+        self::assertSame(6,$r->nextXp);self::assertSame(19,$m->xpThreshold(20));
     }
     public function testDailySpawnsSustainedPressureWithoutExceedingCap(): void
     {

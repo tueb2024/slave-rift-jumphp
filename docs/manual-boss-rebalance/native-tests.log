@@ -1,0 +1,183 @@
+PHPUnit 11.5.57 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.5.12
+
+.........................................[jumphp-test] start App\Tests\GameSmokeTest::testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed
+[jumphp-test] frame App\Tests\GameSmokeTest::testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed.png
+D[jumphp-test] start App\Tests\GameSmokeTest::testAnimatedArsenalAndPowerAtlasesRender
+[jumphp-test] frame App\Tests\GameSmokeTest::testAnimatedArsenalAndPowerAtlasesRender /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testAnimatedArsenalAndPowerAtlasesRender.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testInjectedInputManagerMatchesEngineContract
+[jumphp-test] frame App\Tests\GameSmokeTest::testInjectedInputManagerMatchesEngineContract /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testInjectedInputManagerMatchesEngineContract.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testDemoSpawnsAndFires
+[jumphp-test] frame App\Tests\GameSmokeTest::testDemoSpawnsAndFires /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testDemoSpawnsAndFires.png
+D[jumphp-test] start App\Tests\GameSmokeTest::testUpgradeInputAndRestart
+[jumphp-test] frame App\Tests\GameSmokeTest::testUpgradeInputAndRestart /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testUpgradeInputAndRestart.png
+D[jumphp-test] start App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm
+[jumphp-test] frame App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testWelcomeFreezesCombatAndAcceptsConfirm.png
+D[jumphp-test] start App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload
+[jumphp-test] frame App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testMouseAndRawTouchRestartDeathAndVictoryWithoutReload.png
+D[jumphp-test] start App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput
+[jumphp-test] frame App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testPauseAndUpgradeAcceptPointerInput.png
+D[jumphp-test] start App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde
+[jumphp-test] frame App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testModeMenuNormalReplayNewMapDailyAndHorde.png
+D[jumphp-test] start App\Tests\GameSmokeTest::testExplicitLegacyFixtureKeepsItsMapOnReplay
+[jumphp-test] frame App\Tests\GameSmokeTest::testExplicitLegacyFixtureKeepsItsMapOnReplay /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testExplicitLegacyFixtureKeepsItsMapOnReplay.png
+.[jumphp-test] start App\Tests\GameSmokeTest::testFrameMetricsRetainStallsBeyondPhysicsDeltaCap
+[jumphp-test] frame App\Tests\GameSmokeTest::testFrameMetricsRetainStallsBeyondPhysicsDeltaCap /work/rebalance-installed/var/screenshots/tests/App.Tests.GameSmokeTest-testFrameMetricsRetainStallsBeyondPhysicsDeltaCap.png
+............  63 / 133 ( 47%)
+........................[jumphp-test] start App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld
+[jumphp-test] frame App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld /work/rebalance-installed/var/screenshots/tests/App.Tests.ProceduralSceneSmokeTest-testProceduralSceneBootsThroughRunAndWorld.png
+D...................................... 126 / 133 ( 94%)
+.......                                                         133 / 133 (100%)
+
+Time: 00:21.542, Memory: 61.52 MB
+
+8 tests triggered 5 PHP deprecations:
+
+1) /work/rebalance-installed/src/Gfx/PosterFactory.php:126
+Function imagedestroy() is deprecated since 8.5, as it has no effect since PHP 8.0
+
+Triggered by:
+
+* App\Tests\GameSmokeTest::testDemoSpawnsAndFires (20 times)
+  /work/normal-progression/tests/GameSmokeTest.php:72
+
+* App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde (80 times)
+  /work/normal-progression/tests/GameSmokeTest.php:177
+
+* App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload (180 times)
+  /work/normal-progression/tests/GameSmokeTest.php:113
+
+* App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput (20 times)
+  /work/normal-progression/tests/GameSmokeTest.php:155
+
+* App\Tests\GameSmokeTest::testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed (120 times)
+  /work/normal-progression/tests/GameSmokeTest.php:12
+
+* App\Tests\GameSmokeTest::testUpgradeInputAndRestart (40 times)
+  /work/normal-progression/tests/GameSmokeTest.php:85
+
+* App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm (20 times)
+  /work/normal-progression/tests/GameSmokeTest.php:102
+
+* App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld (20 times)
+  /work/normal-progression/tests/ProceduralSceneSmokeTest.php:10
+
+2) /work/rebalance-installed/src/Gfx/PosterFactory.php:46
+Function imagedestroy() is deprecated since 8.5, as it has no effect since PHP 8.0
+
+Triggered by:
+
+* App\Tests\GameSmokeTest::testDemoSpawnsAndFires (16 times)
+  /work/normal-progression/tests/GameSmokeTest.php:72
+
+* App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde (64 times)
+  /work/normal-progression/tests/GameSmokeTest.php:177
+
+* App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload (144 times)
+  /work/normal-progression/tests/GameSmokeTest.php:113
+
+* App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput (16 times)
+  /work/normal-progression/tests/GameSmokeTest.php:155
+
+* App\Tests\GameSmokeTest::testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed (96 times)
+  /work/normal-progression/tests/GameSmokeTest.php:12
+
+* App\Tests\GameSmokeTest::testUpgradeInputAndRestart (32 times)
+  /work/normal-progression/tests/GameSmokeTest.php:85
+
+* App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm (16 times)
+  /work/normal-progression/tests/GameSmokeTest.php:102
+
+* App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld (16 times)
+  /work/normal-progression/tests/ProceduralSceneSmokeTest.php:10
+
+3) /work/rebalance-installed/src/Gfx/MinitelRosePoster.php:249
+Function imagedestroy() is deprecated since 8.5, as it has no effect since PHP 8.0
+
+Triggered by:
+
+* App\Tests\GameSmokeTest::testDemoSpawnsAndFires (60 times)
+  /work/normal-progression/tests/GameSmokeTest.php:72
+
+* App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde (240 times)
+  /work/normal-progression/tests/GameSmokeTest.php:177
+
+* App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload (540 times)
+  /work/normal-progression/tests/GameSmokeTest.php:113
+
+* App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput (60 times)
+  /work/normal-progression/tests/GameSmokeTest.php:155
+
+* App\Tests\GameSmokeTest::testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed (360 times)
+  /work/normal-progression/tests/GameSmokeTest.php:12
+
+* App\Tests\GameSmokeTest::testUpgradeInputAndRestart (120 times)
+  /work/normal-progression/tests/GameSmokeTest.php:85
+
+* App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm (60 times)
+  /work/normal-progression/tests/GameSmokeTest.php:102
+
+* App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld (60 times)
+  /work/normal-progression/tests/ProceduralSceneSmokeTest.php:10
+
+4) /work/rebalance-installed/src/Gfx/PosterFactory.php:62
+Function imagedestroy() is deprecated since 8.5, as it has no effect since PHP 8.0
+
+Triggered by:
+
+* App\Tests\GameSmokeTest::testDemoSpawnsAndFires (12 times)
+  /work/normal-progression/tests/GameSmokeTest.php:72
+
+* App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde (48 times)
+  /work/normal-progression/tests/GameSmokeTest.php:177
+
+* App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload (108 times)
+  /work/normal-progression/tests/GameSmokeTest.php:113
+
+* App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput (12 times)
+  /work/normal-progression/tests/GameSmokeTest.php:155
+
+* App\Tests\GameSmokeTest::testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed (72 times)
+  /work/normal-progression/tests/GameSmokeTest.php:12
+
+* App\Tests\GameSmokeTest::testUpgradeInputAndRestart (24 times)
+  /work/normal-progression/tests/GameSmokeTest.php:85
+
+* App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm (12 times)
+  /work/normal-progression/tests/GameSmokeTest.php:102
+
+* App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld (12 times)
+  /work/normal-progression/tests/ProceduralSceneSmokeTest.php:10
+
+5) /work/rebalance-installed/src/Gfx/World.php:82
+Function imagedestroy() is deprecated since 8.5, as it has no effect since PHP 8.0
+
+Triggered by:
+
+* App\Tests\GameSmokeTest::testDemoSpawnsAndFires
+  /work/normal-progression/tests/GameSmokeTest.php:72
+
+* App\Tests\GameSmokeTest::testModeMenuNormalReplayNewMapDailyAndHorde (4 times)
+  /work/normal-progression/tests/GameSmokeTest.php:177
+
+* App\Tests\GameSmokeTest::testMouseAndRawTouchRestartDeathAndVictoryWithoutReload (9 times)
+  /work/normal-progression/tests/GameSmokeTest.php:113
+
+* App\Tests\GameSmokeTest::testPauseAndUpgradeAcceptPointerInput
+  /work/normal-progression/tests/GameSmokeTest.php:155
+
+* App\Tests\GameSmokeTest::testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed (6 times)
+  /work/normal-progression/tests/GameSmokeTest.php:12
+
+* App\Tests\GameSmokeTest::testUpgradeInputAndRestart (2 times)
+  /work/normal-progression/tests/GameSmokeTest.php:85
+
+* App\Tests\GameSmokeTest::testWelcomeFreezesCombatAndAcceptsConfirm
+  /work/normal-progression/tests/GameSmokeTest.php:102
+
+* App\Tests\ProceduralSceneSmokeTest::testProceduralSceneBootsThroughRunAndWorld
+  /work/normal-progression/tests/ProceduralSceneSmokeTest.php:10
+
+OK, but there were issues!
+Tests: 133, Assertions: 139481, Deprecations: 5.

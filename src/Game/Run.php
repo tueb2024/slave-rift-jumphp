@@ -69,7 +69,9 @@ final class Run
     public int $xp = 0;
     public int $nextXp = 6;
     public bool $pulseUnlocked = false;
-    public int $primaryStage = 0;
+    public int $primaryStage = -1;
+    public int $unlockedPrimaryStage = -1;
+    public const PRIMARY_LEVELS = [4,9,15,23,33,45,59];
     // Compatibility mirrors for the current HUD renderer. primaryStage is authoritative.
     public int $autoTier = 0;
     public string $autoWeapon = 'COLT';
@@ -89,7 +91,7 @@ final class Run
     public const SHOTGUN_DAMAGE = 70;
     public const SHOTGUN_RANGE = 7.0;
     public const SHOTGUN_RELOAD = 1.15;
-    public const MAX_BOSS_PROJECTILES = 24;
+    public const MAX_BOSS_PROJECTILES = 64;
     public float $shotgunReload = 0.0;
     public float $shotgunFlash = 0.0;
     public int $shotgunSerial = 0;
@@ -107,7 +109,7 @@ final class Run
     private int $hordeBossWave = 0;
     public float $flameActive = 0.0;
     public array $choices = [];
-    public string $message = 'COLT .45 - TIR RYTHMÉ';
+    public string $message = 'CANON SCIÉ - F / CLIC POUR TIRER';
     public float $messageTime = 4.0;
 
     public ?TreasureDirector $objective = null;
@@ -117,7 +119,13 @@ final class Run
     public ?array $bossWarning = null;
     public array $route = [];
     private int $routeIndex = 0;
-    private float $bossAttackClock = 2.5;
+    private float $bossAttackClock = 0.;
+    private ?array $bossHome = null;
+    public ?array $bossCoverPosition = null;
+    public ?array $bossPeekPosition = null;
+    public float $bossDistanceMoved = 0.;
+    public float $bossFacing = 0.;
+    public float $bossCoverTime = 0.;
 
     private float $pulseClock = 1.0;
     private SecondaryScheduler $secondaryScheduler;
@@ -212,7 +220,7 @@ final class Run
             return;
         }
 
-        if ($fire) $this->fireShotgun();
+        if ($fire && $this->shotgunAvailable()) $this->fireShotgun();
         $this->stepPrimaryBursts($dt);
         foreach ($rhythmSteps as $rhythmStep) $this->triggerPrimaryRhythmStep((int)$rhythmStep);
         $this->stepSecondaries($dt);
@@ -226,7 +234,7 @@ final class Run
 
     public function progressionSnapshot(): array
     {
-        return ['secondarySlots'=>$this->secondaryIds(),'empRank'=>$this->empRank,'empClock'=>$this->empClock,'equippedSecondary'=>$this->equippedSecondary,'level'=>$this->level,'xp'=>$this->xp,'collectedXp'=>$this->collectedXp,'maxHealth'=>$this->maxHealth,
+        return ['unlockedPrimaryStage'=>$this->unlockedPrimaryStage,'primaryStage'=>$this->primaryStage,'secondarySlots'=>$this->secondaryIds(),'empRank'=>$this->empRank,'empClock'=>$this->empClock,'equippedSecondary'=>$this->equippedSecondary,'level'=>$this->level,'xp'=>$this->xp,'collectedXp'=>$this->collectedXp,'maxHealth'=>$this->maxHealth,
             'health'=>$this->health,'damageRank'=>$this->damageRank,'hasteRank'=>$this->hasteRank,'magnetRank'=>$this->magnetRank,
             'pulseRank'=>$this->pulseRank,'pulseUnlocked'=>$this->pulseUnlocked,'flameRank'=>$this->flameRank,'rocketRank'=>$this->rocketRank,
             'pulseClock'=>$this->pulseClock,'flameCooldownClock'=>$this->flameCooldownClock,'rocketClock'=>$this->rocketClock,
@@ -237,7 +245,7 @@ final class Run
 
     public function restoreProgression(array $saved, float $healMissing = 0.35): void
     {
-        foreach (['level','xp','collectedXp','maxHealth','health','damageRank','hasteRank','magnetRank','pulseRank',
+        foreach (['unlockedPrimaryStage','primaryStage','level','xp','collectedXp','maxHealth','health','damageRank','hasteRank','magnetRank','pulseRank',
             'pulseUnlocked','flameRank','rocketRank','sniperRank','artilleryRank','sniperClock','artilleryClock','time','flameActive','flameTickClock','pulseClock','flameCooldownClock','rocketClock','score','kills','empRank','empClock','equippedSecondary','secondarySlots'] as $field) {
             if (array_key_exists($field,$saved)) $this->$field=$saved[$field];
         }
@@ -276,13 +284,15 @@ final class Run
         $nx = $dx / $length; $nz = $dz / $length;
         $this->bossPosition = ['x' => $anchor['x'] + $nx * $length * (8.5/6),
             'y' => $anchor['y'] + 0.5, 'z' => $anchor['z'] + $nz * $length * (8.5/6)];
-        $this->boss = new BossController(BossController::WALL, $this->mode->bossHealth, 6.0);
-        $positions = [];
-        foreach ([-2.5, 0.0, 2.5] as $offset) {
-            $positions[] = ['x' => $this->bossPosition['x'] + $nz * $offset - $nx * 0.8,
-                'y' => $this->bossPosition['y'], 'z' => $this->bossPosition['z'] - $nx * $offset - $nz * 0.8];
+        $this->boss = new BossController(BossController::DYNAMIC, $this->mode->bossHealth, 6.0);
+        $this->bossHome=$this->bossPosition;
+        foreach($level->rooms as $room)if($room['type']===LevelGraph::BOSS_ROOM){
+            foreach($room['connectors'] as $entry)if($entry['role']==='entry'){
+                [$ex,$ey,$ez]=$entry['position'];[$nx,,$nz]=$entry['normal'];
+                $this->bossCoverPosition=['x'=>$ex+$nx*2.0+$nz*2.4,'y'=>$ey+.75,'z'=>$ez+$nz*2.0-$nx*2.4];
+                $this->bossPeekPosition=['x'=>$ex-$nx*.8,'y'=>$ey+.75,'z'=>$ez-$nz*.8];
+            }
         }
-        $this->boss->armOrbs($positions, 48);
     }
 
     private function advanceRoute(): void
@@ -324,7 +334,7 @@ final class Run
         if ($objective->state === TreasureDirector::BOSS_READY && $this->boss !== null) {
             $objective->startBoss();
             $this->boss->activate();
-            $this->message = 'MODULES PUIS COEUR : CANON SCIE [F] / TAP TIR';
+            $this->message = 'BARRAGE : REPLI DANS LA SALLE ADJACENTE';
             $this->messageTime = 6.0;
         }
         if ($objective->state === TreasureDirector::BOSS && $this->boss !== null) {
@@ -345,34 +355,48 @@ final class Run
     {
         if($this->mode->kind!==GameMode::HORDE)return;
         if($this->wave%5===0 && $this->hordeBossWave!==$this->wave && !($this->boss?->active&&!$this->boss->defeated)){
-            $this->hordeBossWave=$this->wave;$tier=min(6,intdiv($this->wave,5));
-            $this->boss=new BossController(BossController::WALL,2200+min(2500,($tier-1)*500),max(3.5,6-$tier*.35));
-            $this->bossPosition=['x'=>0.0,'y'=>1.3,'z'=>$this->z>0?-13.0:13.0];$positions=[];
-            foreach([-2.5,0,2.5]as$x)$positions[]=['x'=>$x,'y'=>1.2,'z'=>$this->bossPosition['z']];
-            $this->boss->armOrbs($positions,48);$this->boss->activate();$this->bossAttackClock=1.8;
-            $this->message='SIEGE : MODULES PUIS COEUR / VAGUE '.$this->wave;$this->messageTime=4;
+            $this->hordeBossWave=$this->wave;$tier=max(1,intdiv($this->wave,5));
+            $this->boss=new BossController(BossController::DYNAMIC,9000+(int)(6000*($tier-1)**1.6),max(3.5,6-$tier*.35));
+            $this->bossPosition=['x'=>0.0,'y'=>1.3,'z'=>$this->z>0?-13.0:13.0];
+            $this->bossHome=$this->bossPosition;$this->bossCoverPosition=['x'=>23.,'y'=>.75,'z'=>2.5];$this->bossPeekPosition=['x'=>18.,'y'=>.75,'z'=>0.];$this->boss->activate();$this->bossAttackClock=1.8;
+            $this->message='TRAQUEUR : BARRAGE / VAGUE '.$this->wave;$this->messageTime=4;
         }
         if($this->boss?->active&&!$this->boss->defeated)$this->updateBossCombat($dt);
         if($this->boss?->defeated){$this->bossWarning=null;$this->bossProjectiles=[];}
     }
 
-    /** Telegraph fixes the aim before launch; projectiles never home. EMP freezes the whole encounter. */
+    /** Announced suppressive bursts make the adjacent room a physical refuge. */
     private function updateBossCombat(float $dt): void
     {
-        if ($this->bossStun > 0) return;
-        $this->boss->update($dt);
-        $this->stepBossProjectiles($dt);
-        $this->bossAttackClock -= $dt;
-        if ($this->bossWarning !== null) {
-            $this->bossWarning['time'] -= $dt;
-            if ($this->bossWarning['time'] <= 0) {
-                $this->launchBossProjectiles($this->bossWarning);
-                $this->bossWarning = null;
+        if($this->bossStun>0)return;
+        $previous=$this->boss->attackState;$this->boss->update($dt);
+        $this->stepBossProjectiles($dt);$this->moveBoss($dt);
+        if(!$this->lineClear([$this->x,$this->y+.3,$this->z],[$this->bossPosition['x'],$this->bossPosition['y'],$this->bossPosition['z']]))$this->bossCoverTime+=$dt;
+        if($this->boss->attackState==='windup'){
+            $this->bossWarning=['x'=>$this->x,'y'=>$this->y+.2,'z'=>$this->z,'time'=>$this->boss->attackTimer];
+            if($previous!=='windup')$this->combatAudio[]='boss_charge';
+        }elseif($this->boss->attackState==='barrage'){
+            $this->bossWarning=null;$this->bossAttackClock-=$dt;
+            if($this->bossAttackClock<=0){
+                $this->launchBossProjectiles(['x'=>$this->x,'y'=>$this->y+.2,'z'=>$this->z]);
+                $this->bossAttackClock=max(.16,.27-.025*$this->boss->phase-.012*max(0,$this->mode->campaignStage-1));
             }
-        } elseif ($this->bossAttackClock <= 0) {
-            $this->bossWarning = ['x'=>$this->x, 'y'=>$this->y+.2, 'z'=>$this->z, 'time'=>.9];
-            $this->combatAudio[] = 'boss_charge';
-            $this->bossAttackClock = max(1.6, (3.8-$this->boss->phase*.45)/$this->mode->bossPressure());
+        }else{$this->bossWarning=null;$this->bossAttackClock=0.;}
+    }
+
+    private function moveBoss(float $dt): void
+    {
+        if($this->boss->kind!==BossController::DYNAMIC || $this->bossHome===null)return;
+        $home=$this->bossHome;$center=$this->objective?->treasureAnchor??['x'=>0.,'z'=>0.];
+        $dx=$home['x']-$center['x'];$dz=$home['z']-$center['z'];$d=max(.01,hypot($dx,$dz));$nx=$dx/$d;$nz=$dz/$d;
+        $advance=$this->boss->attackState==='recover'?3.:7.;$side=sin($this->boss->time*1.8)*3.2;
+        $tx=$home['x']-$nx*$advance+$nz*$side;$tz=$home['z']-$nz*$advance-$nx*$side;
+        $x=$this->bossPosition['x'];$z=$this->bossPosition['z'];$length=max(.01,hypot($tx-$x,$tz-$z));
+        $step=min($length,$dt*(3.+$this->boss->phase*.55));$xx=$x+($tx-$x)/$length*$step;$zz=$z+($tz-$z)/$length*$step;
+        $desired=atan2($this->x-$x,$this->z-$z);$turn=self::angleDelta($desired,$this->bossFacing);
+        $this->bossFacing+=max(-$dt*3,min($dt*3,$turn));
+        if(!$this->collides($xx,$this->bossPosition['y'],$zz,.65,.8)){
+            $this->bossPosition['x']=$xx;$this->bossPosition['z']=$zz;$this->bossDistanceMoved+=$step;
         }
     }
 
@@ -381,14 +405,14 @@ final class Run
         $p = $this->bossPosition;
         $dx=$target['x']-$p['x']; $dz=$target['z']-$p['z'];
         $distance=max(.001,hypot($dx,$dz)); $angle=atan2($dx,$dz);
-        $speed=5.0+$this->boss->phase*.65;
-        $fan=match($this->boss->phase){1=>[0.0],2=>[-.22,0.0,.22],default=>[-.42,-.21,0.0,.21,.42]};
+        $speed=11.0+$this->boss->phase*1.2+max(0,$this->mode->campaignStage-1)*.6;
+        $fan=[-.60,-.40,-.20,0.0,.20,.40,.60];
         foreach($fan as $offset){
             if(count($this->bossProjectiles)>=self::MAX_BOSS_PROJECTILES)break;
             $a=$angle+$offset;
             $this->bossProjectiles[]=['x'=>$p['x'], 'y'=>$p['y'], 'z'=>$p['z'],
                 'vx'=>sin($a)*$speed, 'vy'=>($target['y']-$p['y'])/$distance*$speed,
-                'vz'=>cos($a)*$speed, 'life'=>6.0, 'radius'=>.18, 'damage'=>12+$this->boss->phase*3];
+                'vz'=>cos($a)*$speed, 'life'=>6.0, 'radius'=>.18, 'damage'=>16+$this->boss->phase*3];
             $this->bossShots++;
         }
         $this->combatAudio[]='boss_launch';
@@ -422,14 +446,14 @@ final class Run
 
     public function shotgunAvailable(): bool
     {
-        return $this->boss !== null && $this->boss->active && !$this->boss->defeated;
+        return $this->primaryStage < 0;
     }
 
-    /** Dedicated encounter tool: unlimited shells, manual aim, fixed spread and automatic reload. */
+    /** Starting weapon: unlimited shells, manual aim, fixed spread and automatic reload. */
     public function fireShotgun(): bool
     {
         if($this->state!=='play' || !$this->shotgunAvailable() || $this->shotgunReload>0)return false;
-        $this->shotgunReload=self::SHOTGUN_RELOAD; $this->shotgunFlash=.22; $this->shotgunSerial++;
+        $this->shotgunReload=self::SHOTGUN_RELOAD; $this->shotgunFlash=.22; $this->shotgunSerial++;$this->shots+=self::SHOTGUN_PELLETS;
         $this->combatAudio[]='shotgun_fire';
         $yaw=$this->yaw;
         for($pellet=0;$pellet<self::SHOTGUN_PELLETS;$pellet++){
@@ -447,7 +471,7 @@ final class Run
     private function fireAtBoss(int $damage, int $stage, float $range = 24.0, float $cone = 1.05, ?string $traceType = null, string $source = 'primary'): bool
     {
         if ($this->boss === null || !$this->boss->active || $this->boss->defeated) return false;
-        $targets = $this->boss->vulnerable ? [-1 => $this->bossPosition] : $this->boss->orbs;
+        $targets = ($this->boss->kind===BossController::DYNAMIC || $this->boss->vulnerable) ? [-1 => $this->bossPosition] : $this->boss->orbs;
         foreach ($targets as $index => $target) {
             if ($target === null || ($index >= 0 && !$target['alive'])) continue;
             if (hypot($target['x'] - $this->x, $target['z'] - $this->z) > $range) continue;
@@ -464,7 +488,12 @@ final class Run
     public function chooseUpgrade(int $slot): bool
     {
         if ($this->state !== 'upgrade' || !isset($this->choices[$slot])) return false;
-        $choice = $this->choices[$slot];
+        $choice = $this->choices[$slot];$choiceLabel=$this->upgradeLabel($choice);
+        if($choice==='PRIMARY'){
+            if(!$this->canUpgradePrimary())return false;
+            $this->unlockedPrimaryStage++;$this->primaryStage=$this->unlockedPrimaryStage;
+            $this->primaryBurstQueue=[];$this->syncPrimaryStage();
+        }
         $power=match($choice){'PULSE'=>'pulse','FLAMETHROWER'=>'flame','MINI_ROCKETS'=>'rockets','SNIPER'=>'sniper','ARTILLERY'=>'artillery','EMP'=>'emp',default=>null};
         if($power!==null){
             if(in_array($power,$this->secondaryIds(),true) || !$this->equipSecondary($power))return false;
@@ -477,7 +506,7 @@ final class Run
         };
         $this->choices = [];
         $this->state = 'play';
-        $this->message = $this->upgradeLabel($choice) . ' / ' . $this->primaryWeaponLabel();
+        $this->message = $choiceLabel . ' / ' . $this->primaryWeaponLabel();
         $this->messageTime = 2.4;
         $this->checkLevel();
         return true;
@@ -491,10 +520,8 @@ final class Run
 
     private function syncPrimaryStage(): void
     {
-        $next = $this->mode->kind===GameMode::DAILY ? $this->mode->primaryStageForKills($this->kills) : $this->xpCurve->stageForLevel($this->level);
-        $changed = $next !== $this->primaryStage;
-        $this->primaryStage = $next;
-        [$tier, $weapon, $guns] = match ($next) {
+        [$tier, $weapon, $guns] = match ($this->primaryStage) {
+            -1 => [0, 'SHOTGUN', 1],
             0 => [0, 'COLT', 1],
             1 => [0, 'COLT', 2],
             2 => [1, 'MP44', 1],
@@ -506,29 +533,26 @@ final class Run
         $this->autoTier = $tier;
         $this->autoWeapon = $weapon;
         $this->autoGuns = $guns;
-        if ($changed) {
-            $this->primaryBurstQueue = [];
-            $this->message = $this->primaryWeaponLabel() . ' / RYTHME SYNCHRONISÉ';
-            $this->messageTime = 2.6;
-        }
+
     }
 
     public static function primaryStageForLevel(int $level): int
     {
-        return match (true) {
-            $level >= 24 => 6,
-            $level >= 20 => 5,
-            $level >= 16 => 4,
-            $level >= 12 => 3,
-            $level >= 8 => 2,
-            $level >= 4 => 1,
-            default => 0,
-        };
+        $stage=-1;
+        foreach(self::PRIMARY_LEVELS as $index=>$minimum)if($level>=$minimum)$stage=$index;
+        return $stage;
+    }
+
+    public function canUpgradePrimary(): bool
+    {
+        $next=$this->unlockedPrimaryStage+1;
+        return $next<7 && $this->level>=self::PRIMARY_LEVELS[$next];
     }
 
     public function primaryWeaponLabel(): string
     {
         return match ($this->primaryStage) {
+            -1 => 'CANON SCIÉ [F]',
             0 => 'COLT .45',
             1 => 'DOUBLE COLT',
             2 => 'MP44',
@@ -549,6 +573,7 @@ final class Run
     public function upgradeLabel(string $choice): string
     {
         return match ($choice) {
+            'PRIMARY' => 'ARME : '.(['COLT','DOUBLE COLT','MP44','DOUBLE MP44','BAR','GATLING','DOUBLE GATLING'][min(6,$this->unlockedPrimaryStage+1)]),
             'POWER' => 'PUISSANCE', 'HASTE' => 'CADENCE', 'MAGNET' => 'AIMANT',
             'VITALITY' => $this->maxHealth >= self::HEALTH_CAP ? 'SOINS' : 'VITALITÉ', 'PULSE' => 'IMPULSION',
             'FLAMETHROWER' => 'LANCE-FLAMMES', 'EMP'=>'IEM', 'MINI_ROCKETS' => 'ROQUETTES GUIDÉES', 'SNIPER'=>'RAYON DE PRÉCISION', 'ARTILLERY'=>'ARTILLERIE',
@@ -558,6 +583,7 @@ final class Run
 
     public function upgradeDescription(string $choice): string
     {
+        if($choice==='PRIMARY')return 'ACQUIERT L’ARME / CONSERVÉE ENTRE MAPS';
         $id=match($choice){'PULSE'=>'pulse','FLAMETHROWER'=>'flame','MINI_ROCKETS'=>'rockets','SNIPER'=>'sniper','ARTILLERY'=>'artillery','EMP'=>'emp',default=>null};
         if($id!==null)return match($id){
             'flame'=>'JET 2.4 S / CHOIX DÉFINITIF','rockets'=>'ROQUETTES GUIDÉES / CHOIX DÉFINITIF',
@@ -1024,6 +1050,7 @@ final class Run
 
     private function triggerPrimaryRhythmStep(int $step): void
     {
+        if($this->primaryStage<0)return;
         $step = (($step % 16) + 16) % 16;
         $beat = 60.0 / (RhythmClock::BPM_BASE + max(0, $this->level - 1) * RhythmClock::BPM_PER_LEVEL);
         switch ($this->primaryStage) {
@@ -1208,7 +1235,7 @@ final class Run
     private function bossTargetAvailable(float $range,float $cone): bool
     {
         if($this->boss===null || !$this->boss->active || $this->boss->defeated)return false;
-        $targets=$this->boss->vulnerable?[$this->bossPosition]:$this->boss->orbs;
+        $targets=($this->boss->kind===BossController::DYNAMIC || $this->boss->vulnerable)?[$this->bossPosition]:$this->boss->orbs;
         foreach($targets as$t){
             if($t===null || (isset($t['alive'])&&!$t['alive']))continue;
             if(hypot($t['x']-$this->x,$t['z']-$this->z)>$range)continue;
@@ -1326,7 +1353,7 @@ final class Run
         $ids=$this->findTargets($range,1.2,1);$target=null;
         if($ids!==[])$target=$this->enemies[$ids[0]];
         elseif($this->bossTargetAvailable($range,1.2)){
-            if($this->boss->vulnerable)$target=$this->bossPosition;
+            if($this->boss->kind===BossController::DYNAMIC || $this->boss->vulnerable)$target=$this->bossPosition;
             else foreach($this->boss->orbs as$orb)if($orb['alive'] && $this->lineClear([$this->x,$this->y+.35,$this->z],[$orb['x'],$orb['y'],$orb['z']])){$target=$orb;break;}
         }
         if($target===null)return false;
@@ -1368,7 +1395,7 @@ final class Run
             if($d<=$radius && $this->lineClear($at,[$e['x'],$e['y']+.15,$e['z']])){$this->damage($id,(int)round($damage*(1-.5*$d/$radius)));$this->hits++;}
         }
         if($this->boss?->active && !$this->boss->defeated){
-            $targets=$this->boss->vulnerable?[-1=>$this->bossPosition]:$this->boss->orbs;
+            $targets=($this->boss->kind===BossController::DYNAMIC || $this->boss->vulnerable)?[-1=>$this->bossPosition]:$this->boss->orbs;
             foreach($targets as$id=>$e)if($e!==null&&($id<0||$e['alive']) && hypot($e['x']-$at[0],$e['z']-$at[2])<$radius && $this->lineClear($at,[$e['x'],$e['y'],$e['z']])){
                 if($id<0)$this->boss->damage((int)round($damage*1.5));else $this->boss->damageOrb($id,$damage);
             }
@@ -1529,9 +1556,10 @@ final class Run
         $this->syncPrimaryStage();
 
         $weaponPool = $this->weaponUpgradePool();
+        if($this->canUpgradePrimary())array_unshift($weaponPool,'PRIMARY');
         $this->choices = [];
         if ($weaponPool !== []) {
-            $index = (int)floor($this->random() * count($weaponPool));
+            $index = $this->canUpgradePrimary()?0:(int)floor($this->random() * count($weaponPool));
             $this->choices[] = $weaponPool[$index];
             array_splice($weaponPool, $index, 1);
         }

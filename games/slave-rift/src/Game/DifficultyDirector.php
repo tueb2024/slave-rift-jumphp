@@ -44,6 +44,7 @@ final class DifficultyDirector
     public static function primaryDpsEstimate(int $level, int $manualDamageRank = 0, ?int $stage = null): float
     {
         $stage ??= Run::primaryStageForLevel($level);
+        if($stage<0)return Run::SHOTGUN_DAMAGE*Run::SHOTGUN_PELLETS/Run::SHOTGUN_RELOAD;
         $shotsPerBeat = match ($stage) {
             0 => 1.0,
             1 => 2.0,

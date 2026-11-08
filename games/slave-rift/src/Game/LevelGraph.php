@@ -88,6 +88,7 @@ final class LevelGraph
                     }
                 }
             }
+            if ($i===$middleCount-1)$type=self::SMALL_ROOM; // Wide adjacent refuge before the arena.
             if ($type === self::TURN) $turns++;
             $this->addNode($nextId, $type, $parent, true);
             $parent = $nextId++;

@@ -17,7 +17,7 @@ final class EncounterOverhaulTest extends TestCase
     }
     public function testEveryNonShotgunSourceIsRejectedEvenForLethalDamage(): void
     {
-        foreach([BossController::WALL,BossController::DYNAMIC] as $kind){
+        foreach([BossController::WALL] as $kind){
             $b=new BossController($kind,2200);$b->activate();$b->vulnerable=true;
             foreach(['primary','pulse','flame','sniper','rockets','artillery','emp','explosion',''] as $source){
                 self::assertSame(0,$b->damage(999999,$source));self::assertSame(2200,$b->health);
@@ -42,19 +42,19 @@ final class EncounterOverhaulTest extends TestCase
         $r=$this->arena();$r->yaw=M_PI;$r->fireShotgun();self::assertSame(2200,$r->boss->health);
         $r=$this->arena();$r->bossPosition['z']=8;$r->fireShotgun();self::assertSame(2200,$r->boss->health);
         $r=$this->arena();$r->boss->vulnerable=false;$r->fireShotgun();self::assertSame(2200,$r->boss->health);
-        $r=$this->arena();$r->boss->active=false;self::assertFalse($r->fireShotgun());
+        $r=$this->arena();$r->boss->active=false;self::assertTrue($r->fireShotgun());self::assertSame(2200,$r->boss->health);
         $r=$this->arena();$r->state='upgrade';self::assertFalse($r->fireShotgun());
         // Arena tool is independent of XP ladder and exclusive power selection.
-        $r=$this->arena();$r->equipSecondary('emp');$r->fireShotgun();self::assertSame(0,$r->primaryStage);self::assertSame('emp',$r->selectedSecondary());
+        $r=$this->arena();$r->equipSecondary('emp');$r->fireShotgun();self::assertSame(-1,$r->primaryStage);self::assertSame('emp',$r->selectedSecondary());
     }
     public function testBossLaunchesVisibleMovingProjectilesWhichHitOrCanBeDodged(): void
     {
         $r=$this->arena();$this->invoke($r,'launchBossProjectiles',['x'=>0.,'y'=>.7,'z'=>0.]);
-        self::assertCount(1,$r->bossProjectiles);$before=$r->bossProjectiles[0]['z'];
+        self::assertCount(7,$r->bossProjectiles);$before=$r->bossProjectiles[0]['z'];
         $this->invoke($r,'stepBossProjectiles',.05);self::assertLessThan($before,$r->bossProjectiles[0]['z']);
         for($i=0;$i<25;$i++)$this->invoke($r,'stepBossProjectiles',.05);
         self::assertLessThan(100,$r->health);self::assertSame(1,$r->bossProjectileHits);
-        $r=$this->arena();$this->invoke($r,'launchBossProjectiles',['x'=>0.,'y'=>.7,'z'=>0.]);$r->x=2;
+        $r=$this->arena();$this->invoke($r,'launchBossProjectiles',['x'=>0.,'y'=>.7,'z'=>0.]);$r->x=8;
         for($i=0;$i<130;$i++)$this->invoke($r,'stepBossProjectiles',.05);
         self::assertSame(100,$r->health);self::assertSame([],$r->bossProjectiles);
     }

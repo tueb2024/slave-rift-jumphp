@@ -37,21 +37,18 @@ final class ReleaseFlowTest extends TestCase
         $run->step(1 / 60, 0, 0, 0);
         self::assertSame(TreasureDirector::BOSS, $run->objective->state);
         self::assertTrue($run->boss->active);
-        $p=$run->objective->treasureAnchor;$b=$run->bossPosition;
-        $d=max(.001,hypot($b['x']-$p['x'],$b['z']-$p['z']));
-        $run->x=$b['x']-($b['x']-$p['x'])/$d*5;$run->z=$b['z']-($b['z']-$p['z'])/$d*5;
+        $run->level=14;$run->primaryStage=$run->unlockedPrimaryStage=1;
         $clock = new RhythmClock();
-        for ($i = 0; $i < 60 * 80 && !$run->boss->defeated; $i++) {
-            $target = $run->bossPosition;
-            if (!$run->boss->vulnerable) foreach ($run->boss->orbs as $orb) if ($orb['alive']) { $target = $orb; break; }
-            $run->yaw = atan2($target['x'] - $run->x, $target['z'] - $run->z);
-            // Sidestep a telegraphed blast; no invulnerability or modified health.
-            $strafe = $run->bossWarning !== null ? (sin($run->time*2)>0?1.0:-1.0) : 0.0;
-            $run->step(1 / 60, 0, $strafe, 0, true, false, false, $clock->advance(1 / 60, $run->level));
-            $clock->drain();
-            self::assertSame('play', $run->state);
+        for ($i = 0; $i < 60 * 240 && !$run->boss->defeated; $i++) {
+            $goal=$run->boss->attackState==='recover'?$run->bossPeekPosition:$run->bossCoverPosition;
+            $run->yaw=atan2($run->bossPosition['x']-$run->x,$run->bossPosition['z']-$run->z);
+            $dx=$goal['x']-$run->x;$dz=$goal['z']-$run->z;$n=max(1,hypot($dx,$dz));
+            $forward=(sin($run->yaw)*$dx+cos($run->yaw)*$dz)/$n;
+            $strafe=(-cos($run->yaw)*$dx+sin($run->yaw)*$dz)/$n;
+            $run->step(1/60,$forward,$strafe,0,false,false,false,$clock->advance(1/60,$run->level));$clock->drain();
+            self::assertSame('play',$run->state);
         }
-        self::assertTrue($run->boss->defeated, 'The guaranteed encounter shotgun must complete repeated vulnerability cycles.');
+        self::assertTrue($run->boss->defeated, 'Rhythmic weapons and physical adjacent-room cover must finish the mobile boss.');
         $run->step(1 / 60, 0, 0, 0);
         self::assertSame(TreasureDirector::TREASURE_READY, $run->objective->state);
         $treasure = $run->objective->treasureAnchor;

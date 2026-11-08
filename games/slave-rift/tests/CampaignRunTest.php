@@ -15,12 +15,12 @@ final class CampaignRunTest extends TestCase
             self::assertSame([12,20,30,44][$stage-1],$c->geometry['mainRooms']);
             self::assertEquals(1,$c->geometry['horizontalScale']);
             self::assertLessThanOrEqual(48,$c->geometry['mainRooms']);
-            $state=$c->run->progressionSnapshot();$state['level']=12;$state['xp']=3;$state['flameRank']=2;$state['rocketRank']=3;$state['pulseUnlocked']=true;$state['health']=20;
+            $state=$c->run->progressionSnapshot();$state['level']=26;$state['primaryStage']=3;$state['unlockedPrimaryStage']=3;$state['xp']=3;$state['flameRank']=2;$state['rocketRank']=3;$state['pulseUnlocked']=true;$state['health']=20;
             $c->run->restoreProgression($state,0);
             self::assertSame(3,$c->run->primaryStage);
             $c->run->state='won';
             self::assertSame($stage===4?'won':'level_complete',$c->state());
-            if($stage<4){self::assertTrue($c->advance());self::assertSame(12,$c->run->level);self::assertSame(3,$c->run->xp);
+            if($stage<4){self::assertTrue($c->advance());self::assertSame(26,$c->run->level);self::assertSame(3,$c->run->xp);
                 self::assertSame(2,$c->run->flameRank);self::assertSame(3,$c->run->rocketRank);self::assertFalse($c->run->pulseUnlocked);
                 self::assertSame(48,$c->run->health);self::assertSame(3,$c->run->primaryStage);}
             else self::assertFalse($c->advance());
@@ -38,7 +38,7 @@ final class CampaignRunTest extends TestCase
         foreach(range(1,4)as$stage){
             $mode=\App\Game\GameMode::campaignStage(42,$stage);
             self::assertLessThanOrEqual(1.4,$mode->enemyHealthScale(1));
-            self::assertLessThanOrEqual(5000,$mode->bossHealth);
+            self::assertLessThanOrEqual(200000,$mode->bossHealth);
             if($previous!==null){
                 self::assertGreaterThan($previous->compositionWave(1),$mode->compositionWave(1));
                 self::assertGreaterThan($previous->waveBudget(1),$mode->waveBudget(1));

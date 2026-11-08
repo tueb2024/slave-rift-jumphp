@@ -1,0 +1,1509 @@
+{
+    "scope": "Legal-input policies, 1200 simulated seconds per map; not human win-rate predictions.",
+    "runs": [
+        {
+            "seed": 1,
+            "profile": "moyen",
+            "state": "dead",
+            "maps": [
+                {
+                    "map": 1,
+                    "duration": 110.26666666666297,
+                    "bossHp": 9000,
+                    "bossMoved": 35.504527839554285,
+                    "coverSeconds": 0.9666666666666666,
+                    "result": {
+                        "gates": [
+                            {
+                                "wave": 1,
+                                "depth": 5,
+                                "roomId": 5,
+                                "open": true,
+                                "position": [
+                                    49,
+                                    2.7,
+                                    7
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    48.82,
+                                    2.7,
+                                    6
+                                ],
+                                "max": [
+                                    49.18,
+                                    5.1,
+                                    8
+                                ]
+                            },
+                            {
+                                "wave": 2,
+                                "depth": 6,
+                                "roomId": 6,
+                                "open": true,
+                                "position": [
+                                    61,
+                                    2.7,
+                                    7
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    60.82,
+                                    2.7,
+                                    6
+                                ],
+                                "max": [
+                                    61.18,
+                                    5.1,
+                                    8
+                                ]
+                            },
+                            {
+                                "wave": 3,
+                                "depth": 10,
+                                "roomId": 10,
+                                "open": true,
+                                "position": [
+                                    76,
+                                    0,
+                                    34
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    75,
+                                    0,
+                                    33.82
+                                ],
+                                "max": [
+                                    77,
+                                    2.4,
+                                    34.18
+                                ]
+                            }
+                        ],
+                        "shotgunShots": 7,
+                        "bossShots": 63,
+                        "bossProjectileHits": 2,
+                        "performance": {
+                            "frames": 3308,
+                            "cpuSeconds": 0.2750999927520752,
+                            "meanStepMs": 0.07733482835947242,
+                            "p95StepMs": 0.21219253540039062,
+                            "maxStepMs": 1.4450550079345703,
+                            "peakEnemies": 6,
+                            "cap": 16,
+                            "peakPhpBytes": 4194304,
+                            "navigation": {
+                                "searches": 213,
+                                "expanded": 33,
+                                "failed": 0,
+                                "budgetExhausted": 0,
+                                "recoveries": 0,
+                                "maxSearchesPerFrame": 2,
+                                "maxExpansionsPerFrame": 10
+                            }
+                        },
+                        "arsenalTimeline": [
+                            {
+                                "time": 0,
+                                "level": 1,
+                                "weapon": "CANON SCI\u00c9 [F]"
+                            },
+                            {
+                                "time": 12.8,
+                                "level": 4,
+                                "weapon": "COLT .45"
+                            },
+                            {
+                                "time": 42.7,
+                                "level": 9,
+                                "weapon": "DOUBLE COLT"
+                            }
+                        ],
+                        "secondaries": [
+                            {
+                                "id": "pulse",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 2.09,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            },
+                            {
+                                "id": "rockets",
+                                "rank": 1,
+                                "remaining": 2.220000000000006,
+                                "cooldown": 4.02,
+                                "ready": false,
+                                "active": false,
+                                "flash": false
+                            }
+                        ],
+                        "xpModel": "2-3-4-6",
+                        "xpTotal": 122,
+                        "droppedXp": 157,
+                        "progression": {
+                            "unlockedPrimaryStage": 1,
+                            "primaryStage": 1,
+                            "secondarySlots": [
+                                "pulse",
+                                "rockets"
+                            ],
+                            "empRank": 0,
+                            "empClock": -109.73333333332967,
+                            "equippedSecondary": "pulse",
+                            "level": 13,
+                            "xp": 9,
+                            "collectedXp": 122,
+                            "maxHealth": 100,
+                            "health": 0,
+                            "damageRank": 1,
+                            "hasteRank": 4,
+                            "magnetRank": 3,
+                            "pulseRank": 1,
+                            "pulseUnlocked": true,
+                            "flameRank": 0,
+                            "rocketRank": 1,
+                            "pulseClock": -5.876666666666659,
+                            "flameCooldownClock": 4.5,
+                            "rocketClock": 2.220000000000006,
+                            "score": 25853,
+                            "kills": 54,
+                            "sniperRank": 0,
+                            "artilleryRank": 0,
+                            "sniperClock": 1,
+                            "artilleryClock": 1.5,
+                            "time": 110.26666666666297,
+                            "flameActive": 0,
+                            "flameTickClock": 0,
+                            "scheduler": {
+                                "queue": [
+                                    "pulse"
+                                ],
+                                "gap": 0
+                            }
+                        },
+                        "scenario": "route",
+                        "profile": "moyen",
+                        "seed": 1,
+                        "result": "dead",
+                        "time": 110.3,
+                        "wave": 3,
+                        "level": 13,
+                        "weapon": "DOUBLE COLT",
+                        "health": 0,
+                        "lowestHealth": 0,
+                        "lowestHealthRatio": 0,
+                        "checkpoints": {
+                            "finalRoom": {
+                                "time": 82,
+                                "xpTotal": 99,
+                                "wave": 3,
+                                "level": 11,
+                                "weapon": "DOUBLE COLT",
+                                "health": 64,
+                                "maxHealth": 100,
+                                "healthRatio": 0.64
+                            },
+                            "boss": {
+                                "time": 100.2,
+                                "xpTotal": 122,
+                                "wave": 3,
+                                "level": 13,
+                                "weapon": "DOUBLE COLT",
+                                "health": 37,
+                                "maxHealth": 100,
+                                "healthRatio": 0.37
+                            },
+                            "bossDefeated": null,
+                            "treasure": null
+                        },
+                        "maxHealth": 100,
+                        "kills": 54,
+                        "wave7": null,
+                        "finalRoom": true,
+                        "bossReached": true,
+                        "bossDefeated": false,
+                        "objective": "boss",
+                        "remaining": 0,
+                        "liveEnemies": 0,
+                        "routeTarget": {
+                            "x": 76,
+                            "y": 0.25,
+                            "z": 50,
+                            "tags": [
+                                "treasure"
+                            ],
+                            "roomId": 11,
+                            "roomType": "BOSS_ROOM"
+                        },
+                        "lastKillAt": 100.13333333333021,
+                        "player": [
+                            74.93610825092917,
+                            0.6990007324218762,
+                            33.01505806129822
+                        ],
+                        "stalledEnemies": []
+                    }
+                }
+            ]
+        },
+        {
+            "seed": 1,
+            "profile": "bon",
+            "state": "play",
+            "maps": [
+                {
+                    "map": 1,
+                    "duration": 128.16666666666197,
+                    "bossHp": 9000,
+                    "bossMoved": 150.78423370060048,
+                    "coverSeconds": 15.96666666666662,
+                    "result": {
+                        "gates": [
+                            {
+                                "wave": 1,
+                                "depth": 5,
+                                "roomId": 5,
+                                "open": true,
+                                "position": [
+                                    49,
+                                    2.7,
+                                    7
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    48.82,
+                                    2.7,
+                                    6
+                                ],
+                                "max": [
+                                    49.18,
+                                    5.1,
+                                    8
+                                ]
+                            },
+                            {
+                                "wave": 2,
+                                "depth": 6,
+                                "roomId": 6,
+                                "open": true,
+                                "position": [
+                                    61,
+                                    2.7,
+                                    7
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    60.82,
+                                    2.7,
+                                    6
+                                ],
+                                "max": [
+                                    61.18,
+                                    5.1,
+                                    8
+                                ]
+                            },
+                            {
+                                "wave": 3,
+                                "depth": 10,
+                                "roomId": 10,
+                                "open": true,
+                                "position": [
+                                    76,
+                                    0,
+                                    34
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    75,
+                                    0,
+                                    33.82
+                                ],
+                                "max": [
+                                    77,
+                                    2.4,
+                                    34.18
+                                ]
+                            }
+                        ],
+                        "shotgunShots": 11,
+                        "bossShots": 350,
+                        "bossProjectileHits": 0,
+                        "performance": {
+                            "frames": 3845,
+                            "cpuSeconds": 0.3484339714050293,
+                            "meanStepMs": 0.08199311046823568,
+                            "p95StepMs": 0.23293495178222656,
+                            "maxStepMs": 3.39508056640625,
+                            "peakEnemies": 5,
+                            "cap": 16,
+                            "peakPhpBytes": 4194304,
+                            "navigation": {
+                                "searches": 244,
+                                "expanded": 68,
+                                "failed": 0,
+                                "budgetExhausted": 0,
+                                "recoveries": 0,
+                                "maxSearchesPerFrame": 2,
+                                "maxExpansionsPerFrame": 8
+                            }
+                        },
+                        "arsenalTimeline": [
+                            {
+                                "time": 0,
+                                "level": 1,
+                                "weapon": "CANON SCI\u00c9 [F]"
+                            },
+                            {
+                                "time": 13.5,
+                                "level": 4,
+                                "weapon": "COLT .45"
+                            },
+                            {
+                                "time": 40.9,
+                                "level": 9,
+                                "weapon": "DOUBLE COLT"
+                            }
+                        ],
+                        "secondaries": [
+                            {
+                                "id": "pulse",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 2.09,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            },
+                            {
+                                "id": "rockets",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 4.02,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            }
+                        ],
+                        "xpModel": "2-3-4-6",
+                        "xpTotal": 136,
+                        "droppedXp": 157,
+                        "progression": {
+                            "unlockedPrimaryStage": 1,
+                            "primaryStage": 1,
+                            "secondarySlots": [
+                                "pulse",
+                                "rockets"
+                            ],
+                            "empRank": 0,
+                            "empClock": -127.63333333332865,
+                            "equippedSecondary": "pulse",
+                            "level": 14,
+                            "xp": 9,
+                            "collectedXp": 136,
+                            "maxHealth": 130,
+                            "health": 130,
+                            "damageRank": 3,
+                            "hasteRank": 4,
+                            "magnetRank": 0,
+                            "pulseRank": 1,
+                            "pulseUnlocked": true,
+                            "flameRank": 0,
+                            "rocketRank": 1,
+                            "pulseClock": -45.469999999999985,
+                            "flameCooldownClock": 4.5,
+                            "rocketClock": -5.71333333333332,
+                            "score": 43453,
+                            "kills": 54,
+                            "sniperRank": 0,
+                            "artilleryRank": 0,
+                            "sniperClock": 1,
+                            "artilleryClock": 1.5,
+                            "time": 128.16666666666197,
+                            "flameActive": 0,
+                            "flameTickClock": 0,
+                            "scheduler": {
+                                "queue": [
+                                    "pulse",
+                                    "rockets"
+                                ],
+                                "gap": 0
+                            }
+                        },
+                        "scenario": "route",
+                        "profile": "bon",
+                        "seed": 1,
+                        "result": "won",
+                        "time": 128.2,
+                        "wave": 3,
+                        "level": 14,
+                        "weapon": "DOUBLE COLT",
+                        "health": 130,
+                        "lowestHealth": 93,
+                        "lowestHealthRatio": 0.93,
+                        "checkpoints": {
+                            "finalRoom": {
+                                "time": 68.2,
+                                "xpTotal": 98,
+                                "wave": 3,
+                                "level": 11,
+                                "weapon": "DOUBLE COLT",
+                                "health": 115,
+                                "maxHealth": 115,
+                                "healthRatio": 1
+                            },
+                            "boss": {
+                                "time": 81.3,
+                                "xpTotal": 127,
+                                "wave": 3,
+                                "level": 14,
+                                "weapon": "DOUBLE COLT",
+                                "health": 130,
+                                "maxHealth": 130,
+                                "healthRatio": 1
+                            },
+                            "bossDefeated": {
+                                "time": 120.5,
+                                "xpTotal": 127,
+                                "wave": 3,
+                                "level": 14,
+                                "weapon": "DOUBLE COLT",
+                                "health": 130,
+                                "maxHealth": 130,
+                                "healthRatio": 1
+                            },
+                            "treasure": {
+                                "time": 128.2,
+                                "xpTotal": 136,
+                                "wave": 3,
+                                "level": 14,
+                                "weapon": "DOUBLE COLT",
+                                "health": 130,
+                                "maxHealth": 130,
+                                "healthRatio": 1
+                            }
+                        },
+                        "maxHealth": 130,
+                        "kills": 54,
+                        "wave7": null,
+                        "finalRoom": true,
+                        "bossReached": true,
+                        "bossDefeated": true,
+                        "objective": "complete",
+                        "remaining": 0,
+                        "liveEnemies": 0,
+                        "routeTarget": {
+                            "x": 76,
+                            "y": 0.25,
+                            "z": 50,
+                            "tags": [
+                                "treasure"
+                            ],
+                            "roomId": 11,
+                            "roomType": "BOSS_ROOM"
+                        },
+                        "lastKillAt": 81.23333333333129,
+                        "player": [
+                            75.28206338119749,
+                            0.6990007324218762,
+                            48.36096071651407
+                        ],
+                        "stalledEnemies": []
+                    }
+                },
+                {
+                    "map": 2,
+                    "duration": 170.40000000002658,
+                    "bossHp": 24000,
+                    "bossMoved": 200.71823229102566,
+                    "coverSeconds": 23.166666666666977,
+                    "result": {
+                        "gates": [
+                            {
+                                "wave": 1,
+                                "depth": 3,
+                                "roomId": 3,
+                                "open": true,
+                                "position": [
+                                    0,
+                                    0,
+                                    40
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    -1,
+                                    0,
+                                    39.82
+                                ],
+                                "max": [
+                                    1,
+                                    2.4,
+                                    40.18
+                                ]
+                            },
+                            {
+                                "wave": 2,
+                                "depth": 9,
+                                "roomId": 9,
+                                "open": true,
+                                "position": [
+                                    57,
+                                    5.4,
+                                    43
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    56.82,
+                                    5.4,
+                                    42
+                                ],
+                                "max": [
+                                    57.18,
+                                    7.800000000000001,
+                                    44
+                                ]
+                            },
+                            {
+                                "wave": 3,
+                                "depth": 12,
+                                "roomId": 12,
+                                "open": true,
+                                "position": [
+                                    101,
+                                    5.4,
+                                    43
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    100.82,
+                                    5.4,
+                                    42
+                                ],
+                                "max": [
+                                    101.18,
+                                    7.800000000000001,
+                                    44
+                                ]
+                            },
+                            {
+                                "wave": 4,
+                                "depth": 18,
+                                "roomId": 18,
+                                "open": true,
+                                "position": [
+                                    146,
+                                    2.7,
+                                    56
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    145,
+                                    2.7,
+                                    55.82
+                                ],
+                                "max": [
+                                    147,
+                                    5.1,
+                                    56.18
+                                ]
+                            }
+                        ],
+                        "shotgunShots": 0,
+                        "bossShots": 504,
+                        "bossProjectileHits": 0,
+                        "performance": {
+                            "frames": 5112,
+                            "cpuSeconds": 0.6502101421356201,
+                            "meanStepMs": 0.11727479701870484,
+                            "p95StepMs": 0.3018379211425781,
+                            "maxStepMs": 2.073049545288086,
+                            "peakEnemies": 7,
+                            "cap": 20,
+                            "peakPhpBytes": 4194304,
+                            "navigation": {
+                                "searches": 428,
+                                "expanded": 152,
+                                "failed": 0,
+                                "budgetExhausted": 0,
+                                "recoveries": 0,
+                                "maxSearchesPerFrame": 3,
+                                "maxExpansionsPerFrame": 31
+                            }
+                        },
+                        "arsenalTimeline": [
+                            {
+                                "time": 0,
+                                "level": 14,
+                                "weapon": "DOUBLE COLT"
+                            },
+                            {
+                                "time": 135.8,
+                                "level": 15,
+                                "weapon": "MP44"
+                            },
+                            {
+                                "time": 212.4,
+                                "level": 23,
+                                "weapon": "DOUBLE MP44"
+                            }
+                        ],
+                        "secondaries": [
+                            {
+                                "id": "pulse",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 1.97,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            },
+                            {
+                                "id": "rockets",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 3.66,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            }
+                        ],
+                        "xpModel": "2-3-4-6",
+                        "xpTotal": 369,
+                        "droppedXp": 310,
+                        "progression": {
+                            "unlockedPrimaryStage": 3,
+                            "primaryStage": 3,
+                            "secondarySlots": [
+                                "pulse",
+                                "rockets"
+                            ],
+                            "empRank": 0,
+                            "empClock": -298.00000000002143,
+                            "equippedSecondary": "pulse",
+                            "level": 26,
+                            "xp": 20,
+                            "collectedXp": 369,
+                            "maxHealth": 130,
+                            "health": 80,
+                            "damageRank": 5,
+                            "hasteRank": 7,
+                            "magnetRank": 5,
+                            "pulseRank": 1,
+                            "pulseUnlocked": true,
+                            "flameRank": 0,
+                            "rocketRank": 1,
+                            "pulseClock": -53.76333333333285,
+                            "flameCooldownClock": 4.5,
+                            "rocketClock": -1.7066666666666657,
+                            "score": 172681,
+                            "kills": 153,
+                            "sniperRank": 0,
+                            "artilleryRank": 0,
+                            "sniperClock": 1,
+                            "artilleryClock": 1.5,
+                            "time": 298.56666666668855,
+                            "flameActive": 0,
+                            "flameTickClock": 0,
+                            "scheduler": {
+                                "queue": [
+                                    "pulse",
+                                    "rockets"
+                                ],
+                                "gap": 0
+                            }
+                        },
+                        "scenario": "route",
+                        "profile": "bon",
+                        "seed": 7920,
+                        "result": "won",
+                        "time": 298.6,
+                        "wave": 4,
+                        "level": 26,
+                        "weapon": "DOUBLE MP44",
+                        "health": 80,
+                        "lowestHealth": 80,
+                        "lowestHealthRatio": 0.6153846153846154,
+                        "checkpoints": {
+                            "finalRoom": {
+                                "time": 226.8,
+                                "xpTotal": 318,
+                                "wave": 4,
+                                "level": 24,
+                                "weapon": "DOUBLE MP44",
+                                "health": 80,
+                                "maxHealth": 130,
+                                "healthRatio": 0.6153846153846154
+                            },
+                            "boss": {
+                                "time": 242.8,
+                                "xpTotal": 355,
+                                "wave": 4,
+                                "level": 26,
+                                "weapon": "DOUBLE MP44",
+                                "health": 80,
+                                "maxHealth": 130,
+                                "healthRatio": 0.6153846153846154
+                            },
+                            "bossDefeated": {
+                                "time": 294.8,
+                                "xpTotal": 369,
+                                "wave": 4,
+                                "level": 26,
+                                "weapon": "DOUBLE MP44",
+                                "health": 80,
+                                "maxHealth": 130,
+                                "healthRatio": 0.6153846153846154
+                            },
+                            "treasure": {
+                                "time": 298.6,
+                                "xpTotal": 369,
+                                "wave": 4,
+                                "level": 26,
+                                "weapon": "DOUBLE MP44",
+                                "health": 80,
+                                "maxHealth": 130,
+                                "healthRatio": 0.6153846153846154
+                            }
+                        },
+                        "maxHealth": 130,
+                        "kills": 153,
+                        "wave7": null,
+                        "finalRoom": true,
+                        "bossReached": true,
+                        "bossDefeated": true,
+                        "objective": "complete",
+                        "remaining": 0,
+                        "liveEnemies": 0,
+                        "routeTarget": {
+                            "x": 146,
+                            "y": 2.95,
+                            "z": 72,
+                            "tags": [
+                                "treasure"
+                            ],
+                            "roomId": 19,
+                            "roomType": "BOSS_ROOM"
+                        },
+                        "lastKillAt": 242.79999999998878,
+                        "player": [
+                            145.9834447026433,
+                            3.3990007324218756,
+                            70.31158321918006
+                        ],
+                        "stalledEnemies": []
+                    }
+                },
+                {
+                    "map": 3,
+                    "duration": 313.06666666674585,
+                    "bossHp": 64000,
+                    "bossMoved": 305.09757132687645,
+                    "coverSeconds": 32.40000000000072,
+                    "result": {
+                        "gates": [
+                            {
+                                "wave": 1,
+                                "depth": 4,
+                                "roomId": 4,
+                                "open": true,
+                                "position": [
+                                    0,
+                                    0,
+                                    40
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    -1,
+                                    0,
+                                    39.82
+                                ],
+                                "max": [
+                                    1,
+                                    2.4,
+                                    40.18
+                                ]
+                            },
+                            {
+                                "wave": 2,
+                                "depth": 12,
+                                "roomId": 12,
+                                "open": true,
+                                "position": [
+                                    13,
+                                    2.7,
+                                    115
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    12.82,
+                                    2.7,
+                                    114
+                                ],
+                                "max": [
+                                    13.18,
+                                    5.1,
+                                    116
+                                ]
+                            },
+                            {
+                                "wave": 3,
+                                "depth": 16,
+                                "roomId": 16,
+                                "open": true,
+                                "position": [
+                                    61,
+                                    5.4,
+                                    115
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    60.82,
+                                    5.4,
+                                    114
+                                ],
+                                "max": [
+                                    61.18,
+                                    7.800000000000001,
+                                    116
+                                ]
+                            },
+                            {
+                                "wave": 4,
+                                "depth": 22,
+                                "roomId": 22,
+                                "open": true,
+                                "position": [
+                                    64,
+                                    2.7,
+                                    186
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    63,
+                                    2.7,
+                                    185.82
+                                ],
+                                "max": [
+                                    65,
+                                    5.1,
+                                    186.18
+                                ]
+                            },
+                            {
+                                "wave": 5,
+                                "depth": 28,
+                                "roomId": 28,
+                                "open": true,
+                                "position": [
+                                    64,
+                                    2.7,
+                                    260
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    63,
+                                    2.7,
+                                    259.82
+                                ],
+                                "max": [
+                                    65,
+                                    5.1,
+                                    260.18
+                                ]
+                            }
+                        ],
+                        "shotgunShots": 0,
+                        "bossShots": 819,
+                        "bossProjectileHits": 0,
+                        "performance": {
+                            "frames": 9392,
+                            "cpuSeconds": 1.8400380611419678,
+                            "meanStepMs": 0.18277287077050802,
+                            "p95StepMs": 0.4258155822753906,
+                            "maxStepMs": 6.722927093505859,
+                            "peakEnemies": 13,
+                            "cap": 24,
+                            "peakPhpBytes": 6291456,
+                            "navigation": {
+                                "searches": 969,
+                                "expanded": 681,
+                                "failed": 0,
+                                "budgetExhausted": 0,
+                                "recoveries": 0,
+                                "maxSearchesPerFrame": 2,
+                                "maxExpansionsPerFrame": 91
+                            }
+                        },
+                        "arsenalTimeline": [
+                            {
+                                "time": 0,
+                                "level": 26,
+                                "weapon": "DOUBLE MP44"
+                            },
+                            {
+                                "time": 411.4,
+                                "level": 33,
+                                "weapon": "BAR"
+                            }
+                        ],
+                        "secondaries": [
+                            {
+                                "id": "pulse",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 1.85,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            },
+                            {
+                                "id": "rockets",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 3.3,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            }
+                        ],
+                        "xpModel": "2-3-4-6",
+                        "xpTotal": 809,
+                        "droppedXp": 535,
+                        "progression": {
+                            "unlockedPrimaryStage": 4,
+                            "primaryStage": 4,
+                            "secondarySlots": [
+                                "pulse",
+                                "rockets"
+                            ],
+                            "empRank": 0,
+                            "empClock": -611.0333333334349,
+                            "equippedSecondary": "pulse",
+                            "level": 42,
+                            "xp": 7,
+                            "collectedXp": 809,
+                            "maxHealth": 145,
+                            "health": 127,
+                            "damageRank": 12,
+                            "hasteRank": 10,
+                            "magnetRank": 9,
+                            "pulseRank": 1,
+                            "pulseUnlocked": true,
+                            "flameRank": 0,
+                            "rocketRank": 1,
+                            "pulseClock": -82.51666666666455,
+                            "flameCooldownClock": 4.5,
+                            "rocketClock": -4.4333333333333265,
+                            "score": 382301,
+                            "kills": 321,
+                            "sniperRank": 0,
+                            "artilleryRank": 0,
+                            "sniperClock": 1,
+                            "artilleryClock": 1.5,
+                            "time": 611.6333333334344,
+                            "flameActive": 0,
+                            "flameTickClock": 0,
+                            "scheduler": {
+                                "queue": [
+                                    "pulse",
+                                    "rockets"
+                                ],
+                                "gap": 0
+                            }
+                        },
+                        "scenario": "route",
+                        "profile": "bon",
+                        "seed": 15839,
+                        "result": "won",
+                        "time": 611.6,
+                        "wave": 5,
+                        "level": 42,
+                        "weapon": "BAR",
+                        "health": 127,
+                        "lowestHealth": 98,
+                        "lowestHealthRatio": 0.7538461538461538,
+                        "checkpoints": {
+                            "finalRoom": {
+                                "time": 520.9,
+                                "xpTotal": 749,
+                                "wave": 5,
+                                "level": 40,
+                                "weapon": "BAR",
+                                "health": 127,
+                                "maxHealth": 145,
+                                "healthRatio": 0.8758620689655172
+                            },
+                            "boss": {
+                                "time": 527.3,
+                                "xpTotal": 801,
+                                "wave": 5,
+                                "level": 41,
+                                "weapon": "BAR",
+                                "health": 127,
+                                "maxHealth": 145,
+                                "healthRatio": 0.8758620689655172
+                            },
+                            "bossDefeated": {
+                                "time": 606.4,
+                                "xpTotal": 803,
+                                "wave": 5,
+                                "level": 42,
+                                "weapon": "BAR",
+                                "health": 127,
+                                "maxHealth": 145,
+                                "healthRatio": 0.8758620689655172
+                            },
+                            "treasure": {
+                                "time": 611.6,
+                                "xpTotal": 809,
+                                "wave": 5,
+                                "level": 42,
+                                "weapon": "BAR",
+                                "health": 127,
+                                "maxHealth": 145,
+                                "healthRatio": 0.8758620689655172
+                            }
+                        },
+                        "maxHealth": 145,
+                        "kills": 321,
+                        "wave7": null,
+                        "finalRoom": true,
+                        "bossReached": true,
+                        "bossDefeated": true,
+                        "objective": "complete",
+                        "remaining": 0,
+                        "liveEnemies": 0,
+                        "routeTarget": {
+                            "x": 64,
+                            "y": 2.95,
+                            "z": 276,
+                            "tags": [
+                                "treasure"
+                            ],
+                            "roomId": 29,
+                            "roomType": "BOSS_ROOM"
+                        },
+                        "lastKillAt": 527.2333333335112,
+                        "player": [
+                            64.57146174733033,
+                            3.3990007324218756,
+                            274.33510671094274
+                        ],
+                        "stalledEnemies": []
+                    }
+                },
+                {
+                    "map": 4,
+                    "duration": 1199.6999999989089,
+                    "bossHp": 150000,
+                    "bossMoved": 0,
+                    "coverSeconds": 0,
+                    "result": {
+                        "gates": [
+                            {
+                                "wave": 1,
+                                "depth": 8,
+                                "roomId": 8,
+                                "open": true,
+                                "position": [
+                                    15,
+                                    2.7,
+                                    85
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    14.82,
+                                    2.7,
+                                    84
+                                ],
+                                "max": [
+                                    15.18,
+                                    5.1,
+                                    86
+                                ]
+                            },
+                            {
+                                "wave": 2,
+                                "depth": 14,
+                                "roomId": 14,
+                                "open": true,
+                                "position": [
+                                    42,
+                                    2.7,
+                                    128
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    41,
+                                    2.7,
+                                    127.82
+                                ],
+                                "max": [
+                                    43,
+                                    5.1,
+                                    128.18
+                                ]
+                            },
+                            {
+                                "wave": 3,
+                                "depth": 21,
+                                "roomId": 21,
+                                "open": false,
+                                "position": [
+                                    71,
+                                    5.4,
+                                    185
+                                ],
+                                "normal": [
+                                    1,
+                                    0,
+                                    0
+                                ],
+                                "min": [
+                                    70.82,
+                                    5.4,
+                                    184
+                                ],
+                                "max": [
+                                    71.18,
+                                    7.800000000000001,
+                                    186
+                                ]
+                            },
+                            {
+                                "wave": 4,
+                                "depth": 28,
+                                "roomId": 28,
+                                "open": false,
+                                "position": [
+                                    84,
+                                    2.7,
+                                    250
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    83,
+                                    2.7,
+                                    249.82
+                                ],
+                                "max": [
+                                    85,
+                                    5.1,
+                                    250.18
+                                ]
+                            },
+                            {
+                                "wave": 5,
+                                "depth": 35,
+                                "roomId": 35,
+                                "open": false,
+                                "position": [
+                                    84,
+                                    0,
+                                    338
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    83,
+                                    0,
+                                    337.82
+                                ],
+                                "max": [
+                                    85,
+                                    2.4,
+                                    338.18
+                                ]
+                            },
+                            {
+                                "wave": 6,
+                                "depth": 42,
+                                "roomId": 42,
+                                "open": false,
+                                "position": [
+                                    84,
+                                    0,
+                                    430
+                                ],
+                                "normal": [
+                                    0,
+                                    0,
+                                    1
+                                ],
+                                "min": [
+                                    83,
+                                    0,
+                                    429.82
+                                ],
+                                "max": [
+                                    85,
+                                    2.4,
+                                    430.18
+                                ]
+                            }
+                        ],
+                        "shotgunShots": 0,
+                        "bossShots": 0,
+                        "bossProjectileHits": 0,
+                        "performance": {
+                            "frames": 35991,
+                            "cpuSeconds": 40.85868000984192,
+                            "meanStepMs": 1.125708110188541,
+                            "p95StepMs": 8.049964904785156,
+                            "maxStepMs": 22.326946258544922,
+                            "peakEnemies": 12,
+                            "cap": 28,
+                            "peakPhpBytes": 8912896,
+                            "navigation": {
+                                "searches": 3552,
+                                "expanded": 446627,
+                                "failed": 1629,
+                                "budgetExhausted": 0,
+                                "recoveries": 543,
+                                "maxSearchesPerFrame": 3,
+                                "maxExpansionsPerFrame": 96
+                            }
+                        },
+                        "arsenalTimeline": [
+                            {
+                                "time": 0,
+                                "level": 42,
+                                "weapon": "BAR"
+                            },
+                            {
+                                "time": 624.4,
+                                "level": 45,
+                                "weapon": "GATLING"
+                            }
+                        ],
+                        "secondaries": [
+                            {
+                                "id": "pulse",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 1.73,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            },
+                            {
+                                "id": "rockets",
+                                "rank": 1,
+                                "remaining": 0,
+                                "cooldown": 2.94,
+                                "ready": true,
+                                "active": false,
+                                "flash": false
+                            }
+                        ],
+                        "xpModel": "2-3-4-6",
+                        "xpTotal": 1155,
+                        "droppedXp": 363,
+                        "progression": {
+                            "unlockedPrimaryStage": 5,
+                            "primaryStage": 5,
+                            "secondarySlots": [
+                                "pulse",
+                                "rockets"
+                            ],
+                            "empRank": 0,
+                            "empClock": -1810.7333333323438,
+                            "equippedSecondary": "pulse",
+                            "level": 51,
+                            "xp": 20,
+                            "collectedXp": 1155,
+                            "maxHealth": 160,
+                            "health": 87,
+                            "damageRank": 13,
+                            "hasteRank": 13,
+                            "magnetRank": 12,
+                            "pulseRank": 1,
+                            "pulseUnlocked": true,
+                            "flameRank": 0,
+                            "rocketRank": 1,
+                            "pulseClock": -1098.6033333329917,
+                            "flameCooldownClock": 4.5,
+                            "rocketClock": -1092.3933333329974,
+                            "score": 485288,
+                            "kills": 434,
+                            "sniperRank": 0,
+                            "artilleryRank": 0,
+                            "sniperClock": 1,
+                            "artilleryClock": 1.5,
+                            "time": 1811.3333333323433,
+                            "flameActive": 0,
+                            "flameTickClock": 0,
+                            "scheduler": {
+                                "queue": [
+                                    "pulse",
+                                    "rockets"
+                                ],
+                                "gap": 0
+                            }
+                        },
+                        "scenario": "route",
+                        "profile": "bon",
+                        "seed": 23758,
+                        "result": "play",
+                        "time": 1811.3,
+                        "wave": 3,
+                        "level": 51,
+                        "weapon": "GATLING",
+                        "health": 87,
+                        "lowestHealth": 78,
+                        "lowestHealthRatio": 0.5379310344827586,
+                        "checkpoints": {
+                            "finalRoom": null,
+                            "boss": null,
+                            "bossDefeated": null,
+                            "treasure": null
+                        },
+                        "maxHealth": 160,
+                        "kills": 434,
+                        "wave7": null,
+                        "finalRoom": false,
+                        "bossReached": false,
+                        "bossDefeated": false,
+                        "objective": "exploring",
+                        "remaining": 0,
+                        "liveEnemies": 1,
+                        "routeTarget": {
+                            "x": 45,
+                            "y": 6.15,
+                            "z": 185
+                        },
+                        "lastKillAt": 716.7000000000055,
+                        "player": [
+                            43.3526350247517,
+                            6.099000732421875,
+                            183.9864356714415
+                        ],
+                        "stalledEnemies": [
+                            {
+                                "id": 86,
+                                "type": "enforcer",
+                                "x": 41.683192221719125,
+                                "y": 7.45,
+                                "z": 128.24682884065246,
+                                "health": 102,
+                                "maxHealth": 102,
+                                "speed": 1.3078,
+                                "damage": 16,
+                                "radius": 0.27,
+                                "flash": 0,
+                                "cooldown": -1100.1999999996567,
+                                "age": 1106.0999999996513,
+                                "pursuing": true,
+                                "spawnDelay": 0,
+                                "stun": 0,
+                                "yaw": 0.029941795013926117,
+                                "attackTime": 0,
+                                "moving": false,
+                                "animState": "idle",
+                                "windup": 0,
+                                "aimX": 41.354622515298175,
+                                "aimZ": 144.753023144488,
+                                "sightAt": 1811.5983333323434,
+                                "visible": false,
+                                "path": [],
+                                "repathAt": 1812.0899999990102,
+                                "progressAt": 1811.29999999901,
+                                "progressPosition": [
+                                    41.683192221719125,
+                                    6.9,
+                                    128.24682884065246
+                                ],
+                                "pathGoal": [
+                                    43.3526350247517,
+                                    5.399000732421875,
+                                    183.9864356714415
+                                ],
+                                "pathSerial": 1629,
+                                "progressDistance": 0,
+                                "progressSerial": 1629
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

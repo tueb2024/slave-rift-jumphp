@@ -1,4 +1,4 @@
-"""Siege family: broad shoulder launchers, twin cannons, exposed optical core."""
+"""Agile magenta raider: shared geometry for dedicated and full Blender builds."""
 from generate_mechas import construct
-from art_spec import mecha
-def build(row=0,direction=0):construct(mecha('siege',row,direction))
+from raider_parts import raider
+def build(row=0,direction=0):construct(raider(row,direction))

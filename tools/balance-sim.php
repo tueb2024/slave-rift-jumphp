@@ -44,7 +44,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
     $checkpoints = ['finalRoom'=>null,'boss'=>null,'bossDefeated'=>null,'treasure'=>null];
     $snapshot = static fn () => ['time'=>round($run->time,1),'xpTotal'=>$run->collectedXp,'wave'=>$run->wave,'level'=>$run->level,
         'weapon'=>$run->primaryWeaponLabel(),'health'=>$run->health,'maxHealth'=>$run->maxHealth,'healthRatio'=>$run->health/$run->maxHealth];
-    $lastKills=$run->kills;$lastCombatProgress=$run->time;$dodgeUntil=0.0;$dodgeGoal=null;
+    $lastKills=$run->kills;$lastCombatProgress=$run->time;
     $cpuStarted=microtime(true);$stepTimes=[];$peakEnemies=count($run->enemies);$maxSearches=0;$maxExpansions=0;
     for ($frame = 0; $frame < (int)($limit / $dt); $frame++) {
         if ($run->state === 'dead' || $run->state === 'won') break;
@@ -56,7 +56,9 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             if(count($run->secondaryIds())<Run::SECONDARY_CAP){
                 foreach($run->choices as $i=>$choice)if(isset($powers[$choice])){$slot=$i;break;}
             }
-            if ($run->health < $run->maxHealth * 0.6) {
+            $primary=array_search('PRIMARY',$run->choices,true);
+            if($primary!==false)$slot=$primary;
+            if ($run->health < $run->maxHealth * 0.6 && $primary===false) {
                 $heal = array_search('VITALITY', $run->choices, true);
                 if ($heal !== false) $slot = $heal;
             }
@@ -101,23 +103,12 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
                     $goal = $pickup; $pickupDistance = $d;
                 }
             }
-            if ($run->boss?->active && !($run->boss?->defeated ?? false)) {
-                $aim = $run->bossPosition;
-                if (!$run->boss->vulnerable) foreach ($run->boss->orbs as $orb) if ($orb['alive']) { $aim = $orb; break; }
-                $treasure = $run->objective?->treasureAnchor??['x'=>0.,'z'=>0.];
-                $bx = $run->bossPosition['x'] - $treasure['x']; $bz = $run->bossPosition['z'] - $treasure['z'];
-                $length = max(0.001, hypot($bx, $bz));
-                $goal = ['x' => $run->bossPosition['x'] - $bx / $length * 5,
-                    'z' => $run->bossPosition['z'] - $bz / $length * 5];
+            if($run->shotgunAvailable() && $aim!==null && $nearest>4.8)$goal=$aim;
+            if ($run->boss?->active && !($run->boss->defeated ?? false)) {
+                $aim=$run->bossPosition;
+                $hide=$run->boss->attackState!=='recover';
+                $goal=$hide?($run->bossCoverPosition??$goal):($run->bossPeekPosition??$goal);
             }
-            if ($run->bossWarning !== null && $run->time>=$dodgeUntil) {
-                // Keep the sidestep through projectile arrival; immediately returning to the locked aim is unsafe.
-                $p=$run->bossPosition;$w=$run->bossWarning;$d=max(.01,hypot($w['x']-$p['x'],$w['z']-$p['z']));
-                $side=((int)floor($run->time/8)%2)*2-1;
-                $dodgeGoal=['x'=>$w['x']+($w['z']-$p['z'])/$d*2.5*$side,'z'=>$w['z']-($w['x']-$p['x'])/$d*2.5*$side];
-                $dodgeUntil=$run->time+2.2;
-            }
-            if($run->time<$dodgeUntil && $dodgeGoal!==null)$goal=$dodgeGoal;
             if($scanning && !($run->boss?->active??false))$goal=['x'=>$run->x,'y'=>$run->y,'z'=>$run->z];
             else $scanning=false;
             // Route movement through doors and stairs; aiming remains the profile's own policy.
@@ -144,13 +135,13 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             $strafe = (-cos($run->yaw) * $dx + sin($run->yaw) * $dz) / $norm * $speed;
         }
         $stepStarted=microtime(true);
-        $run->step($dt, $forward, $strafe, $turn, $run->shotgunAvailable() && $run->boss->vulnerable, false, false, $rhythm->advance($dt, $run->level));
+        $run->step($dt, $forward, $strafe, $turn, $run->shotgunAvailable() && abs($error??0.)<.13 && $aim!==null, false, false, $rhythm->advance($dt, $run->level));
         $stepTimes[]=(microtime(true)-$stepStarted)*1000;
         $peakEnemies=max($peakEnemies,count($run->enemies));
         $maxSearches=max($maxSearches,$run->navigation->searches-$searchesBefore);
         $maxExpansions=max($maxExpansions,$run->navigation->expansions-$expansionsBefore);
         $rhythm->drain();
-        if($run->kills!==$lastKills){$lastKills=$run->kills;$lastCombatProgress=$run->time;$dodgeUntil=0.0;$dodgeGoal=null;}
+        if($run->kills!==$lastKills){$lastKills=$run->kills;$lastCombatProgress=$run->time;}
         if ($run->primaryWeaponLabel() !== $arsenalTimeline[array_key_last($arsenalTimeline)]['weapon']) $arsenalTimeline[]=['time'=>round($run->time,1),'level'=>$run->level,'weapon'=>$run->primaryWeaponLabel()];
         $lowestHealth = min($lowestHealth, $run->health);
         $lowestHealthRatio = min($lowestHealthRatio, $run->health/$run->maxHealth);

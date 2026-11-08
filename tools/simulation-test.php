@@ -123,8 +123,8 @@ for ($i=0; $i<180; $i++) {
 check($a->x === $b->x && $a->y === $b->y && $a->z === $b->z && $a->yaw === $b->yaw && $a->enemies === $b->enemies,
     'identical seeds and controls remain deterministic');
 
-check($run->arsenalLabel() === 'COLT .45', 'run starts with rhythmic Colt arsenal');
-foreach ([1 => 0, 4 => 1, 8 => 2, 12 => 3, 16 => 4, 20 => 5, 24 => 6] as $level => $stage) {
+check($run->primaryStage === -1 && $run->shotgunAvailable(), 'run starts with the manual shotgun');
+foreach ([1 => -1, 4 => 0, 9 => 1, 15 => 2, 23 => 3, 33 => 4, 45 => 5, 59 => 6] as $level => $stage) {
     check(Run::primaryStageForLevel($level) === $stage, "primary stage $stage unlocks at level $level");
 }
 
