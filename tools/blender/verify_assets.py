@@ -13,3 +13,15 @@ for name,digest in data['files'].items():
         expected=(768,1120) if name.startswith(('mechas/','bosses/')) else ((32,16) if '-hud' in name else (576,96))
         assert size==expected,(name,size,expected)
 print('Verified',len(data['files']),'generated assets')
+
+# Active sawn-off has its own eight-pose authoring pipeline, outside generated/.
+repo=root.parent.parent
+manifest=repo/'tools/blender/shotgun-source/manifest.json'
+if manifest.exists():
+    shotgun=json.loads(manifest.read_text())
+    assert shotgun['frame']==[96,128] and shotgun['atlas']==[768,128]
+    for name,digest in shotgun['files'].items():
+        path=(repo/name).resolve()
+        assert repo.resolve() in path.parents,name
+        assert hashlib.sha256(path.read_bytes()).hexdigest()==digest,name
+    print('Verified sawn-off model, eight source plates and runtime atlas')

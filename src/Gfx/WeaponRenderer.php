@@ -34,14 +34,28 @@ final class WeaponRenderer
         $spread=$dual?$width-2*$x-$drawW:0;
         return ['drawW'=>$drawW,'drawH'=>$drawH,'x'=>$x,'y'=>$height-$drawH,'copies'=>$dual?2:1,'spread'=>$spread];
     }
+    /** Visual poses span the existing reload clock; no simulation timing changes. */
+    public function shotgunFrame(float $reload): int
+    {
+        if ($reload <= 0) return 0;
+        $age = max(0.0, Run::SHOTGUN_RELOAD - $reload);
+        return match (true) {
+            $age < .025 => 1,
+            $age < .060 => 2,
+            $age < .180 => 3,
+            $age < .420 => 4,
+            $age < .780 => 5,
+            $age < 1.000 => 6,
+            default => 7,
+        };
+    }
     public function render(Renderer $r,Run $run,array $texture): void
     {
         if($run->shotgunAvailable()){
-            $age=Run::SHOTGUN_RELOAD-$run->shotgunReload;
-            $frame=$run->shotgunReload<=0?0:($age<.06?1:($age<.18?2:($age<.65?3:0)));
-            $h=(int)round($r->getHeight()*.72);$w=(int)round($h*.75);
-            $kick=$run->shotgunFlash>0?(int)round($run->shotgunFlash*45):0;
-            $r->copy($texture['texture'],[$frame*96,0,96,128],($r->getWidth()-$w)/2,$r->getHeight()-$h+$kick,$w,$h);
+            $frame=$this->shotgunFrame($run->shotgunReload);
+            $l=$this->layout($r->getWidth(),$r->getHeight(),0,$run->time);
+            // Recoil is authored into the registered poses, like the primary arsenal.
+            $r->copy($texture['texture'],[$frame*self::FRAME_W,0,self::FRAME_W,self::FRAME_H],$l['x'],$l['y'],$l['drawW'],$l['drawH']);
             return;
         }
         if($this->lastSerial!==$run->primaryShotSerial){$this->lastSerial=$run->primaryShotSerial;$this->stateStarted=$run->time;}

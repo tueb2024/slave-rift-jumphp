@@ -1,0 +1,114 @@
+[
+  {
+    "name": "pistol",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      2,
+      2,
+      96,
+      128
+    ],
+    "bytes": 35672
+  },
+  {
+    "name": "dual_pistol",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      0,
+      17,
+      96,
+      128
+    ],
+    "bytes": 34144
+  },
+  {
+    "name": "smg",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      11,
+      26,
+      95,
+      128
+    ],
+    "bytes": 23802
+  },
+  {
+    "name": "dual_smg",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      0,
+      10,
+      96,
+      128
+    ],
+    "bytes": 40774
+  },
+  {
+    "name": "machinegun",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      0,
+      8,
+      96,
+      128
+    ],
+    "bytes": 43010
+  },
+  {
+    "name": "minigun",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      0,
+      8,
+      96,
+      128
+    ],
+    "bytes": 39655
+  },
+  {
+    "name": "dual_minigun",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      0,
+      12,
+      96,
+      128
+    ],
+    "bytes": 42977
+  },
+  {
+    "name": "shotgun",
+    "atlas": [
+      768,
+      128
+    ],
+    "readyAlphaBounds": [
+      10,
+      53,
+      76,
+      128
+    ],
+    "bytes": 10823
+  }
+]

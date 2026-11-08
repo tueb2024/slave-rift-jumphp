@@ -114,3 +114,16 @@ All seven sheets are by Nmn (Pawel Zarczynski), CC0. The local files are compact
 `assets/generated/` contains original procedural plate-and-piston mechas, the siege boss, industrial weapons and HUD icons, generated specifically for Slave Rift. No downloaded model or proprietary sprite was used. Source geometry and palette are in `tools/blender/art_spec.py`; builders, poses and renderer are in `tools/blender/`. These source scripts and their generated original assets use the repository's GPL-3.0-or-later licence.
 
 The committed PNGs are portable faceted fallback renders. They are not Blender screenshots. The Windows pipeline replaces them with transparent Blender renders under the same atlas contract, preserves editable `.blend` sources outside the game package, and writes `assets/generated/manifest.json` with hashes and producer information. No existing external asset licence is changed; historical resources remain available but are no longer the active enemy/primary weapon art layer. See `docs/mecha-art-pipeline.md` for dimensions, provenance, commands and qualification limits.
+
+## Sawn-off FPS atlas — issue #7 (2026-11-07)
+
+`sprites/arsenal/shotgun.png` is an original Blender Cycles render, replacing the
+four-pose flat polygon placeholder. It uses the active arsenal's eight 96×128
+transparent-frame contract (768×128 indexed PNG). The editable original model,
+eight 288×384 RGBA source plates and SHA-256 manifest live in
+`tools/blender/shotgun-source/`, outside the runtime package. Materials, geometry,
+FPS camera, lighting and keyed poses are authored in
+`tools/blender/render_shotgun.py`; `tools/build_shotgun_assets.py` packs the plates.
+No external model, image or texture is required. Licence: GPL-3.0-or-later.
+The runtime uses the versioned PNG, with no Blender dependency or generation at
+startup. This pass does not regenerate combat audio.
