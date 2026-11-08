@@ -246,7 +246,7 @@ final class Run
     {
         $this->objective = TreasureDirector::fromLevel($level, $finalWaveSize);
         $this->navigation->setRooms($level->rooms);
-        $waveCount=$this->mode->kind===GameMode::DAILY?$this->mode->waveCount():3;
+        $waveCount=$this->mode->hasFiniteEncounters()?$this->mode->waveCount():3;
         $this->encounters=new EncounterGates($level->rooms,$waveCount);
         $this->navigation->setBlockers($this->encounters->blockers());
         $this->route = [];
@@ -302,7 +302,7 @@ final class Run
         $this->advanceRoute();
         $objective = $this->objective;
         if ($objective === null) return;
-        $wavesComplete=($this->encounters===null && $this->mode->kind!==GameMode::DAILY) || ($this->encounters!==null && $this->encounters->blockers()===[]) || ($this->wave >= $this->mode->waveCount() && $this->remaining===0 && $this->enemies===[]);
+        $wavesComplete=($this->encounters===null && !$this->mode->hasFiniteEncounters()) || ($this->encounters!==null && $this->encounters->blockers()===[]) || ($this->wave >= $this->mode->waveCount() && $this->remaining===0 && $this->enemies===[]);
         if (($objective->state !== TreasureDirector::EXPLORING || $wavesComplete) && $objective->updatePlayer($this->x, $this->y, $this->z)) {
             // Survivors retain their target and path across the final-room transition.
             $this->remaining = $objective->finalWaveSize;
@@ -653,7 +653,7 @@ final class Run
                 $this->message='PORTE OUVERTE : AVANCEZ';$this->messageTime=3.0;
             }
             if($this->encounters!==null && $this->wave>=count($this->encounters->gates))return;
-            if($this->mode->kind===GameMode::DAILY && $this->wave >= $this->mode->waveCount())return;
+            if($this->mode->hasFiniteEncounters() && $this->wave >= $this->mode->waveCount())return;
             $waveBonus = (int)round(($this->wave * 150 + $this->combo * 50) * $this->multiplier);
             $this->score += $waveBonus;
             $this->intermission = $this->mode->intermissionSeconds();
@@ -671,7 +671,7 @@ final class Run
         for ($i = 0; $i < $batch && count($this->enemies) < $this->mode->enemyLimit($this->wave); $i++) {
             if ($this->spawnEnemy()) $this->remaining--;
         }
-        $this->spawnClock = $before===$this->remaining && $this->mode->kind===GameMode::DAILY ? .12 : $this->mode->spawnInterval($this->wave,$this->kills);
+        $this->spawnClock = $before===$this->remaining && $this->mode->hasFiniteEncounters() ? .12 : $this->mode->spawnInterval($this->wave,$this->kills);
     }
 
     private function spawnEnemy(): bool
@@ -716,16 +716,16 @@ final class Run
             }
         }
         $fallbackCandidates = [];
-        for ($attempt = 0; $attempt < ($this->mode->kind===GameMode::DAILY?36:20); $attempt++) {
+        for ($attempt = 0; $attempt < ($this->mode->hasFiniteEncounters()?36:20); $attempt++) {
             $a = $this->random() * M_PI * 2;
             $anchorIndex = null;
-            if ($this->map->spawnPoints !== [] && $this->mode->kind!==GameMode::DAILY) {
+            if ($this->map->spawnPoints !== [] && !$this->mode->hasFiniteEncounters()) {
                 $anchorIndex = min(count($this->map->spawnPoints) - 1, (int)floor($this->random() * count($this->map->spawnPoints)));
                 [$baseX, $baseY, $baseZ] = $this->map->spawnPoints[$anchorIndex];
                 $r = 2.5 + $this->random() * 3.5;
             } else {
                 [$baseX, $baseY, $baseZ] = [$this->x, $this->y, $this->z];
-                $r = ($type === 'brute' ? 8.0 : ($this->mode->kind===GameMode::DAILY?4.5:6.0)) + $this->random() * ($this->mode->kind===GameMode::DAILY?6.0:4.0);
+                $r = ($type === 'brute' ? 8.0 : ($this->mode->hasFiniteEncounters()?4.5:6.0)) + $this->random() * ($this->mode->hasFiniteEncounters()?6.0:4.0);
             }
             $x = $baseX + sin($a) * $r;
             $z = $baseZ + cos($a) * $r;

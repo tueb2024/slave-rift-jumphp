@@ -33,7 +33,7 @@ final class GameMode
     {
         $seed = random_int(1, 65519);
         if ($previousSeed !== null && $seed >= $previousSeed) $seed++;
-        return new self(self::NORMAL, $seed);
+        return self::campaignStage($seed, 1);
     }
 
     /** Explicit fixture/replay entry, also usable by a future server-supplied challenge. */
@@ -109,14 +109,30 @@ final class GameMode
         return new self(self::HORDE, $seed);
     }
 
+    /** Progressive normal play shares bounded encounters, not daily weapon rules. */
+    public function isProgressiveNormal(): bool
+    {
+        return $this->kind === self::NORMAL && $this->campaignStage > 0;
+    }
+
+    public function hasFiniteEncounters(): bool
+    {
+        return $this->kind === self::DAILY || $this->isProgressiveNormal();
+    }
+
     public function enemyLimit(int $wave): int
     {
+        if($this->isProgressiveNormal())return [12,16,20,24][$this->campaignStage-1]+min(2,max(0,$wave-1))*2;
         if($this->kind===self::DAILY)return [4,8,12,16][$this->campaignStage-1]+min(2,max(0,$wave-1))*2;
         return $this->kind === self::HORDE ? min(200, 20 + max(1, $wave) * 4) : Run::MAX_ENEMIES;
     }
 
     public function waveBudget(int $wave): int
     {
+        if($this->isProgressiveNormal()){
+            $waves=[[12,14,16],[18,20,22,24],[26,28,30,32,34],[36,38,40,42,44,46]][$this->campaignStage-1];
+            return $waves[max(0,min(count($waves)-1,$wave-1))];
+        }
         if($this->kind===self::DAILY){
             $waves=self::DAILY_WAVES[$this->campaignStage-1];
             return $waves[max(0,min(count($waves)-1,$wave-1))];
@@ -127,6 +143,7 @@ final class GameMode
 
     public function spawnBatch(int $wave): int
     {
+        if($this->isProgressiveNormal())return $this->campaignStage<3?1:($this->campaignStage===3?2:3);
         if($this->kind===self::DAILY)return match($this->campaignStage){
             1=>1, 2=>$wave===1?1:2, 3=>2, default=>$wave<=3?2:3,
         };
@@ -135,6 +152,7 @@ final class GameMode
 
     public function spawnInterval(int $wave, int $kills = 0): float
     {
+        if($this->isProgressiveNormal())return max(.55,[1.05,.90,.75,.65][$this->campaignStage-1]-max(0,$wave-1)*.04);
         if($this->kind===self::DAILY){
             // The opening teaches movement; the first weapon upgrade raises the pace.
             if($this->campaignStage===1)return $kills<self::DAILY_WEAPON_KILLS[0]?1.15:max(.65,.85-max(0,$wave-1)*.08);
@@ -146,16 +164,18 @@ final class GameMode
 
     public function intermissionSeconds(): float
     {
+        if($this->isProgressiveNormal())return [3.5,3.0,2.5,2.0][$this->campaignStage-1];
         return $this->kind===self::DAILY?[4.0,3.5,3.0,2.5][$this->campaignStage-1]:4.0;
     }
 
     public function enemyHealthScale(int $wave): float
     {
+        if($this->isProgressiveNormal())return [1.0,1.10,1.20,1.35][$this->campaignStage-1]*(1+max(0,$wave-1)*.025);
         if($this->kind===self::DAILY)return [1.0,1.25,1.55,1.9][$this->campaignStage-1]*(1+max(0,$wave-1)*.035);
         return ($this->kind === self::HORDE ? 1.0 + max(0, $wave - 1) * 0.035 : DifficultyDirector::healthScaleFor(1, $wave));
     }
 
-    public function waveCount(): int{return $this->kind===self::DAILY?[3,4,5,6][$this->campaignStage-1]:PHP_INT_MAX;}
+    public function waveCount(): int{return $this->hasFiniteEncounters()?[3,4,5,6][$this->campaignStage-1]:PHP_INT_MAX;}
     public function xpThreshold(int $level): int{return $this->kind===self::DAILY?12+max(0,$level-1)*3:XpCurve::threshold($level);}
     /** Fixed daily budget: 44 + 88 + 152 + 236 = 520; all seven weapons remain reachable. */
     public function primaryStageForKills(int $kills): int
@@ -166,7 +186,7 @@ final class GameMode
     {
         return match ($this->kind) {
             self::DAILY => 'DÉFI DU JOUR / MAP ' . $this->campaignStage . '/4',
-            self::HORDE => 'HORDE', default => 'NORMAL',
+            self::HORDE => 'HORDE', default => $this->isProgressiveNormal() ? 'MAP ' . $this->campaignStage . '/4' : 'NORMAL',
         };
     }
 

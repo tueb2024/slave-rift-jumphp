@@ -21,7 +21,7 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
    await page.waitForFunction(()=>typeof window.JumPHP?.php==='function');
    const php=code=>page.evaluate(code=>window.JumPHP.php(code),prefix+code);
    const state=async()=>{
-    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'melodies'=>\\JumPHP\\Kernel\\Engine::get()->storage->readJson('music-contours.json',[]),'shotgunShots'=>$rcRun?->shotgunSerial,'bossHp'=>$rcRun?->boss?->health,'gates'=>$rcRun?->encounters?->gates,'bossShots'=>$rcRun?->bossShots,'bossProjectiles'=>count($rcRun?->bossProjectiles??[]),'secondaries'=>$rcRun?->secondaryInventory(),'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
+    await php("file_put_contents('/tmp/rc-state.json',json_encode(['state'=>$rcRun?->state,'health'=>$rcRun?->health,'seed'=>$rcRun?->mode->seed,'mode'=>$rcRun?->mode->kind,'tier'=>$rcRun?->mode->difficultyTier,'campaignStage'=>$rcRun?->mode->campaignStage,'level'=>$rcRun?->level,'objective'=>$rcRun?->objective?->state,'screen'=>$rcMenu->screen,'melodies'=>\\JumPHP\\Kernel\\Engine::get()->storage->readJson('music-contours.json',[]),'shotgunShots'=>$rcRun?->shotgunSerial,'bossHp'=>$rcRun?->boss?->health,'gates'=>$rcRun?->encounters?->gates,'bossShots'=>$rcRun?->bossShots,'bossProjectiles'=>count($rcRun?->bossProjectiles??[]),'secondaries'=>$rcRun?->secondaryInventory(),'mouse'=>[\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->x,\\JumPHP\\Kernel\\Engine::get()->input->getMouse()->y]]));");
     return page.evaluate(()=>JSON.parse(window.JumPHP.FS.readFile('/tmp/rc-state.json',{encoding:'utf8'})));
    };
    const tap=async(x,y)=>{
@@ -53,8 +53,15 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     assert.notEqual((await state()).melodies.at(-1),firstMelody,'Replay must compose a different contour');
     await php("$rcRun->state='dead';"); await delay(100);
     await tap(160,118); assert.notEqual((await state()).seed,first,'new random map reused seed');
-    await php("$rcRun->state='won';"); await delay(100);
-    await page.screenshot({path:`${out}/${name}-won.png`});
+    // Normal play is a four-map run too; the map-complete button must preserve gear.
+    await php("$rcRun->level=12;$rcRun->xp=3;");
+    for(let stage=1;stage<=4;stage++){
+     assert.equal((await state()).campaignStage,stage);
+     await php("$rcRun->state='won';");await delay(100);
+     await expect('screen',stage===4?'won':'level_complete');
+     await page.screenshot({path:`${out}/${name}-normal-map-${stage}.png`});
+     if(stage<4){await tap(160,90);await expect('state','play');await expect('level',12);}
+    }
     await tap(160,146); await expect('screen','main'); await expect('state',null);
     assert.deepEqual(await page.evaluate(()=>({local:JSON.stringify(localStorage),session:JSON.stringify(sessionStorage),cookies:document.cookie})),seedStorageBefore,'normal runs must not persist seeds in browser storage');
     await tap(160,88); await expect('screen','daily');

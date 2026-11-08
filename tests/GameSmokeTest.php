@@ -9,6 +9,38 @@ use JumPHP\Testing\GameTestCase;
 
 final class GameSmokeTest extends GameTestCase
 {
+    public function testPlayMenuAdvancesFourMapsAndReplayKeepsTheCampaignSeed(): void
+    {
+        $this->game->start(PlayScene::class);
+        $this->game->press('upgrade_select',1);
+        $campaign=$this->game->peek('campaign');$seed=$campaign->seed;
+        self::assertNotNull($campaign);
+        $run=$this->game->peek('run');$run->level=12;$run->xp=3;$run->health=60;
+        $area=0.;
+        for($stage=1;$stage<=4;$stage++){
+            self::assertSame($stage,$this->game->peek('campaign')->stage);
+            self::assertGreaterThan($area,$this->game->peek('campaign')->geometry['footprint']);
+            $area=$this->game->peek('campaign')->geometry['footprint'];
+            $run=$this->game->peek('run');$run->state='won';$this->game->run(1);
+            self::assertSame($stage===4?'won':'level_complete',$this->game->peek('menu')->screen);
+            $this->game->shot('normal-map-'.$stage.'-complete');
+            if($stage<4){
+                $this->game->press('upgrade_select',1);
+                self::assertSame('play',$this->game->peek('run')->state);
+                self::assertSame(12,$this->game->peek('run')->level);
+                self::assertSame(3,$this->game->peek('run')->xp);
+            }
+        }
+        self::assertSame('REJOUER LES 4 MAPS',$this->game->peek('menu')->items()['replay']);
+        $this->game->press('upgrade_select',1);
+        self::assertSame($seed,$this->game->peek('campaign')->seed);
+        self::assertSame(1,$this->game->peek('campaign')->stage);
+        self::assertSame(1,$this->game->peek('run')->level);
+        $this->game->peek('run')->state='dead';$this->game->run(1);
+        $this->game->press('upgrade_next',1);$this->game->press('upgrade_select',1);
+        self::assertNotSame($seed,$this->game->peek('campaign')->seed);
+    }
+
     public function testAnimatedArsenalAndPowerAtlasesRender(): void
     {
         $this->game->start(PlayScene::class,['gameMode'=>\App\Game\GameMode::horde(42),'playing'=>true]);
@@ -80,6 +112,7 @@ final class GameSmokeTest extends GameTestCase
     {
         $this->game->start(PlayScene::class, ['seed' => 1337, 'playing' => true]);
         foreach (['dead', 'won'] as $state) {
+            $this->game->start(PlayScene::class, ['seed'=>1337, 'playing'=>true]);
             $old = $this->game->peek('run');
             $old->state = $state;
             $old->health = 0;
@@ -104,6 +137,7 @@ final class GameSmokeTest extends GameTestCase
         $x = ($lx + 160 * $lw / 320) / $ow;
         $y = ($ly + 118 * $lh / 180) / $oh;
         foreach (['dead', 'won'] as $state) {
+            $this->game->start(PlayScene::class, ['seed'=>1337, 'playing'=>true]);
             $old = $this->game->peek('run'); $old->state = $state;
             $touch = $this->game->engine->input->getTouch();
             $touch->handle((object)['type' => SDL_FINGERDOWN, 'tfinger' => (object)['x' => $x, 'y' => $y]]);

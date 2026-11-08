@@ -81,6 +81,7 @@ final class PlayScene extends AbstractScene
         }
         $this->mode = $params['gameMode'] ?? GameMode::fixed((int)($params['seed'] ?? ($this->demo ? 1337 : GameMode::normal()->seed)), (int)($params['depth'] ?? 7));
         $this->menu->mode = $this->mode->kind;
+        $this->menu->normalCampaign = $this->mode->isProgressiveNormal();
         $this->menu->open('play');
         $this->procedural = $this->mode->kind !== GameMode::HORDE && (bool)($params['procedural'] ?? true);
         $this->levelSeed = $this->mode->seed;
@@ -95,6 +96,11 @@ final class PlayScene extends AbstractScene
         }
         $this->run = new Run($map, $this->levelSeed, $this->mode);
         if ($this->assembledLevel !== null) $this->run->setObjective($this->assembledLevel, $this->mode->finalWaveSize);
+        if($this->mode->isProgressiveNormal()){
+            $this->campaign=new CampaignRun($this->mode->seed, new \App\Game\XpCurve());
+            $this->run=$this->campaign->run;$this->assembledLevel=$this->campaign->level;$this->mode=$this->run->mode;
+            $this->levelSeed=$this->mode->seed;$this->proceduralDepth=$this->mode->depth;
+        }
         if($this->mode->kind===GameMode::DAILY){
             $this->campaign=CampaignRun::daily(substr($this->mode->dailyId,0,10),$params['dailySeeds']??null,$params['dailyServerId']??null);
             $this->run=$this->campaign->run;$this->assembledLevel=$this->campaign->level;$this->mode=$this->run->mode;
@@ -285,7 +291,7 @@ final class PlayScene extends AbstractScene
         $cream = [240,215,170]; $cyan = [90,235,225];
         $r->fillRect(0, 0, $w, 23, [6,5,12,225]);
         $font->draw($r, 'PV ' . $run->health . '/' . $run->maxHealth, 4, 3, 1, $cream);
-        $waveLabel='V'.$run->wave.($run->mode->kind===GameMode::DAILY?'/'.$run->mode->waveCount():'');
+        $waveLabel='V'.$run->wave.($run->mode->hasFiniteEncounters()?'/'.$run->mode->waveCount():'');
         $font->draw($r, $waveLabel . '  E' . $run->kills . '  ' . $this->clock($run->time), $w - 48, 3, 1, $cream, 'right');
         Hud::bar($r, 4, 13, 82, 4, max(0.0, $run->health / $run->maxHealth));
         $font->draw($r, 'NIV ' . $run->level . ' XP ' . $run->xp . '/' . $run->nextXp, 96, 13, 1, $cyan);
@@ -348,7 +354,7 @@ final class PlayScene extends AbstractScene
         if (!$hasSecondaries && $run->time < 6 && !$this->demo && $run->state === 'play' && !($run->boss?->active ?? false)) {
             $font->draw($r, 'SUIVEZ LA FLÈCHE / RAMASSEZ L\'XP', $cx, $cy - 42, 1, $cream, 'center', [8,5,12]);
         }
-        if (!$hasSecondaries && $run->time < 8 && !$this->demo && !($run->boss?->active ?? false)) $font->draw($r, 'Z/S : AVANCER / FLÈCHES : TOURNER / ESPACE : SAUT', $cx, $h - 28, 1, $cream, 'center', [8,5,12]);
+        if (!$hasSecondaries && $run->time < 8 && !$this->demo && !($run->boss?->active ?? false)) $font->draw($r, 'Z/S : AVANCER / FLÈCHES : TOURNER / ESPACE : SAUT', $cx, $h - ($this->campaign!==null?42:28), 1, $cream, 'center', [8,5,12]);
         if ($run->hurt > 0) { $r->fillRect(0, 23, 3, $h - 33, [240,55,55]); $r->fillRect($w - 3, 23, 3, $h - 33, [240,55,55]); }
 
         if ($run->state === 'upgrade') {
@@ -367,7 +373,7 @@ final class PlayScene extends AbstractScene
         else {
             $r->fillRect($w - 44, 0, 44, 23, [8,5,12,235]);
             $font->draw($r, 'PAUSE', $w - 22, 7, 1, $cyan, 'center');
-            if ($this->mode?->kind !== GameMode::NORMAL) $font->draw($r, $this->mode->label(), $cx, $h-31, 1, $cyan, 'center', [8,5,12]);
+            if ($this->mode?->kind !== GameMode::NORMAL || $this->campaign !== null) $font->draw($r, $this->mode->label(), $cx, $h-31, 1, $cyan, 'center', [8,5,12]);
         }
         if ($this->demo) $font->draw($r, 'DEMO', $w - 4, 27, 1, $cream, 'right');
         if ($this->debug && $this->menu->screen === 'play') {
@@ -414,6 +420,9 @@ final class PlayScene extends AbstractScene
     {
         if ($this->mode === null) return;
         $mode = $this->mode;
+        if ($this->campaign !== null && $mode->kind === GameMode::NORMAL) {
+            $mode = GameMode::campaignStage($this->campaign->seed, 1);
+        }
         if (!$sameMap && $mode->kind === GameMode::NORMAL && !$this->demo) $mode = GameMode::normal($mode->seed);
         if (!$sameMap && $mode->kind === GameMode::HORDE) $mode = GameMode::horde();
         $this->enter(['demo'=>$this->demo,'debug'=>$this->debug,'playing'=>true,
@@ -446,8 +455,10 @@ final class PlayScene extends AbstractScene
             'daily'=>'DÉFI DU JOUR', 'controls'=>'COMMANDES', 'pause'=>'PAUSE', 'dead'=>'VOUS ÊTES MORT', 'won'=>'VICTOIRE !', 'level_complete'=>'MAP TERMINÉE', default=>'SLAVE RIFT',
         };
         $font->draw($r, $title, $cx, 12, 2, [90,235,225], 'center');
+        if ($this->menu->screen === 'main') $font->draw($r, '4 MAPS / PLUS GRANDES / PLUS DENSES', $cx, 38, 1, [240,215,170], 'center');
         if ($this->menu->screen === 'daily') $font->draw($r, GameMode::dateLabel(GameMode::today()), $cx, 32, 1, [240,215,170], 'center');
         if (in_array($this->menu->screen,['dead','won','level_complete'],true) && $this->run !== null) {
+            if ($this->campaign !== null) $font->draw($r,$this->mode->label(),$cx,30,1,[240,215,170],'center');
             $font->draw($r, 'SCORE '.$this->run->score.' / '.$this->clock($this->run->time), $cx, 40, 1, [240,215,170], 'center');
             $font->draw($r, 'VAGUE '.$this->run->wave.' / '.$this->run->kills.' ÉLIMINATIONS', $cx, 54, 1, [240,215,170], 'center');
         }

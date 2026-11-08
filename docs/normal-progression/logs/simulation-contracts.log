@@ -1,0 +1,98 @@
+PASS: arena imports a useful brush set
+PASS: player starts clear of solids
+PASS: world mesh stride is valid
+PASS: runner mesh is valid
+PASS: guardian mesh is valid
+PASS: brute mesh is valid
+PASS: pickup and pulse meshes are present
+PASS: runner atlas dimensions match the image
+PASS: runner row 0 has its declared frames
+PASS: runner row 1 has its declared frames
+PASS: runner row 2 has its declared frames
+PASS: runner row 3 has its declared frames
+PASS: runner row 4 has its declared frames
+PASS: runner row 5 has its declared frames
+PASS: runner row 6 has its declared frames
+PASS: runner row 7 has its declared frames
+PASS: runner row 8 has its declared frames
+PASS: runner row 9 has its declared frames
+PASS: runner declared frames stay inside the texture
+PASS: guardian atlas dimensions match the image
+PASS: guardian row 0 has its declared frames
+PASS: guardian row 1 has its declared frames
+PASS: guardian row 2 has its declared frames
+PASS: guardian row 3 has its declared frames
+PASS: guardian row 4 has its declared frames
+PASS: guardian row 5 has its declared frames
+PASS: guardian row 6 has its declared frames
+PASS: guardian row 7 has its declared frames
+PASS: guardian row 8 has its declared frames
+PASS: guardian row 9 has its declared frames
+PASS: guardian declared frames stay inside the texture
+PASS: enforcer atlas dimensions match the image
+PASS: enforcer row 0 has its declared frames
+PASS: enforcer row 1 has its declared frames
+PASS: enforcer row 2 has its declared frames
+PASS: enforcer row 3 has its declared frames
+PASS: enforcer row 4 has its declared frames
+PASS: enforcer row 5 has its declared frames
+PASS: enforcer row 6 has its declared frames
+PASS: enforcer row 7 has its declared frames
+PASS: enforcer row 8 has its declared frames
+PASS: enforcer row 9 has its declared frames
+PASS: enforcer declared frames stay inside the texture
+PASS: brute atlas dimensions match the image
+PASS: brute row 0 has its declared frames
+PASS: brute row 1 has its declared frames
+PASS: brute row 2 has its declared frames
+PASS: brute row 3 has its declared frames
+PASS: brute row 4 has its declared frames
+PASS: brute row 5 has its declared frames
+PASS: brute row 6 has its declared frames
+PASS: brute row 7 has its declared frames
+PASS: brute row 8 has its declared frames
+PASS: brute row 9 has its declared frames
+PASS: brute declared frames stay inside the texture
+PASS: siege atlas dimensions match the image
+PASS: siege row 0 has its declared frames
+PASS: siege row 1 has its declared frames
+PASS: siege row 2 has its declared frames
+PASS: siege row 3 has its declared frames
+PASS: siege row 4 has its declared frames
+PASS: siege row 5 has its declared frames
+PASS: siege row 6 has its declared frames
+PASS: siege row 7 has its declared frames
+PASS: siege row 8 has its declared frames
+PASS: siege row 9 has its declared frames
+PASS: siege declared frames stay inside the texture
+PASS: player physics settles deterministically
+PASS: player stays on the floor at an open ledge
+PASS: player climbs a half-unit step without jumping
+PASS: identical seeds and controls remain deterministic
+PASS: run starts with rhythmic Colt arsenal
+PASS: primary stage 0 unlocks at level 1
+PASS: primary stage 1 unlocks at level 4
+PASS: primary stage 2 unlocks at level 8
+PASS: primary stage 3 unlocks at level 12
+PASS: primary stage 4 unlocks at level 16
+PASS: primary stage 5 unlocks at level 20
+PASS: primary stage 6 unlocks at level 24
+PASS: DM1 opening enemies stay on the player floor
+PASS: DM1 player spawn stays on the arena floor
+PASS: DM1 demo makes combat progress
+PASS: DM1 demo rewards kills with score
+PASS: DM1 enemy kills leave a short visual death animation
+PASS: DM1 demo produces a muzzle-to-impact tracer
+PASS: Wave two seeded selection includes ranged enforcers
+PASS: wide wave uses multiple valid spawn points
+PASS: moving enemies keep collision spacing
+PASS: dense wave 8 keeps neighbor checks bounded
+PASS: dense wave 16 keeps neighbor checks bounded
+PASS: dense wave 32 keeps neighbor checks bounded
+PASS: dense wave 32 amortizes render LOS (314 per second)
+PASS: dense wave 48 keeps neighbor checks bounded
+PASS: dense wave 48 amortizes render LOS (470 per second)
+{
+    "checks": 94,
+    "brushes": 21
+}

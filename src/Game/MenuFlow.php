@@ -8,6 +8,7 @@ final class MenuFlow
     public string $screen = 'main';
     public string $mode = GameMode::NORMAL;
     public int $cursor = 0;
+    public bool $normalCampaign = false;
 
     public function open(string $screen): void
     {
@@ -25,7 +26,9 @@ final class MenuFlow
             'dead', 'won' => match ($this->mode) {
                 GameMode::DAILY => ['retry' => 'REJOUER LE DÉFI', 'menu' => 'MENU PRINCIPAL'],
                 GameMode::HORDE => ['retry' => 'RECOMMENCER', 'menu' => 'MENU PRINCIPAL'],
-                default => ['replay' => 'REJOUER CETTE MAP', 'new' => 'NOUVELLE MAP ALÉATOIRE', 'menu' => 'MENU PRINCIPAL'],
+                default => $this->normalCampaign
+                    ? ['replay' => 'REJOUER LES 4 MAPS', 'new' => 'NOUVELLE CAMPAGNE', 'menu' => 'MENU PRINCIPAL']
+                    : ['replay' => 'REJOUER CETTE MAP', 'new' => 'NOUVELLE MAP ALÉATOIRE', 'menu' => 'MENU PRINCIPAL'],
             },
             default => [],
         };
