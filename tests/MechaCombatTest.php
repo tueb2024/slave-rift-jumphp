@@ -60,10 +60,11 @@ final class MechaCombatTest extends TestCase
         self::assertSame($active,$r2->flameActive);for($i=0;$i<60;$i++)$r2->step(.05,0,0,0);
         self::assertSame(0.0,$r2->flameActive);self::assertSame([],$r2->flameSegments);
     }
-    public function testSecondariesAreExclusiveAndSelectionSurvivesMaps(): void
+    public function testAcquiredSecondaryAndItsRankSurviveMaps(): void
     {
         $r=$this->fixture();
         foreach(['FLAMETHROWER','MINI_ROCKETS','SNIPER','ARTILLERY','EMP','PULSE']as$choice){
+            $r=$this->fixture();
             $r->state='upgrade';$r->choices=[$choice];self::assertTrue($r->chooseUpgrade(0));
             self::assertCount(1,$r->secondaryInventory());
             $copy=$this->fixture();$copy->restoreProgression($r->progressionSnapshot(),0);

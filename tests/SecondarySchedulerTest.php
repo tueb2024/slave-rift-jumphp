@@ -26,7 +26,7 @@ final class SecondarySchedulerTest extends TestCase
         self::assertSame('pulse',$s->step(0,['pulse'],['pulse'],.25));
     }
 
-    public function testLegacyMultiPowerStateDispatchesOnlyOneSelectedPower(): void
+    public function testLegacyMultiPowerStateDispatchesOnlyTheFirstTwoPowers(): void
     {
         $run=new Run(HordeArena::build(),42);$run->remaining=0;$run->intermission=3600;
         $run->flameRank=1;$run->rocketRank=1;$run->pulseUnlocked=true;
@@ -34,7 +34,8 @@ final class SecondarySchedulerTest extends TestCase
         (new \ReflectionMethod($run,'spawnEnemyAt'))->invoke($run,0.0,.55,2.0,'brute');
         $run->enemies[array_key_first($run->enemies)]['health']=100000;
         $events=[];for($i=0;$i<60;$i++){$run->step(1/60,0,0,0);array_push($events,...$run->drainSecondaryEvents());}
-        self::assertSame(['flame'],array_unique(array_column($events,'id')));
-        self::assertCount(1,$run->secondaryInventory());
+        self::assertSame(['flame','rockets'],array_values(array_unique(array_column($events,'id'))));
+        self::assertCount(2,$run->secondaryInventory());
+        self::assertGreaterThanOrEqual($events[0]['spacing']-1/60,$events[1]['time']-$events[0]['time']);
     }
 }

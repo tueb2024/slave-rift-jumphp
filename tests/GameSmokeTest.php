@@ -47,6 +47,8 @@ final class GameSmokeTest extends GameTestCase
         $r=$this->game->peek('run');$r->remaining=0;$r->intermission=1000;$r->health=100000;
         foreach(range(0,6)as$stage){$r->primaryStage=$stage;$r->primaryShotSerial++;$this->game->run(1);$this->game->shot('arsenal-stage-'.$stage);}
         foreach(['flame','emp','rockets','artillery','sniper']as$id){
+            $this->game->start(PlayScene::class,['gameMode'=>\App\Game\GameMode::horde(42),'playing'=>true]);
+            $r=$this->game->peek('run');$r->remaining=0;$r->intermission=1000;$r->health=100000;
             $r->equipSecondary($id);$field=match($id){'flame'=>'flameRank','emp'=>'empRank','rockets'=>'rocketRank','artillery'=>'artilleryRank',default=>'sniperRank'};$r->$field=1;
             $x=$r->x+sin($r->yaw)*3;$z=$r->z+cos($r->yaw)*3;
             if($id==='flame')$r->flameActive=.8;

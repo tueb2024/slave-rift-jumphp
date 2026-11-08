@@ -20,6 +20,7 @@ final class PowerRenderer
     {
         $vp=World::camera($run,$r->getWidth()/max(1,$r->getHeight()),$pitch);
         $project=static function($p)use($vp,$r,$run){if(!$run->lineClear(World::eye($run),$p))return null;$q=Mat4::project($vp,$p,$r->getWidth(),$r->getHeight());return $q!==null&&$q[2]>=0&&$q[2]<=1?$q:null;};
+        self::flameJet($r,$s,$run,$project);
         foreach($run->projectiles as$p){$q=$project([$p['x'],$p['y'],$p['z']]);if(!$q)continue;
             self::sprite($r,$s,'rocket',(int)($p['age']/.075)%8,$q[0],$q[1],max(12,min(64,110/max(1,hypot($p['x']-$run->x,$p['z']-$run->z)))));
         }
@@ -36,14 +37,36 @@ final class PowerRenderer
             self::ring($r,$q[0],$q[1],max(3,35/max(1,hypot($e['x']-$run->x,$e['z']-$run->z))),($e['stun']??0)>0?[100,230,255]:[255,180,70]);
         }
     }
+    /** Textured wisps follow a world-space stream, narrowing into the aiming direction. */
+    private static function flameJet(Renderer $r,Sdl $s,Run $run,callable $project): void
+    {
+        if($run->flameActive<=0 || $run->flameSegments===[])return;
+        $limit=max(array_column($run->flameSegments,'d'));
+        $texture=$s->getTexture('power_flame');$points=[];
+        foreach([.38,.55,.78,1.06,1.42,1.85,2.38,3.03,3.83,4.8,6.,6.7] as $d){
+            if($d>$limit)break;
+            $lateral=-.32*exp(-$d/1.7);
+            $p=[$run->x+sin($run->yaw)*$d+cos($run->yaw)*$lateral,
+                $run->y+.23+sin($run->time*14+$d*5)*.018,
+                $run->z+cos($run->yaw)*$d-sin($run->yaw)*$lateral];
+            $q=$project($p);if($q===null)break;
+            $points[]=['x'=>$q[0],'y'=>$q[1],'d'=>$d];
+        }
+        $fade=min(1.,$run->flameActive/.18);$scale=$r->getHeight()/180;
+        // Back-to-front wisps overlap into one stream. No upright fire billboards.
+        for($i=count($points)-2;$i>=0;$i--){
+            $a=$points[$i];$b=$points[$i+1];$dx=$b['x']-$a['x'];$dy=$b['y']-$a['y'];
+            $radius=(.085+.045*$a['d'])*100/max(.3,$a['d'])*$scale*$fade;
+            $width=max(hypot($dx,$dy)*2.3,$radius*2.5);$height=$radius*4.4;
+            $frame=((int)($run->time/.065)+$i*3)%8;
+            $r->copy($texture['texture'],[$frame*96,0,96,128],($a['x']+$b['x'])/2-$width/2,($a['y']+$b['y'])/2-$height/2,
+                $width,$height,false,false,rad2deg(atan2($dy,$dx)));
+        }
+    }
+
     public static function foreground(Renderer $r,Sdl $s,Run $run): void
     {
         $w=$r->getWidth();$h=$r->getHeight();
-        if($run->flameActive>0){$frame=2+(int)($run->time/.075)%4;if($run->flameActive<.2)$frame=6;
-            // Keep the power ahead of the gun, with a center gap for aiming.
-            self::sprite($r,$s,'flame',$frame,$w*.32,$h+15,$h*.85);
-            self::sprite($r,$s,'flame',2+(int)($run->time/.09)%4,$w*.68,$h+15,$h*.75);
-        }
         if($run->empFx>0)self::sprite($r,$s,'emp',min(7,(int)((.65-$run->empFx)/.65*8)),$w/2,$h*.8,$h*.8);
     }
     public static function ring(Renderer $r,float $x,float $y,float $radius,array $color,float $progress=1): void

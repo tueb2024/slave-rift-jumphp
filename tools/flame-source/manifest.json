@@ -1,0 +1,15 @@
+{
+  "source": "tools/flame-source/jet-board.png",
+  "atlas": [
+    768,
+    128
+  ],
+  "frame": [
+    96,
+    128
+  ],
+  "files": {
+    "tools/flame-source/jet-board.png": "7c0274b0306eb87e4be47cc91f0c7455f011fc4bab5acd8f78820270b4786e02",
+    "assets/sprites/arsenal/flame.png": "4165ef3b3ab59db5779fe92efebf283a82bf7f24b4e2f9c864ffcf30d1bc4ee0"
+  }
+}

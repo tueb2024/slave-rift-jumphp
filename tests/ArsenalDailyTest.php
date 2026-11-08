@@ -32,7 +32,7 @@ final class ArsenalDailyTest extends TestCase
             self::assertGreaterThanOrEqual($m->enemyLimit(1),$r->spawned);self::assertLessThanOrEqual($m->enemyLimit(1),count($r->enemies));
         }
     }
-    public function testEmpStopsNearbyEnemiesThenTheyRecoverAndSlotIsExclusive(): void
+    public function testEmpStopsNearbyEnemiesThenTheyRecoverAndSharesTheDuo(): void
     {
         $r=new Run(HordeArena::build(),42);$r->remaining=0;$r->intermission=1000;
         $r->equipSecondary('emp');$r->empRank=1;
@@ -42,7 +42,7 @@ final class ArsenalDailyTest extends TestCase
         self::assertSame($before,[$r->enemies[$id]['x'],$r->enemies[$id]['z']]);
         for($i=0;$i<40;$i++)$r->step(.05,0,0,0);
         self::assertNotSame($before,[$r->enemies[$id]['x'],$r->enemies[$id]['z']]);
-        $r->equipSecondary('rockets');$r->rocketRank=1;self::assertSame(0,$r->empRank);self::assertSame(['rockets'],array_column($r->secondaryInventory(),'id'));
+        $r->equipSecondary('rockets');$r->rocketRank=1;self::assertSame(1,$r->empRank);self::assertSame(['emp','rockets'],array_column($r->secondaryInventory(),'id'));self::assertFalse($r->equipSecondary('sniper'));
     }
     public function testDailyCannotSkipExplorationWavesByRushingFinalRoom(): void
     {

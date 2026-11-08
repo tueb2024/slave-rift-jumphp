@@ -7,11 +7,11 @@ use PHPUnit\Framework\TestCase;
 
 final class XpCurveTest extends TestCase
 {
-    public function testClassRewardsAndEveryFourteenthHealingDropArePreserved(): void
+    public function testHordeClassRewardsAndEveryFourteenthHealingDropArePreserved(): void
     {
         self::assertSame(XpCurve::ACCESSIBLE,(new XpCurve())->model);
         foreach([XpCurve::CURRENT=>[2,2,2,5],XpCurve::WEIGHTED=>[1,2,3,6],XpCurve::ACCESSIBLE=>[2,3,4,6]]as$model=>$values){
-            $curve=new XpCurve($model);$run=new Run(HordeArena::build(),42,null,$curve);
+            $curve=new XpCurve($model);$run=new Run(HordeArena::build(),42,\App\Game\GameMode::horde(42),$curve);
             for($i=1;$i<=28;$i++){
                 $type=['runner','guardian','enforcer','brute'][($i-1)%4];
                 self::assertSame($values[($i-1)%4],$curve->reward($type));

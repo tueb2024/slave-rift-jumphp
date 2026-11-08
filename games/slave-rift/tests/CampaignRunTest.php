@@ -21,7 +21,7 @@ final class CampaignRunTest extends TestCase
             $c->run->state='won';
             self::assertSame($stage===4?'won':'level_complete',$c->state());
             if($stage<4){self::assertTrue($c->advance());self::assertSame(12,$c->run->level);self::assertSame(3,$c->run->xp);
-                self::assertSame(2,$c->run->flameRank);self::assertSame(0,$c->run->rocketRank);self::assertFalse($c->run->pulseUnlocked);
+                self::assertSame(2,$c->run->flameRank);self::assertSame(3,$c->run->rocketRank);self::assertFalse($c->run->pulseUnlocked);
                 self::assertSame(48,$c->run->health);self::assertSame(3,$c->run->primaryStage);}
             else self::assertFalse($c->advance());
         }

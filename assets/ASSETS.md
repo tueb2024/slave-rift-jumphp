@@ -127,3 +127,16 @@ FPS camera, lighting and keyed poses are authored in
 No external model, image or texture is required. Licence: GPL-3.0-or-later.
 The runtime uses the versioned PNG, with no Blender dependency or generation at
 startup. This pass does not regenerate combat audio.
+
+## Forward flame jet — 2026-11-08
+
+`sprites/arsenal/flame.png` replaces the upright fire atlas with eight original
+horizontal flowing wisps generated for this project using ImageGen. The source
+board and SHA-256 manifest are versioned under `tools/flame-source/`;
+`tools/build_flame_atlas.py` extracts and packs the eight 96×128 RGBA cells.
+Binary alpha coverage prevents the renderer's magenta composition key from
+bleeding through semi-transparent sprite edges. The runtime draws rotated,
+depth-scaled wisps along world-space, wall-clipped flame segments instead of two
+upright foreground fires. No external game texture or third-party model is used.
+Source scripts and project artwork follow the repository's GPL-3.0-or-later
+licence. Only the atlas is copied into the runtime package.

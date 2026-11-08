@@ -54,13 +54,13 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await php("$rcRun->state='dead';"); await delay(100);
     await tap(160,118); assert.notEqual((await state()).seed,first,'new random map reused seed');
     // Normal play is a four-map run too; the map-complete button must preserve gear.
-    await php("$rcRun->level=12;$rcRun->xp=3;");
+    await php("$rcRun->level=12;$rcRun->xp=3;$rcRun->equipSecondary('flame');$rcRun->equipSecondary('rockets');");
     for(let stage=1;stage<=4;stage++){
      assert.equal((await state()).campaignStage,stage);
      await php("$rcRun->state='won';");await delay(100);
      await expect('screen',stage===4?'won':'level_complete');
      await page.screenshot({path:`${out}/${name}-normal-map-${stage}.png`});
-     if(stage<4){await tap(160,90);await expect('state','play');await expect('level',12);}
+     if(stage<4){await tap(160,90);await expect('state','play');await expect('level',12);assert.deepEqual((await state()).secondaries.map(p=>p.id),['flame','rockets']);}
     }
     await tap(160,146); await expect('screen','main'); await expect('state',null);
     assert.deepEqual(await page.evaluate(()=>({local:JSON.stringify(localStorage),session:JSON.stringify(sessionStorage),cookies:document.cookie})),seedStorageBefore,'normal runs must not persist seeds in browser storage');
@@ -69,8 +69,9 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     const dailySeed=(await state()).seed;
     await php("$rcRun->state='dead';");await delay(100);
     await tap(160,90);await expect('seed',dailySeed);await expect('tier',1);
+    await php("$rcRun->equipSecondary('flame');$rcRun->equipSecondary('rockets');");
     for(let stage=1;stage<=4;stage++){
-     await expect('tier',stage);
+     await expect('tier',stage);assert.deepEqual((await state()).secondaries.map(p=>p.id),['flame','rockets']);
      await php("$rcRun->state='won';");await delay(100);
      await expect('screen',stage===4?'won':'level_complete');
      await page.screenshot({path:`${out}/${name}-daily-map-${stage}.png`});
@@ -105,7 +106,8 @@ const delay = ms => new Promise(r => setTimeout(r,ms));
     await php("$rcRun->state='upgrade';$rcRun->choices=['FLAMETHROWER'];$rcRun->chooseUpgrade(0);");
     await delay(150); assert.equal((await state()).secondaries.length,1);
     await php("$rcRun->state='upgrade';$rcRun->choices=['EMP'];$rcRun->chooseUpgrade(0);$rcRun->empFx=.65;");
-    await delay(100); assert.equal((await state()).secondaries[0].id,'emp');
+    await delay(100); assert.deepEqual((await state()).secondaries.map(p=>p.id),['flame','emp']);
+    await php("$rcRun->state='upgrade';$rcRun->choices=['SNIPER'];if($rcRun->chooseUpgrade(0))throw new \\RuntimeException('A permanent duo was replaced');$rcRun->state='play';");
     await page.screenshot({path:`${out}/${name}-secondary-arsenal.png`});
     // Enter an upgrade fixture and select its second row by a real pointer/tap.
     await php("$rcRun->state='upgrade'; $rcRun->choices=['POWER','MAGNET','VITALITY'];");

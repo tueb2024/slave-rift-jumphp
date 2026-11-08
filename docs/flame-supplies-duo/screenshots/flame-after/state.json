@@ -1,0 +1,12 @@
+{
+  "inventory": [
+    "flame",
+    "rockets"
+  ],
+  "choices": [
+    "HASTE",
+    "MAGNET",
+    "POWER"
+  ],
+  "supplies": 3
+}

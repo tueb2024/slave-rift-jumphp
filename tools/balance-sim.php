@@ -51,13 +51,10 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
         if ($run->state === 'upgrade') {
             // Varied choices; prefer healing under pressure, not a single optimized build.
             $slot = ($seed + $run->level) % count($run->choices);
-            // A single-slot build keeps its upgraded power instead of randomly
-            // replacing it with rank one at every level. This uses legal choices only.
+            // Fill the permanent duo from legal offers, then use classic bonuses.
             $powers=['FLAMETHROWER'=>'flame','MINI_ROCKETS'=>'rockets','SNIPER'=>'sniper','ARTILLERY'=>'artillery','EMP'=>'emp','PULSE'=>'pulse'];
-            $equipped=$run->selectedSecondary();
-            if($equipped!==null && isset($powers[$run->choices[$slot]]) && $powers[$run->choices[$slot]]!==$equipped){
-                foreach($run->choices as$i=>$choice)if(($powers[$choice]??null)===$equipped){$slot=$i;break;}
-                if(isset($powers[$run->choices[$slot]]) && $powers[$run->choices[$slot]]!==$equipped)foreach($run->choices as$i=>$choice)if(!isset($powers[$choice])){$slot=$i;break;}
+            if(count($run->secondaryIds())<Run::SECONDARY_CAP){
+                foreach($run->choices as $i=>$choice)if(isset($powers[$choice])){$slot=$i;break;}
             }
             if ($run->health < $run->maxHealth * 0.6) {
                 $heal = array_search('VITALITY', $run->choices, true);
@@ -94,7 +91,7 @@ function simulateProfile(string $profile, int $seed, float $limit = 600.0, strin
             // endpoint forever. This scans the camera; it does not reveal hidden targets.
             $scanning=$aim===null && $run->enemies!==[] && $run->time-$lastCombatProgress>2;
             $pickupDistance = $collection;
-            foreach ($run->pickups as $pickup) {
+            foreach (array_merge($run->pickups,$run->health<$run->maxHealth*.8?$run->roomSupplies:[]) as $pickup) {
                 $attentionToXp = match ($profile) {'faible'=>50, 'bon'=>95, default=>80};
                 $noticed = ((int)floor($pickup['x']*17+$pickup['z']*31)+$seed) % 100;
                 if ($noticed < 0) $noticed += 100;

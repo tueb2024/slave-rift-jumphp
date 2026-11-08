@@ -374,7 +374,7 @@ final class World
 
     private function drawPickupSprites(Engine $engine, Renderer $r, Run $run, float $pitch): void
     {
-        if ($run->pickups === []) return;
+        if ($run->pickups === [] && $run->roomSupplies === []) return;
         $sdl = $engine->sdl;
         foreach ([
             'health' => ['name' => 'pickup_health', 'path' => 'assets/sprites/pickups/health-pack.png', 'width' => 32, 'height' => 38],
@@ -383,7 +383,7 @@ final class World
             if (!$sdl->hasTexture($sprite['name'])) $sdl->loadTexture($sprite['name'], $sprite['path']);
         }
         $vp = self::camera($run, $r->getWidth() / max(1, $r->getHeight()), $pitch);
-        foreach ($run->pickups as $pickup) {
+        foreach (array_merge($run->pickups,$run->roomSupplies) as $pickup) {
             $point3d = [$pickup['x'], $pickup['y'] + sin($run->time * 4) * 0.06 + 0.18, $pickup['z']];
             if (!$run->lineClear(self::eye($run), $point3d)) continue;
             $point = Mat4::project($vp, $point3d, $r->getWidth(), $r->getHeight());
@@ -559,7 +559,7 @@ final class World
         foreach ($run->enemies as $enemy) {
             $r->fillCircle((int)round($cx + $enemy['x'] * $scale), (int)round($cy + $enemy['z'] * $scale), $enemy['type'] === 'brute' ? 4 : 2, match($enemy['type']){'runner'=>[255,181,35],'guardian'=>[35,185,244],'enforcer'=>[230,48,74],default=>[187,65,227]});
         }
-        foreach ($run->pickups as $pickup) {
+        foreach (array_merge($run->pickups,$run->roomSupplies) as $pickup) {
             $r->fillCircle((int)round($cx + $pickup['x'] * $scale), (int)round($cy + $pickup['z'] * $scale), 1, $pickup['kind'] === 'health' ? [250,70,80] : [80,235,235]);
         }
         if ($run->boss?->active && !$run->boss->defeated) {

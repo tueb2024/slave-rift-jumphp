@@ -308,7 +308,6 @@ final class PlayScene extends AbstractScene
         \App\Gfx\PowerRenderer::foreground($r,$this->sdl(),$run);
         $font->draw($r, 'SCORE ' . number_format($run->score, 0, '.', ' '), $cx, $h - 20, 1, [255,205,90], 'center');
 
-        if ($run->flameActive > 0) $font->draw($r, 'BALAYAGE DE FLAMMES', $cx, $h - 40, 1, [255,170,90], 'center');
 
         $r->fillRect(0, $h - 10, $w, 10, [6,5,12,225]);
         $arsenal = $run->primaryWeaponLabel();
